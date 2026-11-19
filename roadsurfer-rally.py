@@ -54,7 +54,10 @@ def resolve(stations, terms):
             for s in stations.values()
             if t == str(s["id"])
             or (len(t) == 2 and t.isupper() and t == s["city"]["country"])
-            or (not t.isupper() and (tl in s["name"].lower() or tl in s["city"]["name"].lower()))
+            or (
+                not t.isupper()
+                and (tl in s["name"].lower() or tl in s["city"]["name"].lower())
+            )
         }
         if not hit:
             sys.exit(f"No station matches '{t}' (use --list)")
@@ -66,10 +69,17 @@ def km(a, b):
     """Great-circle distance between two stations (straight line, roads are ~1.3x)."""
     la1, lo1, la2, lo2 = map(
         math.radians,
-        (a["coordinate"]["latitude"], a["coordinate"]["longitude"],
-         b["coordinate"]["latitude"], b["coordinate"]["longitude"]),
+        (
+            a["coordinate"]["latitude"],
+            a["coordinate"]["longitude"],
+            b["coordinate"]["latitude"],
+            b["coordinate"]["longitude"],
+        ),
     )
-    h = math.sin((la2 - la1) / 2) ** 2 + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2
+    h = (
+        math.sin((la2 - la1) / 2) ** 2
+        + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2
+    )
     return 12742 * math.asin(math.sqrt(h))
 
 
@@ -107,21 +117,37 @@ def find_offers(args, stations):
 
 
 def link(o, d, start, end):
-    q = {"station": o, "end_station": d, "start-date": start, "end-date": end, "currency": "EUR"}
+    q = {
+        "station": o,
+        "end_station": d,
+        "start-date": start,
+        "end-date": end,
+        "currency": "EUR",
+    }
     return "https://booking.roadsurfer.com/en/rally/pick?" + urllib.parse.urlencode(q)
 
 
 def price(o, d, start, end):
-    res = get(
-        "/rally/search",
-        "rally.search",
-        {"stations": json.dumps([[o, d]]), "range": json.dumps([start, end]), "currency": "EUR"},
-    ) or []
-    return ", ".join(
-        f"{r['name']} €{r['availability']['price_details']['final']}"
-        for r in res
-        if r.get("available") and r.get("availability")
-    ) or "n/a"
+    res = (
+        get(
+            "/rally/search",
+            "rally.search",
+            {
+                "stations": json.dumps([[o, d]]),
+                "range": json.dumps([start, end]),
+                "currency": "EUR",
+            },
+        )
+        or []
+    )
+    return (
+        ", ".join(
+            f"{r['name']} €{r['availability']['price_details']['final']}"
+            for r in res
+            if r.get("available") and r.get("availability")
+        )
+        or "n/a"
+    )
 
 
 def run(args, stations):
@@ -129,7 +155,9 @@ def run(args, stations):
     seen = set(json.loads(STATE.read_text())) if STATE.exists() else set()
     new = []
     records = []
-    print(f"[{datetime.now():%Y-%m-%d %H:%M}] {len(offers)} offer(s) in {args.start}..{args.end}")
+    print(
+        f"[{datetime.now():%Y-%m-%d %H:%M}] {len(offers)} offer(s) in {args.start}..{args.end}"
+    )
     for o, d, s, e in offers:
         key = f"{o}-{d}-{s}-{e}"
         flag = "NEW " if key not in seen else "    "
@@ -140,37 +168,77 @@ def run(args, stations):
         pr = price(o, d, s, e) if args.prices else ""
         if pr:
             line += f"  [{pr}]"
-        records.append({
-            "start": s, "end": e, "price": pr, "link": link(o, d, s, e),
-            "from": {"name": stations[o]["name"], "cc": stations[o]["city"]["country"], **stations[o]["coordinate"]},
-            "to": {"name": stations[d]["name"], "cc": stations[d]["city"]["country"], **stations[d]["coordinate"]},
-        })
+        records.append(
+            {
+                "start": s,
+                "end": e,
+                "price": pr,
+                "link": link(o, d, s, e),
+                "from": {
+                    "name": stations[o]["name"],
+                    "cc": stations[o]["city"]["country"],
+                    **stations[o]["coordinate"],
+                },
+                "to": {
+                    "name": stations[d]["name"],
+                    "cc": stations[d]["city"]["country"],
+                    **stations[d]["coordinate"],
+                },
+            }
+        )
         print(line)
         print(f"      {link(o, d, s, e)}")
     if new and seen and args.notify:
-        subprocess.run(["notify-send", "roadsurfer Rally", f"{len(new)} new offer(s)"], check=False)
+        subprocess.run(
+            ["notify-send", "roadsurfer Rally", f"{len(new)} new offer(s)"], check=False
+        )
     STATE.write_text(json.dumps(sorted(seen | set(new))))
     if args.map:
         tpl = Path(__file__).with_name("rally-map.template.html").read_text()
-        Path(args.map).write_text(tpl.replace("/*DATA*/[]", json.dumps(records, ensure_ascii=False)))
+        Path(args.map).write_text(
+            tpl.replace("/*DATA*/[]", json.dumps(records, ensure_ascii=False))
+        )
         print(f"map ({len(records)} offers): {Path(args.map).resolve().as_uri()}")
 
 
 def main():
     global DELAY
-    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--to", nargs="*", help="destination stations (id, name, city or country code)")
-    p.add_argument("--from", dest="origin", nargs="*", help="origin stations (default: all)")
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    p.add_argument(
+        "--to", nargs="*", help="destination stations (id, name, city or country code)"
+    )
+    p.add_argument(
+        "--from", dest="origin", nargs="*", help="origin stations (default: all)"
+    )
     p.add_argument("--via", help="only routes passing near this station (id or name)")
-    p.add_argument("--detour", type=int, default=150,
-                   help="max extra straight-line km to pass by --via (default 150)")
-    p.add_argument("--start", default=date.today().isoformat(), help="window start YYYY-MM-DD")
+    p.add_argument(
+        "--detour",
+        type=int,
+        default=150,
+        help="max extra straight-line km to pass by --via (default 150)",
+    )
+    p.add_argument(
+        "--start", default=date.today().isoformat(), help="window start YYYY-MM-DD"
+    )
     p.add_argument("--end", default="2099-12-31", help="window end YYYY-MM-DD")
-    p.add_argument("--prices", action="store_true", help="fetch models and price per offer")
+    p.add_argument(
+        "--prices", action="store_true", help="fetch models and price per offer"
+    )
     p.add_argument("--watch", type=int, metavar="MIN", help="repeat every MIN minutes")
     p.add_argument("--notify", action="store_true", help="notify-send on new offers")
-    p.add_argument("--map", metavar="FILE.html", help="write a self-contained map of the offers (add --prices for models/price)")
-    p.add_argument("--delay", type=float, default=DELAY, help="seconds between requests (default %(default)s)")
+    p.add_argument(
+        "--map",
+        metavar="FILE.html",
+        help="write a self-contained map of the offers (add --prices for models/price)",
+    )
+    p.add_argument(
+        "--delay",
+        type=float,
+        default=DELAY,
+        help="seconds between requests (default %(default)s)",
+    )
     p.add_argument("--list", action="store_true", help="list stations and exit")
     args = p.parse_args()
     DELAY = args.delay
@@ -179,13 +247,19 @@ def main():
     if not stations:
         sys.exit("Could not fetch station list")
     if args.list:
-        for s in sorted(stations.values(), key=lambda s: (s["city"]["country"], s["name"])):
-            print(f"{s['id']:>4}  {s['city']['country']}  {s['name']}  ({s['city']['name']})")
+        for s in sorted(
+            stations.values(), key=lambda s: (s["city"]["country"], s["name"])
+        ):
+            print(
+                f"{s['id']:>4}  {s['city']['country']}  {s['name']}  ({s['city']['name']})"
+            )
         return
     if args.via:
         via = resolve(stations, [args.via])
         if len(via) != 1:
-            sys.exit(f"--via '{args.via}' matches {len(via)} stations, use an id (see --list)")
+            sys.exit(
+                f"--via '{args.via}' matches {len(via)} stations, use an id (see --list)"
+            )
         args.via = via.pop()
     while True:
         run(args, stations)
