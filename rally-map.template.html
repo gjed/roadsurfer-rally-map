@@ -61,7 +61,7 @@ const iso = ms => new Date(ms).toISOString().slice(0, 10);
 const min = DATA.map(r => r.start).sort()[0], max = DATA.map(r => r.end).sort().pop();
 if (min) { $('from').value = min; $('to').value = max; }
 const kms = DATA.map(r => roadKm(r.from, r.to));
-$('kmin').placeholder = Math.min(...kms); $('kmax').placeholder = Math.max(...kms);
+if (kms.length) { $('kmin').placeholder = Math.min(...kms); $('kmax').placeholder = Math.max(...kms); }
 $('week').max = min ? Math.ceil((day(max) - day(min)) / 864e5 / 7) : 0;
 
 // Faceted filters: each dropdown only offers values that still have offers
