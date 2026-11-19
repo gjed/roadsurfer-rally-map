@@ -83,12 +83,6 @@ def km(a, b):
     return 12742 * math.asin(math.sqrt(h))
 
 
-def detour(stations, via, o, d):
-    """Extra km to pass through `via` on the way from o to d."""
-    so, sd, sv = stations[o], stations[d], stations[via]
-    return km(so, sv) + km(sv, sd) - km(so, sd)
-
-
 def find_offers(args, stations):
     targets = resolve(stations, args.to) if args.to else None
     origins = resolve(stations, args.origin) if args.origin else set(stations)
@@ -100,7 +94,6 @@ def find_offers(args, stations):
         if det
         for d in det.get("returns") or []
         if targets is None or d in targets
-        if args.via is None or detour(stations, args.via, o, d) <= args.detour
     ]
 
     def frames(route):
@@ -157,8 +150,7 @@ def run(args, stations):
         f"[{datetime.now():%Y-%m-%d %H:%M}] {len(offers)} offer(s) in {args.start}..{args.end}"
     )
     for o, d, s, e in offers:
-        via = f"  +{detour(stations, args.via, o, d):.0f}km" if args.via else ""
-        line = f"{s} -> {e}{via}  {stations[o]['name']} ({stations[o]['city']['country']}) -> {stations[d]['name']} ({stations[d]['city']['country']})"
+        line = f"{s} -> {e}  {stations[o]['name']} ({stations[o]['city']['country']}) -> {stations[d]['name']} ({stations[d]['city']['country']})"
         pr = price(o, d, s, e) if args.prices else ""
         if pr:
             line += f"  [{pr}]"
@@ -200,13 +192,6 @@ def main():
     p.add_argument(
         "--from", dest="origin", nargs="*", help="origin stations (default: all)"
     )
-    p.add_argument("--via", help="only routes passing near this station (id or name)")
-    p.add_argument(
-        "--detour",
-        type=int,
-        default=150,
-        help="max extra straight-line km to pass by --via (default 150)",
-    )
     p.add_argument(
         "--start", default=date.today().isoformat(), help="window start YYYY-MM-DD"
     )
@@ -240,13 +225,6 @@ def main():
                 f"{s['id']:>4}  {s['city']['country']}  {s['name']}  ({s['city']['name']})"
             )
         return
-    if args.via:
-        via = resolve(stations, [args.via])
-        if len(via) != 1:
-            sys.exit(
-                f"--via '{args.via}' matches {len(via)} stations, use an id (see --list)"
-            )
-        args.via = via.pop()
     run(args, stations)
 
 
