@@ -219,7 +219,11 @@ def main():
             p.error(
                 "--from-json only renders: drop --list/--json-out/--from/--to/--prices"
             )
-        offers = json.loads(Path(args.from_json).read_text(encoding="utf-8"))["offers"]
+        try:
+            data = json.loads(Path(args.from_json).read_text(encoding="utf-8"))
+            offers = data["offers"]
+        except (OSError, ValueError, KeyError, TypeError) as e:
+            sys.exit(f"Could not read --from-json {args.from_json}: {e!r}")
         render(offers, args.map)
         return
 
