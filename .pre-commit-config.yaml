@@ -5,7 +5,9 @@ repos:
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
+        exclude: ^vendor/
       - id: trailing-whitespace
+        exclude: ^vendor/
       - id: check-added-large-files
       - id: check-merge-conflict
   - repo: https://github.com/executablebooks/mdformat
