@@ -3,7 +3,7 @@
 ## Purpose
 
 Find roadsurfer Rally one-way relocation offers through the unofficial booking API
-and present them as a list and as a self-contained HTML map.
+and present them as a list and as an HTML map.
 
 ## Requirements
 
@@ -43,13 +43,14 @@ runs and SHALL NOT mark offers as new.
 - **THEN** only offers from the matching origins to the matching destinations that
   overlap the window are listed, and no file is written
 
-### Requirement: Self-contained map output
+### Requirement: Map output
 
 With `--map FILE`, the scanner SHALL write an HTML file built from the
 `rally-map.template.html` file next to the script, with the literal `/*DATA*/[]`
 replaced by the JSON offer records, every `</` in the data escaped as `<\/`, and SHALL
 print the number of offers on the map. The records SHALL come from the scan of the
-same run or, with `--from-json`, from a data file.
+same run or, with `--from-json`, from a data file. The page SHALL load Leaflet from
+`vendor/leaflet/` next to it.
 
 #### Scenario: Map from a clean clone
 
