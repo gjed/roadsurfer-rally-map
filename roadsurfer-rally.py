@@ -195,9 +195,8 @@ def run(args, stations):
     STATE.write_text(json.dumps(sorted(seen | set(new))))
     if args.map:
         tpl = Path(__file__).with_name("rally-map.template.html").read_text()
-        Path(args.map).write_text(
-            tpl.replace("/*DATA*/[]", json.dumps(records, ensure_ascii=False))
-        )
+        data = json.dumps(records, ensure_ascii=False).replace("</", "<\\/")
+        Path(args.map).write_text(tpl.replace("/*DATA*/[]", data))
         print(f"map ({len(records)} offers): {Path(args.map).resolve().as_uri()}")
 
 
