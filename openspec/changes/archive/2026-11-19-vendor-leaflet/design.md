@@ -28,8 +28,10 @@ icons are resolved relative to the `leaflet.css` link.
 - **Leaflet 1.9.4.** Every newer npm release is a 2.0 alpha or beta. 1.9.4 is the
   latest stable 1.x and is what the template already uses.
 - **Source: the npm tarball.** `https://registry.npmjs.org/leaflet/-/leaflet-1.9.4.tgz`
-  carries a registry integrity hash. The files are cross-checked against the
-  `leaflet.zip` asset of the GitHub release `v1.9.4`.
+  carries a registry integrity hash, and its `leaflet.js` is the file unpkg served.
+  The files are cross-checked against the `leaflet.zip` asset of the GitHub release
+  `v1.9.4`: all match except `leaflet.js`, whose banner comment in the zip names the
+  build (`1.9.4+v1.d15112c`). The release zip has no `LICENSE`.
 - **Version in one file.** `vendor/leaflet/VERSION` holds the version. The template
   paths carry no version, so an update touches the files and `VERSION` only, and a
   future Renovate regex manager ([#11](https://github.com/gjed/roadsurfer-rally-map/issues/11))
