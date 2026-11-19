@@ -96,8 +96,9 @@ options:
 `vendor/leaflet/` holds an unmodified copy of [Leaflet](https://leafletjs.com/)
 1.9.4 (`leaflet.js`, `leaflet.css`, `images/`), taken from the npm package
 [leaflet-1.9.4.tgz](https://registry.npmjs.org/leaflet/-/leaflet-1.9.4.tgz). Leaflet
-is licensed under BSD-2-Clause, see [vendor/leaflet/LICENSE](vendor/leaflet/LICENSE). The version is
-recorded in [vendor/leaflet/VERSION](vendor/leaflet/VERSION).
+is licensed under BSD-2-Clause, see
+[vendor/leaflet/LICENSE](vendor/leaflet/LICENSE). The version is recorded in
+[vendor/leaflet/VERSION](vendor/leaflet/VERSION).
 
 The generated page finds Leaflet only when `vendor/` sits next to it. A published
 page must ship the `vendor/` directory alongside `index.html`.
@@ -111,9 +112,15 @@ To update Leaflet to version `X.Y.Z`:
    tar xzf leaflet-X.Y.Z.tgz
    ```
 
-1. Copy `package/dist/leaflet.js`, `package/dist/leaflet.css`,
-   `package/dist/images/*.png` and `package/LICENSE` over the files in
-   `vendor/leaflet/`. Do not edit them: pre-commit and git leave `vendor/` as is.
+1. Replace the vendored files with the ones from the package:
+
+   ```sh
+   rm vendor/leaflet/images/*.png
+   cp package/dist/leaflet.js package/dist/leaflet.css package/LICENSE vendor/leaflet/
+   cp package/dist/images/*.png vendor/leaflet/images/
+   ```
+
+   Do not edit them: pre-commit and git leave `vendor/` as is.
 
 1. Write `X.Y.Z` to `vendor/leaflet/VERSION` and update the version and URL in this
    section.
