@@ -227,6 +227,9 @@ def main():
         render(offers, args.map)
         return
 
+    if args.list and (args.map or args.json_out):
+        p.error("--list only lists stations: drop --map/--json-out")
+
     stations = {s["id"]: s for s in get("/rally/stations", "rally.startStations") or []}
     if not stations:
         sys.exit("Could not fetch station list")
