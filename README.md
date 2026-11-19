@@ -36,9 +36,59 @@ python3 roadsurfer-rally.py --prices --map index.html    # add models and prices
 python3 roadsurfer-rally.py --help
 ```
 
-Each run stores the offers it has seen in `.roadsurfer-rally-seen.json` and marks
-offers it has not seen before as `NEW`. Git ignores this file and the generated
-`index.html`.
+Git ignores the generated `index.html`.
+
+### Scan and render separately
+
+Scanning needs the API. Rendering the page does not. `--json-out` saves the scanned
+offers as a JSON object with an `offers` list, the same records the page embeds.
+`--from-json` builds the page from that file without any network request:
+
+```sh
+python3 roadsurfer-rally.py --json-out offers.json        # scan only
+python3 roadsurfer-rally.py --from-json offers.json --map index.html  # render offline
+```
+
+`--from-json` needs `--map` and does not accept `--list`, `--json-out`, `--from`,
+`--to` or `--prices`. `--map` without `--from-json` scans and renders in one run.
+
+### Usage
+
+Output of `python3 roadsurfer-rally.py --help` on Python 3.14. Python 3.8 and 3.9
+label the options section `optional arguments:`.
+
+```text
+usage: roadsurfer-rally.py [-h] [--to [TO ...]] [--from [ORIGIN ...]]
+                           [--start START] [--end END] [--prices]
+                           [--map FILE.html] [--json-out FILE.json]
+                           [--from-json FILE.json] [--delay DELAY] [--list]
+
+Query roadsurfer Rally (one-way relocation) offers.
+
+Unofficial API used by booking.roadsurfer.com (stdlib only):
+  GET /api/{lang}/rally/stations                 all stations
+  GET /api/{lang}/rally/stations/{id}            station; "returns" = rally destinations
+  GET /api/{lang}/rally/timeframes/{from}-{to}   [{startDate, endDate}, ...]
+  GET /api/{lang}/rally/search?stations=[[from,to]]&range=[start,end]&currency=EUR
+                                                 models + price for an exact timeframe
+The X-Requested-Alias header must match the route alias or the API returns 404.
+
+options:
+  -h, --help            show this help message and exit
+  --to [TO ...]         destination stations (id, name, city or country code)
+  --from [ORIGIN ...]   origin stations (default: all)
+  --start START         window start YYYY-MM-DD
+  --end END             window end YYYY-MM-DD
+  --prices              fetch models and price per offer
+  --map FILE.html       write a self-contained map of the offers (add --prices
+                        for models/price)
+  --json-out FILE.json  write the scanned offers as {"offers": [...]}
+  --from-json FILE.json
+                        render --map from a --json-out file, without network
+                        access
+  --delay DELAY         seconds between requests (default 0.5)
+  --list                list stations and exit
+```
 
 ## API notes
 
