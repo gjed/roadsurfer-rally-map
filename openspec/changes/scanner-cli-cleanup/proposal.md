@@ -22,6 +22,8 @@ from scan data without calling the API.
   `notify-send` and the `--start` default staying fixed during `--watch`.
 - **BREAKING** Remove `--via`, `--detour`, the `detour()` helper, its route filter and
   the `+Nkm` column.
+- Remove `km()`. `detour()` was its only caller; the map computes distances in the
+  browser.
 - Split scanning from rendering. `--json-out FILE` writes the scanned offers as
   `{"offers": [...]}`. `--from-json FILE --map OUT` builds the map from that file
   without any network request. `--map` alone still scans and renders in one run.
