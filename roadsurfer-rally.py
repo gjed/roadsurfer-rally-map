@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Query/monitor roadsurfer Rally (one-way relocation) offers.
+"""Query roadsurfer Rally (one-way relocation) offers.
 
 Unofficial API used by booking.roadsurfer.com (stdlib only):
   GET /api/{lang}/rally/stations                 all stations
@@ -14,7 +14,6 @@ import argparse
 import http.client
 import json
 import math
-import subprocess
 import sys
 import time
 import urllib.parse
@@ -24,7 +23,6 @@ from pathlib import Path
 
 BASE = "https://booking.roadsurfer.com/api/en"
 DELAY = 0.5  # seconds between requests (sequential, ~2 req/s); see --delay
-STATE = Path(__file__).with_name(".roadsurfer-rally-seen.json")
 
 
 def get(path, alias, params=None):
@@ -154,19 +152,13 @@ def price(o, d, start, end):
 
 def run(args, stations):
     offers = find_offers(args, stations)
-    seen = set(json.loads(STATE.read_text())) if STATE.exists() else set()
-    new = []
     records = []
     print(
         f"[{datetime.now():%Y-%m-%d %H:%M}] {len(offers)} offer(s) in {args.start}..{args.end}"
     )
     for o, d, s, e in offers:
-        key = f"{o}-{d}-{s}-{e}"
-        flag = "NEW " if key not in seen else "    "
-        if key not in seen:
-            new.append(key)
         via = f"  +{detour(stations, args.via, o, d):.0f}km" if args.via else ""
-        line = f"{flag}{s} -> {e}{via}  {stations[o]['name']} ({stations[o]['city']['country']}) -> {stations[d]['name']} ({stations[d]['city']['country']})"
+        line = f"{s} -> {e}{via}  {stations[o]['name']} ({stations[o]['city']['country']}) -> {stations[d]['name']} ({stations[d]['city']['country']})"
         pr = price(o, d, s, e) if args.prices else ""
         if pr:
             line += f"  [{pr}]"
@@ -190,11 +182,6 @@ def run(args, stations):
         )
         print(line)
         print(f"      {link(o, d, s, e)}")
-    if new and seen and args.notify:
-        subprocess.run(
-            ["notify-send", "roadsurfer Rally", f"{len(new)} new offer(s)"], check=False
-        )
-    STATE.write_text(json.dumps(sorted(seen | set(new))))
     if args.map:
         tpl = Path(__file__).with_name("rally-map.template.html").read_text()
         data = json.dumps(records, ensure_ascii=False).replace("</", "<\\/")
@@ -227,8 +214,6 @@ def main():
     p.add_argument(
         "--prices", action="store_true", help="fetch models and price per offer"
     )
-    p.add_argument("--watch", type=int, metavar="MIN", help="repeat every MIN minutes")
-    p.add_argument("--notify", action="store_true", help="notify-send on new offers")
     p.add_argument(
         "--map",
         metavar="FILE.html",
@@ -262,11 +247,7 @@ def main():
                 f"--via '{args.via}' matches {len(via)} stations, use an id (see --list)"
             )
         args.via = via.pop()
-    while True:
-        run(args, stations)
-        if not args.watch:
-            break
-        time.sleep(args.watch * 60)
+    run(args, stations)
 
 
 if __name__ == "__main__":
