@@ -6,8 +6,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   html, body { height: 100%; margin: 0; font: 13px system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; }
   #bar { box-sizing: border-box; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; background: #f4f4f4; border-bottom: 1px solid #ccc; }
-  #map { position: absolute; top: 84px; bottom: 0; left: 0; right: 0; }
+  #map { flex: 1; }
   #bar label { display: flex; gap: 4px; align-items: center; white-space: nowrap; }
   #bar select { max-width: 170px; }
   #count { margin-left: auto; font-weight: 600; }
