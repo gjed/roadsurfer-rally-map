@@ -13,7 +13,6 @@ The X-Requested-Alias header must match the route alias or the API returns 404.
 import argparse
 import http.client
 import json
-import math
 import sys
 import time
 import urllib.parse
@@ -63,24 +62,6 @@ def resolve(stations, terms):
             sys.exit(f"No station matches '{t}' (use --list)")
         out |= hit
     return out
-
-
-def km(a, b):
-    """Great-circle distance between two stations (straight line, roads are ~1.3x)."""
-    la1, lo1, la2, lo2 = map(
-        math.radians,
-        (
-            a["coordinate"]["latitude"],
-            a["coordinate"]["longitude"],
-            b["coordinate"]["latitude"],
-            b["coordinate"]["longitude"],
-        ),
-    )
-    h = (
-        math.sin((la2 - la1) / 2) ** 2
-        + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2
-    )
-    return 12742 * math.asin(math.sqrt(h))
 
 
 def find_offers(args, stations):

@@ -4,6 +4,7 @@
 
 - [ ] 1.1 Remove the seen-state file, the `NEW` flag, `--notify` and `--watch`, and drop `.roadsurfer-rally-seen.json` from `.gitignore`
 - [ ] 1.2 Remove `--via`, `--detour`, `detour()`, its route filter and the `+Nkm` column
+- [ ] 1.3 Remove the now unused `km()` helper and `import math`
 
 ## 2. Split scanning from rendering
 
