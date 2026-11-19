@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>roadsurfer Rally map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  html, body { height: 100%; margin: 0; font: 13px system-ui, sans-serif; }
+  #bar { box-sizing: border-box; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; background: #f4f4f4; border-bottom: 1px solid #ccc; }
+  #map { position: absolute; top: 84px; bottom: 0; left: 0; right: 0; }
+  #bar label { display: flex; gap: 4px; align-items: center; white-space: nowrap; }
+  #bar select { max-width: 170px; }
+  #count { margin-left: auto; font-weight: 600; }
+  #reset { cursor: pointer; }
+  .a a { color: #0b6; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <label>Start <input type="date" id="from"></label>
+  <label>to <input type="date" id="to"></label>
+  <label>Week <input type="range" id="week" min="0" max="0" value="0" style="width:140px"></label>
+  <label>Distance <input type="number" id="kmin" min="0" step="50" style="width:65px"> to <input type="number" id="kmax" min="0" step="50" style="width:65px"> km</label>
+  <label>From country <select id="fcc"></select></label>
+  <label>From <select id="fst"></select></label>
+  <label>To country <select id="tcc"></select></label>
+  <label>To <select id="tst"></select></label>
+  <button id="reset">Reset</button>
+  <span id="count"></span>
+</div>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const DATA = /*DATA*/[];
+const map = L.map('map').setView([50.0, 9.0], 5);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Tiles © Esri' }).addTo(map);
+const layer = L.layerGroup().addTo(map);
+
+function arc(a, b, n = 40) {
+  const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+  const cx = mx - (b[1] - a[1]) * 0.2, cy = my + (b[0] - a[0]) * 0.2;
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, u = 1 - t;
+    pts.push([u * u * a[0] + 2 * u * t * cx + t * t * b[0], u * u * a[1] + 2 * u * t * cy + t * t * b[1]]);
+  }
+  return pts;
+}
+
+// estimate: great-circle distance x 1.3 to approximate driving distance
+function roadKm(a, b) {
+  const R = Math.PI / 180, dLa = (b.latitude - a.latitude) * R, dLo = (b.longitude - a.longitude) * R;
+  const h = Math.sin(dLa / 2) ** 2 + Math.cos(a.latitude * R) * Math.cos(b.latitude * R) * Math.sin(dLo / 2) ** 2;
+  return Math.round(12742 * Math.asin(Math.sqrt(h)) * 1.3 / 10) * 10;
+}
+const $ = id => document.getElementById(id);
+const day = s => Date.parse(s + 'T00:00:00Z');
+const iso = ms => new Date(ms).toISOString().slice(0, 10);
+const min = DATA.map(r => r.start).sort()[0], max = DATA.map(r => r.end).sort().pop();
+if (min) { $('from').value = min; $('to').value = max; }
+const kms = DATA.map(r => roadKm(r.from, r.to));
+$('kmin').placeholder = Math.min(...kms); $('kmax').placeholder = Math.max(...kms);
+$('week').max = min ? Math.ceil((day(max) - day(min)) / 864e5 / 7) : 0;
+
+// Faceted filters: each dropdown only offers values that still have offers
+// under every OTHER active filter, so incompatible combinations can't be picked.
+const FILTERS = {
+  fcc: r => r.from.cc, fst: r => r.from.name,
+  tcc: r => r.to.cc,   tst: r => r.to.name,
+};
+const sel = {};  // current selections, '' = any
+
+function passes(r, skip) {
+  if (day(r.start) < day($('from').value) || day(r.start) > day($('to').value)) return false;
+  const km = roadKm(r.from, r.to);
+  if (km < +$('kmin').value || ($('kmax').value !== '' && km > +$('kmax').value)) return false;
+  for (const k in FILTERS) if (k !== skip && sel[k] && FILTERS[k](r) !== sel[k]) return false;
+  return true;
+}
+
+function fillSelects() {
+  for (const k in FILTERS) {
+    const counts = new Map();
+    for (const r of DATA) if (passes(r, k)) counts.set(FILTERS[k](r), (counts.get(FILTERS[k](r)) || 0) + 1);
+    if (sel[k] && !counts.has(sel[k])) sel[k] = '';  // selection became impossible -> clear it
+    const el = $(k);
+    el.innerHTML = '<option value="">any (' + [...counts.values()].reduce((a, b) => a + b, 0) + ')</option>' +
+      [...counts].sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([v, n]) => `<option value="${v}"${v === sel[k] ? ' selected' : ''}>${v} (${n})</option>`).join('');
+  }
+}
+
+function render() {
+  fillSelects();
+  layer.clearLayers();
+  // one arc per route (from -> to); all matching dates are listed in its popup
+  const routes = new Map();
+  let n = 0;
+  for (const r of DATA) {
+    if (!passes(r)) continue;
+    n++;
+    const key = r.from.name + '>' + r.to.name;
+    if (!routes.has(key)) routes.set(key, { from: r.from, to: r.to, trips: [] });
+    routes.get(key).trips.push(r);
+  }
+  for (const g of routes.values()) {
+    g.trips.sort((x, y) => x.start.localeCompare(y.start));
+    const a = [g.from.latitude, g.from.longitude], b = [g.to.latitude, g.to.longitude];
+    const t = g.trips, N = t.length, km = roadKm(g.from, g.to);
+    const head = `${g.from.name} (${g.from.cc}) \u2192 ${g.to.name} (${g.to.cc})`;
+    const rows = t.map(r => `<li>${r.start} \u2192 ${r.end}${r.price ? ' \u00b7 ' + r.price : ''} \u00b7 <a href="${r.link}" target="_blank">book</a></li>`).join('');
+    const pop = `<div class="a"><b>${head}</b><br>~${km} km by road \u00b7 ${N} trip${N > 1 ? 's' : ''}<ul style="margin:4px 0 0;padding-left:18px;max-height:220px;overflow:auto">${rows}</ul></div>`;
+    const tip = `${head}<br>~${km} km \u00b7 ${N} trip${N > 1 ? 's' : ''}: ${t[0].start}${N > 1 ? ' \u2026 ' + t[N - 1].start : ''}`;
+    const col = '#06c';
+    const line = L.polyline(arc(a, b), { color: col, weight: Math.min(2 + N, 7), opacity: .75 }).addTo(layer).bindPopup(pop).bindTooltip(tip, { sticky: true });
+    line.on('mouseover', () => line.setStyle({ opacity: 1, color: '#e60' })).on('mouseout', () => line.setStyle({ opacity: .75, color: col }));
+    L.circleMarker(a, { radius: 4, color: col, fillColor: '#fff', fillOpacity: 1 }).addTo(layer).bindPopup(pop).bindTooltip(tip);
+    L.circleMarker(b, { radius: 6, color: col, fillColor: col, fillOpacity: 1 }).addTo(layer).bindPopup(pop).bindTooltip(tip);
+  }
+  $('count').textContent = routes.size + ' routes \u00b7 ' + n + ' / ' + DATA.length + ' trips';
+}
+
+$('week').oninput = () => {
+  const s = day(min) + $('week').value * 7 * 864e5;
+  $('from').value = iso(Math.max(s, day(min)));
+  $('to').value = iso(Math.min(s + 6 * 864e5, day(max)));
+  render();
+};
+for (const k in FILTERS) $(k).onchange = () => { sel[k] = $(k).value; render(); };
+['from', 'to', 'kmin', 'kmax'].forEach(id => $(id).oninput = render);
+$('reset').onclick = () => {
+  for (const k in FILTERS) sel[k] = '';
+  $('from').value = min; $('to').value = max; $('week').value = 0; $('kmin').value = $('kmax').value = '';
+  render();
+};
+render();
+</script>
+</body>
+</html>
