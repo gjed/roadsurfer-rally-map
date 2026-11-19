@@ -174,11 +174,17 @@ def run(args, stations):
         )
         print(line)
         print(f"      {link(o, d, s, e)}")
-    if args.map:
-        tpl = Path(__file__).with_name("rally-map.template.html").read_text()
-        data = json.dumps(records, ensure_ascii=False).replace("</", "<\\/")
-        Path(args.map).write_text(tpl.replace("/*DATA*/[]", data))
-        print(f"map ({len(records)} offers): {Path(args.map).resolve().as_uri()}")
+    return records
+
+
+def render(records, path):
+    """Write the map page with the records in the template's data block."""
+    tpl = (
+        Path(__file__).with_name("rally-map.template.html").read_text(encoding="utf-8")
+    )
+    data = json.dumps(records, ensure_ascii=False).replace("</", "<\\/")
+    Path(path).write_text(tpl.replace("/*DATA*/[]", data), encoding="utf-8")
+    print(f"map ({len(records)} offers): {Path(path).resolve().as_uri()}")
 
 
 def main():
@@ -205,6 +211,16 @@ def main():
         help="write a self-contained map of the offers (add --prices for models/price)",
     )
     p.add_argument(
+        "--json-out",
+        metavar="FILE.json",
+        help='write the scanned offers as {"offers": [...]}',
+    )
+    p.add_argument(
+        "--from-json",
+        metavar="FILE.json",
+        help="render --map from a --json-out file, without network access",
+    )
+    p.add_argument(
         "--delay",
         type=float,
         default=DELAY,
@@ -213,6 +229,18 @@ def main():
     p.add_argument("--list", action="store_true", help="list stations and exit")
     args = p.parse_args()
     DELAY = args.delay
+
+    if args.from_json:
+        if not args.map:
+            p.error("--from-json requires --map")
+        scan_opts = (args.list, args.json_out, args.prices)
+        if any(scan_opts) or args.origin is not None or args.to is not None:
+            p.error(
+                "--from-json only renders: drop --list/--json-out/--from/--to/--prices"
+            )
+        offers = json.loads(Path(args.from_json).read_text(encoding="utf-8"))["offers"]
+        render(offers, args.map)
+        return
 
     stations = {s["id"]: s for s in get("/rally/stations", "rally.startStations") or []}
     if not stations:
@@ -225,7 +253,13 @@ def main():
                 f"{s['id']:>4}  {s['city']['country']}  {s['name']}  ({s['city']['name']})"
             )
         return
-    run(args, stations)
+    records = run(args, stations)
+    if args.json_out:
+        out = json.dumps({"offers": records}, ensure_ascii=False, indent=1)
+        Path(args.json_out).write_text(out + "\n", encoding="utf-8")
+        print(f"data ({len(records)} offers): {Path(args.json_out).resolve()}")
+    if args.map:
+        render(records, args.map)
 
 
 if __name__ == "__main__":
