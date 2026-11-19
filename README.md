@@ -4,8 +4,8 @@ Finds [roadsurfer Rally](https://booking.roadsurfer.com/en/rally) one-way camper
 relocation offers and shows them on a map.
 
 `roadsurfer-rally.py` asks the roadsurfer booking API for every Rally route and its
-timeframes, prints the offers with booking links and, with `--map`, writes a
-self-contained HTML page. The page uses Leaflet and draws each offer as a line from
+timeframes, prints the offers with booking links and, with `--map`, writes an HTML
+page. The page uses the vendored copy of Leaflet and draws each offer as a line from
 its pick-up station to its return station.
 
 This project uses an unofficial, undocumented API. It is not affiliated with,
@@ -22,9 +22,10 @@ and runs `--help` on Python 3.8 through 3.14, and real scans were run on 3.8 and
 python3 roadsurfer-rally.py --map index.html
 ```
 
-Then open `index.html` in a browser. The page loads Leaflet and the map tiles from
-public CDNs, so viewing it needs an internet connection. A full scan makes about
-850 sequential requests and takes several minutes.
+Then open `index.html` in a browser. The page loads Leaflet from `vendor/leaflet/`
+by relative path, so write the `--map` file in the repo root, next to `vendor/`. The
+map tiles still come from Esri, so viewing the page needs an internet connection. A
+full scan makes about 850 sequential requests and takes several minutes.
 
 Other useful options:
 
@@ -89,6 +90,41 @@ options:
   --delay DELAY         seconds between requests (default 0.5)
   --list                list stations and exit
 ```
+
+## Vendored Leaflet
+
+`vendor/leaflet/` holds an unmodified copy of [Leaflet](https://leafletjs.com/)
+1.9.4 (`leaflet.js`, `leaflet.css`, `images/`), taken from the npm package
+[leaflet-1.9.4.tgz](https://registry.npmjs.org/leaflet/-/leaflet-1.9.4.tgz). Leaflet
+is licensed under BSD-2-Clause, see [vendor/leaflet/LICENSE](vendor/leaflet/LICENSE). The version is
+recorded in [vendor/leaflet/VERSION](vendor/leaflet/VERSION).
+
+The generated page finds Leaflet only when `vendor/` sits next to it. A published
+page must ship the `vendor/` directory alongside `index.html`.
+
+To update Leaflet to version `X.Y.Z`:
+
+1. Download and unpack the package:
+
+   ```sh
+   npm pack leaflet@X.Y.Z
+   tar xzf leaflet-X.Y.Z.tgz
+   ```
+
+1. Copy `package/dist/leaflet.js`, `package/dist/leaflet.css`,
+   `package/dist/images/*.png` and `package/LICENSE` over the files in
+   `vendor/leaflet/`. Do not edit them: pre-commit and git leave `vendor/` as is.
+
+1. Write `X.Y.Z` to `vendor/leaflet/VERSION` and update the version and URL in this
+   section.
+
+1. Check the files against the `leaflet.zip` asset of the
+   [GitHub release](https://github.com/Leaflet/Leaflet/releases) with `sha256sum`.
+   The zip's `leaflet.js` differs only in its banner comment, which adds the build
+   hash (for 1.9.4: `1.9.4+v1.d15112c`).
+
+1. Generate a map in the repo root, serve the folder with `python3 -m http.server`
+   and check that the map, the route lines and the markers render.
 
 ## API notes
 
