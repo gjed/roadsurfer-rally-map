@@ -11,12 +11,12 @@ The X-Requested-Alias header must match the route alias or the API returns 404.
 """
 
 import argparse
+import http.client
 import json
 import math
 import subprocess
 import sys
 import time
-import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import date, datetime
@@ -37,11 +37,13 @@ def get(path, alias, params=None):
         try:
             with urllib.request.urlopen(req, timeout=30) as r:
                 return json.load(r)
-        except (urllib.error.URLError, TimeoutError) as e:
-            if attempt == 4:
+        except (OSError, ValueError, http.client.HTTPException) as e:
+            code = getattr(e, "code", None)
+            # a 4xx other than 429 (e.g. 404 from a wrong alias) won't fix itself
+            if attempt == 4 or (code and 400 <= code < 500 and code != 429):
                 print(f"ERROR {url}: {e}", file=sys.stderr)
                 return None
-            time.sleep(5 * (attempt + 1) if getattr(e, "code", None) == 429 else 2)
+            time.sleep(5 * (attempt + 1) if code == 429 else 2)
 
 
 def resolve(stations, terms):
