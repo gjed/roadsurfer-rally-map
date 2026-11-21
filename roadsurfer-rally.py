@@ -18,7 +18,7 @@ import sys
 import time
 import urllib.parse
 import urllib.request
-from datetime import UTC, date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 BASE = "https://booking.roadsurfer.com/api/en"
@@ -274,7 +274,8 @@ def main():
         return
     records = run(args, stations)
     scan = {
-        "finished_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        # timezone.utc, not datetime.UTC (3.11+): the script supports Python 3.8
+        "finished_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),  # noqa: UP017
         "offers": len(records),
         "requests": REQUESTS,
         "failed": FAILED,
