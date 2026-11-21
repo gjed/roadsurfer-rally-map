@@ -97,7 +97,9 @@ The workflow [`scan.yml`](.github/workflows/scan.yml) scans on Monday and Thursd
 03:17 UTC, and on manual dispatch, with `--delay 5`. It publishes `index.html` and
 `vendor/` to <https://gjed.github.io/roadsurfer-rally-map/>. The run also keeps the
 scanned `offers.json` as the workflow artifact `offers`. When the scan fails, nothing
-is deployed and the published page stays at the last good scan.
+is deployed and the published page stays at the last good scan. GitHub pauses
+scheduled workflows after 60 days without repository activity; a maintainer then
+re-enables the scan with `gh workflow enable scan.yml` (or Actions → Enable).
 
 The workflow scans without `--prices`, so the published popups show dates and the
 booking link but no models or prices. `--prices` would add one request per offer on
