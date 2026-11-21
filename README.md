@@ -91,6 +91,14 @@ options:
   --list                list stations and exit
 ```
 
+## Published map
+
+The workflow [`scan.yml`](.github/workflows/scan.yml) scans on Monday and Thursday at
+03:17 UTC, and on manual dispatch, with `--delay 5`. It publishes `index.html` and
+`vendor/` to <https://gjed.github.io/roadsurfer-rally-map/>. The run also keeps the
+scanned `offers.json` as the workflow artifact `offers`. When the scan fails, nothing
+is deployed and the published page stays at the last good scan.
+
 ## Vendored Leaflet
 
 `vendor/leaflet/` holds an unmodified copy of [Leaflet](https://leafletjs.com/)
@@ -151,7 +159,17 @@ a 404 HTML page.
 ### Known behaviour
 
 - Bursts of requests get HTTP 429. The scanner sends requests one at a time and
-  waits 0.5 s before each one (`--delay`). It retries with backoff on errors.
+  waits before each one for the delay (`--delay`, 0.5 s by default, 5 s in the
+  workflow) plus a random jitter of up to 20% of the delay.
+- After an HTTP 429 the scanner waits about 1, 2, 3 and then 4 minutes, plus up to
+  30 s of jitter, before each retry. Other errors are retried after 2 s. It gives up
+  on a request after five attempts, and at once on any other 4xx answer.
+- After a scan, the scanner prints the number of requests, failed requests and 429
+  answers, and the duration. When more than 10% of the requests failed
+  (`MAX_FAILED`), it exits with status 1 and writes neither the `--json-out` nor the
+  `--map` file.
+- A full scan makes about 850 requests. With `--delay 5` it takes about 70 to 90
+  minutes; the workflow allows 150.
 - Every rally lasts 7 days and costs a flat €129.01.
 - Ranges longer than 7 days come back as unavailable.
 
