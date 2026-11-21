@@ -1,6 +1,7 @@
 # developer-tooling Specification
 
 ## Purpose
+
 Give contributors one local command each for scanning, rendering, previewing,
 linting and testing, with rendering and tests working offline from a clean clone.
 
