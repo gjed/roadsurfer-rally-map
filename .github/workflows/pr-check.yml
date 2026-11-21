@@ -1,0 +1,94 @@
+name: PR Check
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit on all files
+        run: |
+          set -euo pipefail
+          pre-commit run --all-files --show-diff-on-failure || {
+            EXIT_CODE=$?
+            echo "::error::A pre-commit hook failed (ruff, ruff-format, mdformat, pymarkdown or a generic hook). Run 'pre-commit run --all-files' locally and commit the fixes shown above."
+            exit $EXIT_CODE
+          }
+
+  build:
+    name: Test and build the map
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+
+      - name: Unit tests
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -v || {
+            EXIT_CODE=$?
+            echo "::error::Unit tests failed. Fix roadsurfer-rally.py (or the test it broke) and re-run 'python3 -m unittest discover -s tests -v' locally."
+            exit $EXIT_CODE
+          }
+
+      - name: Render the map from the fixture (offline)
+        run: |
+          set -euo pipefail
+          SITE="$RUNNER_TEMP/site"
+          mkdir -p "$SITE"
+          python3 roadsurfer-rally.py --from-json tests/fixtures/offers.json --map "$SITE/index.html" || {
+            EXIT_CODE=$?
+            echo "::error::Rendering tests/fixtures/offers.json failed. Reproduce with 'python3 roadsurfer-rally.py --from-json tests/fixtures/offers.json --map index.html' and fix the traceback above."
+            exit $EXIT_CODE
+          }
+
+      - name: Check the generated page
+        run: |
+          set -euo pipefail
+          SITE="$RUNNER_TEMP/site"
+          PAGE="$SITE/index.html"
+          if grep -qF '/*DATA*/[]' "$PAGE"; then
+            echo "::error::The /*DATA*/[] placeholder is still in the page: render() did not insert the offers. Keep 'const DATA = /*DATA*/[];' in rally-map.template.html exactly as render() expects."
+            exit 1
+          fi
+          if ! grep -qF 'vendor/leaflet/' "$PAGE" || grep -qF 'unpkg' "$PAGE"; then
+            echo "::error::The page must load Leaflet from vendor/leaflet/ and must not reference unpkg. Fix the <link>/<script> tags in rally-map.template.html."
+            exit 1
+          fi
+          python3 - "$PAGE" "$SITE/map.js" <<'EOF' || {
+          import sys
+          html = open(sys.argv[1], encoding="utf-8").read()
+          tag = '<script src="vendor/leaflet/leaflet.js"></script>'
+          rest = html.split(tag, 1)[1]
+          start = rest.index("<script>") + len("<script>")
+          open(sys.argv[2], "w", encoding="utf-8").write(rest[start : rest.index("</script>", start)])
+          EOF
+            echo "::error::Could not find the inline <script> after the vendor/leaflet/leaflet.js tag. Keep the map script inline, right after that tag, in rally-map.template.html."
+            exit 1
+          }
+          node --version
+          node --check "$SITE/map.js" || {
+            EXIT_CODE=$?
+            echo "::error::The map's embedded JavaScript does not parse (see the node error above). Fix the <script> block in rally-map.template.html; the line numbers count from the start of that block."
+            exit $EXIT_CODE
+          }
+          echo "Page OK: placeholder replaced, script parses, Leaflet from vendor/."
