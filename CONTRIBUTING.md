@@ -12,7 +12,7 @@ scanner uses only the standard library, so there is nothing else to install.
 ```sh
 git clone https://github.com/gjed/roadsurfer-rally-map.git
 cd roadsurfer-rally-map
-pip install pre-commit
+pipx install pre-commit   # or: pip install pre-commit, inside a virtualenv
 pre-commit install
 ```
 
