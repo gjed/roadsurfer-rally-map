@@ -92,7 +92,7 @@ Behaviour changes go through [OpenSpec](https://github.com/Fission-AI/OpenSpec):
 
 - Conventional Commits: `<type>(<scope>): <subject>`, for example
   `fix(scanner): retry on HTTP 503` or `docs(readme): link the live map`.
-- Every commit is signed and signed off: `git commit -S -s`.
+- Every commit is signed off: `git commit -s`.
 - Atomic commits: one logical change each. Stage files by explicit path, never
   `git add -A` or `git add .`.
 - The project is experimental: never mark a commit as breaking (no `!`, no

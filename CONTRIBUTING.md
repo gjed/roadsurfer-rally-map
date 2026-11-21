@@ -37,8 +37,8 @@ only when you need fresh offers. Run `make` alone to list the targets.
 
 1. Open or pick an issue. For a behaviour change, write an OpenSpec change under
    `openspec/changes/` (see [AGENTS.md](AGENTS.md#openspec-workflow)).
-1. Branch from `main` and make atomic, signed, signed-off Conventional Commits
-   (`git commit -S -s`).
+1. Branch from `main` and make atomic, signed-off Conventional Commits
+   (`git commit -s`).
 1. Run `make lint test map` and fix what they report.
 1. Open the PR against `main`, assign it to `gjed` and write `Closes #N` in the body.
 1. Wait for the PR check (lint, tests, fixture render and page checks) to pass.
