@@ -1,0 +1,74 @@
+# pr-check
+
+## ADDED Requirements
+
+### Requirement: Offline pull request validation
+
+Every pull request SHALL be validated automatically, with read-only repository
+permissions and without secrets. No validation step SHALL send a request to
+`booking.roadsurfer.com`.
+
+#### Scenario: Pull request opened
+
+- **WHEN** a pull request is opened or updated
+- **THEN** the lint and build checks run against its head
+
+#### Scenario: No roadsurfer traffic
+
+- **WHEN** the checks run
+- **THEN** no step contacts `booking.roadsurfer.com`
+
+### Requirement: Lint
+
+The lint check SHALL run the repository's pre-commit hooks on all files, including the
+Python linter and formatter and the Markdown linters, and SHALL fail when any hook
+fails or changes a file.
+
+#### Scenario: Unformatted Python
+
+- **WHEN** a pull request contains Python that ruff would reformat
+- **THEN** the lint check fails and shows the diff
+
+### Requirement: Map build from a fixture
+
+The build check SHALL render the map from a committed offers fixture in the
+`--json-out` format, without network access, and SHALL fail unless the generated page
+has the data placeholder replaced, an embedded script that parses as JavaScript, and
+Leaflet loaded from `vendor/leaflet/` rather than a CDN.
+
+#### Scenario: Broken template JavaScript
+
+- **WHEN** a pull request introduces a syntax error in the template's script
+- **THEN** the build check fails
+
+#### Scenario: Valid template
+
+- **WHEN** the template and scanner are unchanged
+- **THEN** the build check renders the fixture and passes
+
+### Requirement: Unit tests
+
+The build check SHALL run unit tests of the scanner's pure helpers: station
+resolution, booking-link building, page rendering with escaping of `</`, the
+date-window filter with the API client replaced, and the `--from-json` error paths.
+
+#### Scenario: Broken Python
+
+- **WHEN** a pull request breaks the rendering code
+- **THEN** the unit tests fail and the build check fails
+
+#### Scenario: Unreadable fixture
+
+- **WHEN** `--from-json` is given a missing file, invalid JSON, or JSON without
+  `offers`
+- **THEN** the scanner exits non-zero
+
+### Requirement: Actionable failures
+
+Every failing validation step SHALL print a GitHub `::error::` annotation that names
+what failed and how to fix or reproduce it locally.
+
+#### Scenario: Failed step
+
+- **WHEN** a validation step fails
+- **THEN** the run log contains an `::error::` line describing the fix
