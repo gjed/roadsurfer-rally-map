@@ -1,0 +1,112 @@
+{
+ "offers": [
+  {
+   "start": "2026-11-24",
+   "end": "2026-12-01",
+   "price": "",
+   "link": "https://booking.roadsurfer.com/en/rally/pick?station=1&end_station=13&start-date=2026-11-24&end-date=2026-12-01&currency=EUR",
+   "from": {
+    "name": "Munich",
+    "cc": "DE",
+    "latitude": 48.204,
+    "longitude": 11.586
+   },
+   "to": {
+    "name": "Bordeaux",
+    "cc": "FR",
+    "latitude": 44.821,
+    "longitude": -0.693
+   }
+  },
+  {
+   "start": "2026-11-24",
+   "end": "2026-12-01",
+   "price": "",
+   "link": "https://booking.roadsurfer.com/en/rally/pick?station=1&end_station=40&start-date=2026-11-24&end-date=2026-12-01&currency=EUR",
+   "from": {
+    "name": "Munich",
+    "cc": "DE",
+    "latitude": 48.204,
+    "longitude": 11.586
+   },
+   "to": {
+    "name": "Bilbao",
+    "cc": "ES",
+    "latitude": 43.2876667,
+    "longitude": -2.878791
+   }
+  },
+  {
+   "start": "2026-11-24",
+   "end": "2026-12-01",
+   "price": "",
+   "link": "https://booking.roadsurfer.com/en/rally/pick?station=1&end_station=58&start-date=2026-11-24&end-date=2026-12-01&currency=EUR",
+   "from": {
+    "name": "Munich",
+    "cc": "DE",
+    "latitude": 48.204,
+    "longitude": 11.586
+   },
+   "to": {
+    "name": "Turin",
+    "cc": "IT",
+    "latitude": 45.112,
+    "longitude": 7.675
+   }
+  },
+  {
+   "start": "2026-11-25",
+   "end": "2026-12-02",
+   "price": "",
+   "link": "https://booking.roadsurfer.com/en/rally/pick?station=1&end_station=78&start-date=2026-11-25&end-date=2026-12-02&currency=EUR",
+   "from": {
+    "name": "Munich",
+    "cc": "DE",
+    "latitude": 48.204,
+    "longitude": 11.586
+   },
+   "to": {
+    "name": "Venice",
+    "cc": "IT",
+    "latitude": 45.4666559,
+    "longitude": 12.1754866
+   }
+  },
+  {
+   "start": "2026-11-26",
+   "end": "2026-12-03",
+   "price": "",
+   "link": "https://booking.roadsurfer.com/en/rally/pick?station=1&end_station=31&start-date=2026-11-26&end-date=2026-12-03&currency=EUR",
+   "from": {
+    "name": "Munich",
+    "cc": "DE",
+    "latitude": 48.204,
+    "longitude": 11.586
+   },
+   "to": {
+    "name": "Nantes",
+    "cc": "FR",
+    "latitude": 47.211,
+    "longitude": -1.565
+   }
+  },
+  {
+   "start": "2026-11-26",
+   "end": "2026-12-03",
+   "price": "",
+   "link": "https://booking.roadsurfer.com/en/rally/pick?station=1&end_station=38&start-date=2026-11-26&end-date=2026-12-03&currency=EUR",
+   "from": {
+    "name": "Munich",
+    "cc": "DE",
+    "latitude": 48.204,
+    "longitude": 11.586
+   },
+   "to": {
+    "name": "Valencia \"Port\" </script><b>",
+    "cc": "ES",
+    "latitude": 39.458,
+    "longitude": -0.397
+   }
+  }
+ ]
+}
