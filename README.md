@@ -3,6 +3,9 @@
 Finds [roadsurfer Rally](https://booking.roadsurfer.com/en/rally) one-way campervan
 relocation offers and shows them on a map.
 
+Live map: <https://gjed.github.io/roadsurfer-rally-map/>, refreshed twice a week by
+[`scan.yml`](.github/workflows/scan.yml).
+
 `roadsurfer-rally.py` asks the roadsurfer booking API for every Rally route and its
 timeframes, prints the offers with booking links and, with `--map`, writes an HTML
 page. The page uses the vendored copy of Leaflet and draws each offer as a line from
@@ -38,6 +41,18 @@ python3 roadsurfer-rally.py --help
 ```
 
 Git ignores the generated `index.html`.
+
+### Make targets
+
+The `Makefile` wraps the common commands. Run `make` alone to list them.
+
+| Target       | Runs                                                                                            |
+| ------------ | ----------------------------------------------------------------------------------------------- |
+| `make scan`  | Full scan into `offers.json` (git-ignored), at the default delay                                |
+| `make map`   | Renders `index.html` from `offers.json` offline, or from `tests/fixtures/offers.json` if absent |
+| `make serve` | `python3 -m http.server` on `127.0.0.1:8000`, from the repo root                                |
+| `make lint`  | `pre-commit run --all-files`                                                                    |
+| `make test`  | `python3 -m unittest discover -s tests -v`                                                      |
 
 ### Scan and render separately
 
@@ -179,6 +194,13 @@ a 404 HTML page.
   minutes; the workflow allows 150.
 - Every rally lasts 7 days and costs a flat €129.01.
 - Ranges longer than 7 days come back as unavailable.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and the pull request flow, and
+[AGENTS.md](AGENTS.md) for the conventions. Every pull request runs
+[`pr-check.yml`](.github/workflows/pr-check.yml): pre-commit, the unit tests and an
+offline render of the test fixture.
 
 ## License
 
