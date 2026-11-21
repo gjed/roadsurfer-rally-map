@@ -25,6 +25,7 @@ BASE = "https://booking.roadsurfer.com/api/en"
 DELAY = 0.5  # seconds between requests (sequential, ~2 req/s); see --delay
 JITTER = 0.2  # up to this share of DELAY is added at random to each wait
 REQUESTS = FAILED = RATE_LIMITED = 0  # get() calls, calls given up, 429 answers
+MAX_FAILED = 0.10  # a scan with a larger failed share is blocked: no files written
 
 
 def get(path, alias, params=None):
@@ -177,6 +178,17 @@ def render(records, path):
     print(f"map ({len(records)} offers): {Path(path).resolve().as_uri()}")
 
 
+def summary(started):
+    """Print the request counts and duration; return True if the scan is blocked."""
+    secs = round(time.monotonic() - started)
+    share = FAILED / REQUESTS if REQUESTS else 0
+    print(
+        f"scan: {REQUESTS} requests, {FAILED} failed ({share:.1%}), "
+        f"{RATE_LIMITED} rate-limited (429), duration {secs // 60}m{secs % 60:02d}s"
+    )
+    return share > MAX_FAILED
+
+
 def main():
     global DELAY
     p = argparse.ArgumentParser(
@@ -239,8 +251,11 @@ def main():
     if args.list and (args.map or args.json_out):
         p.error("--list only lists stations: drop --map/--json-out")
 
+    started = time.monotonic()
     stations = {s["id"]: s for s in get("/rally/stations", "rally.startStations") or []}
     if not stations:
+        if not args.list:
+            summary(started)
         sys.exit("Could not fetch station list")
     if args.list:
         for s in sorted(
@@ -251,6 +266,11 @@ def main():
             )
         return
     records = run(args, stations)
+    if summary(started):
+        sys.exit(
+            f"Scan blocked: {FAILED} of {REQUESTS} requests failed "
+            f"(more than {MAX_FAILED:.0%}); not writing any file"
+        )
     if args.json_out:
         out = json.dumps({"offers": records}, ensure_ascii=False, indent=1)
         Path(args.json_out).write_text(out + "\n", encoding="utf-8")
