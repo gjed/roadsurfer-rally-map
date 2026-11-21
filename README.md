@@ -182,6 +182,11 @@ To update Leaflet to version `X.Y.Z`:
 1. Generate a map in the repo root, serve the folder with `python3 -m http.server`
    and check that the map, the route lines and the markers render.
 
+Renovate watches `vendor/leaflet/VERSION` and opens a PR when a new stable Leaflet
+version is on npm. That PR changes only `VERSION`, so it is never automerged: check
+out its branch, run the steps above for the new version, push, and merge once the
+checks pass. Leaflet prereleases are ignored.
+
 ## API notes
 
 These notes were reverse-engineered from booking.roadsurfer.com.
