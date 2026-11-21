@@ -13,6 +13,7 @@ The X-Requested-Alias header must match the route alias or the API returns 404.
 import argparse
 import http.client
 import json
+import random
 import sys
 import time
 import urllib.parse
@@ -22,25 +23,33 @@ from pathlib import Path
 
 BASE = "https://booking.roadsurfer.com/api/en"
 DELAY = 0.5  # seconds between requests (sequential, ~2 req/s); see --delay
+JITTER = 0.2  # up to this share of DELAY is added at random to each wait
+REQUESTS = FAILED = RATE_LIMITED = 0  # get() calls, calls given up, 429 answers
 
 
 def get(path, alias, params=None):
+    global REQUESTS, FAILED, RATE_LIMITED
+    REQUESTS += 1
     url = BASE + path + ("?" + urllib.parse.urlencode(params) if params else "")
     req = urllib.request.Request(
         url, headers={"Accept": "application/json", "X-Requested-Alias": alias}
     )
-    time.sleep(DELAY)
+    time.sleep(DELAY + random.uniform(0, JITTER * DELAY))
     for attempt in range(5):
         try:
             with urllib.request.urlopen(req, timeout=30) as r:
                 return json.load(r)
         except (OSError, ValueError, http.client.HTTPException) as e:
             code = getattr(e, "code", None)
+            if code == 429:
+                RATE_LIMITED += 1
             # a 4xx other than 429 (e.g. 404 from a wrong alias) won't fix itself
             if attempt == 4 or (code and 400 <= code < 500 and code != 429):
                 print(f"ERROR {url}: {e}", file=sys.stderr)
+                FAILED += 1
                 return None
-            time.sleep(5 * (attempt + 1) if code == 429 else 2)
+            # on a 429 back off for minutes (~1, 2, 3, 4) with jitter
+            time.sleep(60 * (attempt + 1) + random.uniform(0, 30) if code == 429 else 2)
 
 
 def resolve(stations, terms):
