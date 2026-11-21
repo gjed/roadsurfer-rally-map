@@ -1,0 +1,65 @@
+name: Scan and deploy map
+
+on:
+  schedule:
+    - cron: "17 3 * * 1,4" # Monday and Thursday, off the hour
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Scan and build site
+    runs-on: ubuntu-latest
+    # ~850 requests at --delay 5 plus jitter take 70-90 minutes
+    timeout-minutes: 150
+    env:
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+
+      # exits non-zero and writes nothing when more than 10% of requests fail
+      - name: Scan
+        run: python3 roadsurfer-rally.py --delay 5 --json-out offers.json --map index.html
+
+      - name: Assemble site
+        run: |
+          mkdir _site
+          cp index.html _site/
+          cp -r vendor _site/
+
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - name: Upload scan data
+        uses: actions/upload-artifact@v7
+        with:
+          name: offers
+          path: offers.json
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
