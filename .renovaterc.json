@@ -1,0 +1,42 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>gjed/renovate-config:default",
+    "customManagers:githubActionsVersions"
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/examples/**",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/__fixtures__/**",
+    "**/.mise/locks/**",
+    "**/.config/mise/locks/**"
+  ],
+  "pre-commit": {
+    "enabled": true
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Vendored Leaflet version",
+      "managerFilePatterns": ["/^vendor/leaflet/VERSION$/"],
+      "matchStrings": ["^(?<currentValue>\\d+\\.\\d+\\.\\d+)\\s*$"],
+      "datasourceTemplate": "npm",
+      "depNameTemplate": "leaflet"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "A Leaflet PR only bumps VERSION: never automerge it, the vendored files are updated by hand on its branch",
+      "matchManagers": ["custom.regex"],
+      "matchDepNames": ["leaflet"],
+      "automerge": false,
+      "prBodyNotes": [
+        "This PR only bumps `vendor/leaflet/VERSION`. Before merging, run the update procedure in the README section \"Vendored Leaflet\" on this branch so the vendored files match the new version."
+      ]
+    }
+  ]
+}
