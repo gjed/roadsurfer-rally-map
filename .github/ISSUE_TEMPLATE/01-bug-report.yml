@@ -1,0 +1,55 @@
+name: Bug report
+description: The map or the scanner shows something wrong, misses offers, or fails.
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. This project uses an unofficial roadsurfer API and is not
+        affiliated with roadsurfer: for bookings, contact roadsurfer directly.
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - Published map (gjed.github.io)
+        - Scanner run locally
+        - Scheduled scan workflow
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to reproduce
+      description: The command you ran, or the route and dates on the map.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output or screenshot
+      description: Error message, scanner summary line, or a screenshot. Optional.
+    validations:
+      required: false
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, or Python version and OS for local runs. Optional.
+    validations:
+      required: false
