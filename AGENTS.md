@@ -109,5 +109,6 @@ The update procedure is in the README section "Vendored Leaflet".
 
 - Assign the PR to `gjed`.
 - Put `Closes #N` in the body for the issue it resolves.
-- Keep a PR to one issue and include the OpenSpec change and its archive.
+- Keep a PR to one issue; for a behaviour change, include the OpenSpec change and its
+  archive.
 - The PR check must pass.
