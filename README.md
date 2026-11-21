@@ -30,6 +30,11 @@ by relative path, so write the `--map` file in the repo root, next to `vendor/`.
 map tiles still come from Esri, so viewing the page needs an internet connection. A
 full scan makes about 850 sequential requests and takes several minutes.
 
+The toolbar shows when the data was scanned, in UTC, before the route and trip
+counts, for example `updated 2026-11-18 03:12 UTC · 12 routes · 724 / 724 trips`.
+Hovering it shows the offer, request and failed-request counts of that scan. A page
+rendered from a data file without scan metadata shows no timestamp.
+
 Other useful options:
 
 ```sh
@@ -56,8 +61,20 @@ The `Makefile` wraps the common commands. Run `make` alone to list them.
 
 ### Scan and render separately
 
-Scanning needs the API. Rendering the page does not. `--json-out` saves the scanned
-offers as a JSON object with an `offers` list, the same records the page embeds.
+Scanning needs the API. Rendering the page does not. `--json-out` saves the scan as
+a JSON object with an `offers` list, the same records the page embeds, and a `scan`
+object with the scan metadata:
+
+| Key            | Value                                                       |
+| -------------- | ----------------------------------------------------------- |
+| `finished_at`  | when the scan finished, UTC, e.g. `2026-11-18T03:12:05Z`    |
+| `offers`       | number of offers found                                      |
+| `requests`     | API requests sent                                           |
+| `failed`       | requests the scanner gave up on                             |
+| `rate_limited` | HTTP 429 answers received                                   |
+| `start`, `end` | the `--start` and `--end` window                            |
+| `from`, `to`   | the `--from` and `--to` terms as given, `null` when not set |
+
 `--from-json` builds the page from that file without any network request:
 
 ```sh
@@ -67,6 +84,8 @@ python3 roadsurfer-rally.py --from-json offers.json --map index.html  # render o
 
 `--from-json` needs `--map` and does not accept `--list`, `--json-out`, `--from`,
 `--to` or `--prices`. `--map` without `--from-json` scans and renders in one run.
+`--from-json` embeds the file's `scan` object as is; a file without one, written
+before the metadata existed, still renders, with no timestamp in the toolbar.
 
 ### Usage
 
@@ -98,7 +117,7 @@ options:
   --prices              fetch models and price per offer
   --map FILE.html       write a self-contained map of the offers (add --prices
                         for models/price)
-  --json-out FILE.json  write the scanned offers as {"offers": [...]}
+  --json-out FILE.json  write the scan as {"scan": {...}, "offers": [...]}
   --from-json FILE.json
                         render --map from a --json-out file, without network
                         access
