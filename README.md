@@ -99,6 +99,11 @@ The workflow [`scan.yml`](.github/workflows/scan.yml) scans on Monday and Thursd
 scanned `offers.json` as the workflow artifact `offers`. When the scan fails, nothing
 is deployed and the published page stays at the last good scan.
 
+The workflow scans without `--prices`, so the published popups show dates and the
+booking link but no models or prices. `--prices` would add one request per offer on
+top of the scan, and every rally costs the same flat price anyway (see Known
+behaviour).
+
 ## Vendored Leaflet
 
 `vendor/leaflet/` holds an unmodified copy of [Leaflet](https://leafletjs.com/)
