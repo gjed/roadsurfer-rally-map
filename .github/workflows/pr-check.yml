@@ -70,8 +70,8 @@ jobs:
             echo "::error::The /*DATA*/[] placeholder is still in the page: render() did not insert the offers. Keep 'const DATA = /*DATA*/[];' in rally-map.template.html exactly as render() expects."
             exit 1
           fi
-          if ! grep -qF 'vendor/leaflet/' "$PAGE" || grep -qF 'unpkg' "$PAGE"; then
-            echo "::error::The page must load Leaflet from vendor/leaflet/ and must not reference unpkg. Fix the <link>/<script> tags in rally-map.template.html."
+          if ! grep -qF 'vendor/leaflet/' "$PAGE" || grep -qiE '(src|href)="(https?:)?//[^"]*leaflet' "$PAGE"; then
+            echo "::error::The page must load Leaflet from vendor/leaflet/ and must not load it from a CDN. Fix the <link>/<script> tags in rally-map.template.html."
             exit 1
           fi
           python3 - "$PAGE" "$SITE/map.js" <<'EOF' || {
