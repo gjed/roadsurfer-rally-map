@@ -35,6 +35,7 @@
 const DATA = /*DATA*/[];
 const map = L.map('map').setView([50.0, 9.0], 5);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Tiles © Esri' }).addTo(map);
+const SCAN = /*SCAN*/null;
 const layer = L.layerGroup().addTo(map);
 
 function arc(a, b, n = 40) {
