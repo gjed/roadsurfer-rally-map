@@ -1,0 +1,26 @@
+name: Feature request
+description: Something the map or the scanner could do better.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas are welcome. Features that need many more requests to the roadsurfer API
+        are unlikely to land: the scanner keeps its traffic low on purpose.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you want to do
+      description: The problem or use case, not only the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How it could work. Optional.
+    validations:
+      required: false

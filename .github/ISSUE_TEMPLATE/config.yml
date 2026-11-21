@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Live map
+    url: https://gjed.github.io/roadsurfer-rally-map/
+    about: The current Rally offers, refreshed twice a week.
+  - name: Contribute a change
+    url: https://github.com/gjed/roadsurfer-rally-map/blob/main/CONTRIBUTING.md
+    about: Setup, checks and how to open a pull request.
+  - name: Bookings and roadsurfer questions
+    url: https://booking.roadsurfer.com/en/rally
+    about: This project is not affiliated with roadsurfer. Book and ask about rallies on their site.
