@@ -18,7 +18,7 @@ import sys
 import time
 import urllib.parse
 import urllib.request
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 BASE = "https://booking.roadsurfer.com/api/en"
@@ -168,13 +168,18 @@ def run(args, stations):
     return records
 
 
-def render(records, path):
-    """Write the map page with the records in the template's data block."""
+def embed(value):
+    """JSON for an inline <script>: `</` is escaped so it can't close the tag."""
+    return json.dumps(value, ensure_ascii=False).replace("</", "<\\/")
+
+
+def render(records, path, scan=None):
+    """Write the map page with the records and the scan metadata (or null)."""
     tpl = (
         Path(__file__).with_name("rally-map.template.html").read_text(encoding="utf-8")
     )
-    data = json.dumps(records, ensure_ascii=False).replace("</", "<\\/")
-    Path(path).write_text(tpl.replace("/*DATA*/[]", data), encoding="utf-8")
+    page = tpl.replace("/*DATA*/[]", embed(records))
+    Path(path).write_text(page.replace("/*SCAN*/null", embed(scan)), encoding="utf-8")
     print(f"map ({len(records)} offers): {Path(path).resolve().as_uri()}")
 
 
@@ -215,7 +220,7 @@ def main():
     p.add_argument(
         "--json-out",
         metavar="FILE.json",
-        help='write the scanned offers as {"offers": [...]}',
+        help='write the scan as {"scan": {...}, "offers": [...]}',
     )
     p.add_argument(
         "--from-json",
@@ -245,7 +250,9 @@ def main():
             offers = data["offers"]
         except (OSError, ValueError, KeyError, TypeError) as e:
             sys.exit(f"Could not read --from-json {args.from_json}: {e!r}")
-        render(offers, args.map)
+        # files written before the scan metadata existed have no "scan" key
+        scan = data.get("scan")
+        render(offers, args.map, scan if isinstance(scan, dict) else None)
         return
 
     if args.list and (args.map or args.json_out):
@@ -266,17 +273,30 @@ def main():
             )
         return
     records = run(args, stations)
+    scan = {
+        "finished_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "offers": len(records),
+        "requests": REQUESTS,
+        "failed": FAILED,
+        "rate_limited": RATE_LIMITED,
+        "start": args.start,
+        "end": args.end,
+        "from": args.origin,
+        "to": args.to,
+    }
     if summary(started):
         sys.exit(
             f"Scan blocked: {FAILED} of {REQUESTS} requests failed "
             f"(more than {MAX_FAILED:.0%}); not writing any file"
         )
     if args.json_out:
-        out = json.dumps({"offers": records}, ensure_ascii=False, indent=1)
+        out = json.dumps(
+            {"scan": scan, "offers": records}, ensure_ascii=False, indent=1
+        )
         Path(args.json_out).write_text(out + "\n", encoding="utf-8")
         print(f"data ({len(records)} offers): {Path(args.json_out).resolve()}")
     if args.map:
-        render(records, args.map)
+        render(records, args.map, scan)
 
 
 if __name__ == "__main__":

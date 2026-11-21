@@ -39,10 +39,24 @@ STATIONS = {
 }
 
 
-def page_data(html):
-    """Return the JSON text embedded in the page's `const DATA = ...;` line."""
-    line = next(x for x in html.splitlines() if x.startswith("const DATA = "))
-    return line[len("const DATA = ") :].rstrip(";")
+SCAN = {
+    "finished_at": "2026-11-18T03:12:05Z",
+    "offers": 3,
+    "requests": 850,
+    "failed": 2,
+    "rate_limited": 1,
+    "start": "2026-11-18",
+    "end": "2099-12-31",
+    "from": ["</script>"],
+    "to": None,
+}
+
+
+def page_data(html, name="DATA"):
+    """Return the JSON text embedded in the page's `const NAME = ...;` line."""
+    prefix = f"const {name} = "
+    line = next(x for x in html.splitlines() if x.startswith(prefix))
+    return line[len(prefix) :].rstrip(";")
 
 
 class ResolveTest(unittest.TestCase):
@@ -113,6 +127,19 @@ class RenderTest(unittest.TestCase):
         # the escaped JSON still decodes to the original records
         self.assertEqual(json.loads(data), self.offers)
 
+    def test_no_scan_metadata(self):
+        self.assertNotIn("/*SCAN*/null", self.html)
+        self.assertIsNone(json.loads(page_data(self.html, "SCAN")))
+
+    def test_scan_metadata(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            rally.render(self.offers, self.out, SCAN)
+        html = self.out.read_text(encoding="utf-8")
+        scan = page_data(html, "SCAN")
+        self.assertNotIn("</", scan)
+        self.assertEqual(json.loads(scan), SCAN)
+        self.assertEqual(json.loads(page_data(html)), self.offers)
+
 
 class FindOffersTest(unittest.TestCase):
     ROUTES: ClassVar = {1: {"returns": [3, 4]}, 2: {"returns": [3]}}
@@ -162,6 +189,55 @@ class FindOffersTest(unittest.TestCase):
         )
 
 
+class ScanMetadataTest(unittest.TestCase):
+    """A scan writes its metadata next to the offers and into the page."""
+
+    def fake_get(self, path, alias, params=None):
+        if path == "/rally/stations":
+            return [
+                {**s, "coordinate": {"latitude": 50.0, "longitude": 9.0}}
+                for s in STATIONS.values()
+            ]
+        if path == "/rally/stations/1":
+            return {"returns": [3]}
+        if path == "/rally/timeframes/1-3":
+            return [{"startDate": "2026-12-01T00:00", "endDate": "2026-12-05T00:00"}]
+        raise AssertionError(f"unexpected request {path}")
+
+    def test_json_out_and_map(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        out, page = Path(tmp.name) / "offers.json", Path(tmp.name) / "index.html"
+        argv = ["x", "--from", "1", "--start", "2026-11-01"]
+        argv += ["--json-out", str(out), "--map", str(page)]
+        with (
+            mock.patch.object(rally, "get", side_effect=self.fake_get),
+            mock.patch.multiple(rally, REQUESTS=40, FAILED=3, RATE_LIMITED=2),
+            mock.patch.object(sys, "argv", argv),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            rally.main()
+        data = json.loads(out.read_text(encoding="utf-8"))
+        html = page.read_text(encoding="utf-8")
+        self.assertEqual(json.loads(page_data(html, "SCAN")), data["scan"])
+        scan = data["scan"]
+        self.assertRegex(scan.pop("finished_at"), r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+        self.assertEqual(
+            scan,
+            {
+                "offers": 1,
+                "requests": 40,
+                "failed": 3,
+                "rate_limited": 2,
+                "start": "2026-11-01",
+                "end": "2099-12-31",
+                "from": ["1"],
+                "to": None,
+            },
+        )
+        self.assertEqual(len(data["offers"]), 1)
+
+
 class FromJsonTest(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
@@ -196,10 +272,30 @@ class FromJsonTest(unittest.TestCase):
         empty.write_text('{"data": []}', encoding="utf-8")
         self.assert_fails(empty)
 
+    def page_scan(self):
+        html = (self.dir / "index.html").read_text(encoding="utf-8")
+        return json.loads(page_data(html, "SCAN"))
+
     def test_fixture_renders(self):
+        # the fixture predates the scan metadata: the page gets SCAN = null
         r = self.run_cli(FIXTURE)
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertTrue((self.dir / "index.html").exists())
+        self.assertIsNone(self.page_scan())
+
+    def test_scan_metadata_carried_over(self):
+        offers = json.loads(FIXTURE.read_text(encoding="utf-8"))["offers"]
+        src = self.dir / "scan.json"
+        src.write_text(json.dumps({"scan": SCAN, "offers": offers}), encoding="utf-8")
+        r = self.run_cli(src)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.page_scan(), SCAN)
+
+    def test_malformed_scan_ignored(self):
+        src = self.dir / "odd.json"
+        src.write_text('{"scan": "yesterday", "offers": []}', encoding="utf-8")
+        r = self.run_cli(src)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIsNone(self.page_scan())
 
 
 if __name__ == "__main__":
