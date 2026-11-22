@@ -1,35 +1,12 @@
 # rally-scanner
 
-## MODIFIED Requirements
+## ADDED Requirements
 
-### Requirement: Map output
+### Requirement: Release tag in the map
 
-With `--map FILE`, the scanner SHALL write an HTML file from
-`rally-map.template.html` next to the script, replacing `/*DATA*/[]` with the JSON
-offer records, `/*SCAN*/null` with the JSON scan metadata or `null`, and
-`/*RELEASE*/null` with the `--release` tag as a JSON string or `null`, escaping
-every embedded `</` as `<\/`, and SHALL print the number of offers on the map. The
-records and the metadata SHALL come from the scan of the same run or, with
-`--from-json`, from a data file. `--release` SHALL require `--map`. The page SHALL
-load Leaflet from `vendor/leaflet/` next to it.
-
-#### Scenario: Map from a clean clone
-
-- **WHEN** the user runs `python3 roadsurfer-rally.py --map index.html` in a clean
-  clone
-- **THEN** `index.html` is written, the scanner prints `map (N offers)`, and git
-  ignores `index.html`
-
-#### Scenario: Map from a data file
-
-- **WHEN** the user runs `python3 roadsurfer-rally.py --from-json offers.json --map index.html`
-- **THEN** `index.html` embeds the records and the `scan` object of `offers.json` and
-  the scanner prints `map (N offers)` with the number of records in the file
-
-#### Scenario: Data file without metadata
-
-- **WHEN** the user renders with `--from-json` a data file that has no `scan` object
-- **THEN** `index.html` is written and embeds `null` as the scan metadata
+With `--release TAG`, the scanner SHALL replace `/*RELEASE*/null` in the map page with
+the tag as a JSON string, escaping every `</` as `<\/`; without `--release`, or with an
+empty tag, it SHALL replace it with `null`. `--release` SHALL require `--map`.
 
 #### Scenario: Map with a release tag
 
@@ -39,10 +16,13 @@ load Leaflet from `vendor/leaflet/` next to it.
 
 #### Scenario: Map without a release tag
 
-- **WHEN** the user renders without `--release`
+- **WHEN** the user renders without `--release` or with `--release ""`
 - **THEN** `index.html` embeds `null` as the release tag
 
-## ADDED Requirements
+#### Scenario: Release without a map
+
+- **WHEN** the user passes `--release` without `--map`
+- **THEN** the scanner exits with a usage error and sends no request
 
 ### Requirement: Release footer
 

@@ -1,5 +1,10 @@
 # releases
 
+## Purpose
+
+Cut versioned GitHub releases from `main` with semantic-release, from the Conventional
+Commits since the last tag, without committing back to `main`.
+
 ## ADDED Requirements
 
 ### Requirement: Versioned releases from main
