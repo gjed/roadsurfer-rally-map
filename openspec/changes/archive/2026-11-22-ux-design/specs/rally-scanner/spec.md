@@ -107,7 +107,7 @@ The map page SHALL embed its favicon in the page head as an inline SVG data URI,
 the published page and a page rendered locally with `--map` show it without any
 extra file, and the browser SHALL request no favicon file from the server.
 
-#### Scenario: Published page
+#### Scenario: Favicon on the published page
 
 - **WHEN** the published page is opened
 - **THEN** the browser tab shows the route icon and no request returns 404 for a
