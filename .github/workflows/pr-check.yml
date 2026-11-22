@@ -30,6 +30,56 @@ jobs:
             exit $EXIT_CODE
           }
 
+  python38:
+    name: Python 3.8 (stated minimum)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # actions/setup-python has no 3.8 build for ubuntu-24.04; uv downloads its own.
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.8"
+          enable-cache: false
+
+      - name: Install Python 3.8
+        run: |
+          set -euo pipefail
+          { uv python install 3.8 && uv run --no-project python -c 'import sys; assert sys.version_info[:2] == (3, 8), sys.version'; } || {
+            EXIT_CODE=$?
+            echo "::error::uv could not provide Python 3.8. If uv no longer ships 3.8, raise the minimum in README.md, CONTRIBUTING.md, AGENTS.md, ruff.toml and this job together."
+            exit $EXIT_CODE
+          }
+          uv run --no-project python --version
+
+      - name: Compile and run --help on 3.8
+        run: |
+          set -euo pipefail
+          { uv run --no-project python -m py_compile roadsurfer-rally.py && uv run --no-project python roadsurfer-rally.py --help >/dev/null; } || {
+            EXIT_CODE=$?
+            echo "::error::roadsurfer-rally.py does not compile or start on Python 3.8, the stated minimum. Replace the newer syntax or stdlib API shown above (for example datetime.UTC: use timezone.utc) and check with 'uv run --python 3.8 python roadsurfer-rally.py --help'."
+            exit $EXIT_CODE
+          }
+
+      - name: Unit tests on 3.8
+        run: |
+          set -euo pipefail
+          uv run --no-project python -m unittest discover -s tests -v || {
+            EXIT_CODE=$?
+            echo "::error::Unit tests failed on Python 3.8, the stated minimum. Reproduce with 'uv run --python 3.8 python -m unittest discover -s tests -v' and replace the newer syntax or API."
+            exit $EXIT_CODE
+          }
+
+      - name: Render the map from the fixture on 3.8 (offline)
+        run: |
+          set -euo pipefail
+          uv run --no-project python roadsurfer-rally.py --from-json tests/fixtures/offers.json --map "$RUNNER_TEMP/index.html" || {
+            EXIT_CODE=$?
+            echo "::error::Rendering tests/fixtures/offers.json failed on Python 3.8, the stated minimum. Reproduce with 'uv run --python 3.8 python roadsurfer-rally.py --from-json tests/fixtures/offers.json --map index.html'."
+            exit $EXIT_CODE
+          }
+
   build:
     name: Test and build the map
     runs-on: ubuntu-latest
