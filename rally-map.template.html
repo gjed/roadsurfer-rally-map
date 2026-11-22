@@ -26,6 +26,8 @@
   #list tbody tr { cursor: pointer; }
   #list tbody tr:hover, #list tbody tr:focus { background: #eef5ff; }
   #list td a { color: #0b6; }
+  #release { padding: 2px 12px; font-size: 11px; color: #666; background: #f4f4f4; border-top: 1px solid #ccc; }
+  #release:empty { display: none; }
   @media (max-width: 600px) {
     #list table { font-size: 12px; }
     #list th, #list td { padding: 4px 3px; }
@@ -50,10 +52,12 @@
 </div>
 <div id="map"></div>
 <div id="list"></div>
+<footer id="release"></footer>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script>
 const DATA = /*DATA*/[];
 const SCAN = /*SCAN*/null;
+const RELEASE = /*RELEASE*/null;
 const map = L.map('map').setView([50.0, 9.0], 5);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Tiles © Esri' }).addTo(map);
 const layer = L.layerGroup().addTo(map);
@@ -90,6 +94,14 @@ const done = SCAN && typeof SCAN.finished_at === 'string' ? Date.parse(SCAN.fini
 if (!isNaN(done)) {
   $('updated').textContent = 'updated ' + new Date(done).toISOString().slice(0, 16).replace('T', ' ') + ' UTC \u00b7';
   $('updated').title = `scan finished ${SCAN.finished_at} \u00b7 ${SCAN.offers} offers \u00b7 ${SCAN.requests} requests, ${SCAN.failed} failed`;
+}
+
+// release tag, null when rendered without --release: the footer stays empty and hidden
+if (typeof RELEASE === 'string' && RELEASE) {
+  const a = document.createElement('a');
+  a.href = 'https://github.com/gjed/roadsurfer-rally-map/releases/tag/' + encodeURIComponent(RELEASE);
+  a.textContent = RELEASE;
+  $('release').append('release ', a);
 }
 
 // Faceted filters: each dropdown only offers values that still have offers

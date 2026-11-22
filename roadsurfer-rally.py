@@ -173,13 +173,16 @@ def embed(value):
     return json.dumps(value, ensure_ascii=False).replace("</", "<\\/")
 
 
-def render(records, path, scan=None):
-    """Write the map page with the records and the scan metadata (or null)."""
+def render(records, path, scan=None, release=None):
+    """Write the map page with the records, scan metadata and release tag (or null)."""
     tpl = (
         Path(__file__).with_name("rally-map.template.html").read_text(encoding="utf-8")
     )
     page = tpl.replace("/*DATA*/[]", embed(records))
-    Path(path).write_text(page.replace("/*SCAN*/null", embed(scan)), encoding="utf-8")
+    page = page.replace("/*SCAN*/null", embed(scan))
+    Path(path).write_text(
+        page.replace("/*RELEASE*/null", embed(release)), encoding="utf-8"
+    )
     print(f"map ({len(records)} offers): {Path(path).resolve().as_uri()}")
 
 
@@ -233,9 +236,17 @@ def main():
         default=DELAY,
         help="seconds between requests (default %(default)s)",
     )
+    p.add_argument(
+        "--release",
+        metavar="TAG",
+        help="release tag to show in the --map footer, e.g. v1.2.0",
+    )
     p.add_argument("--list", action="store_true", help="list stations and exit")
     args = p.parse_args()
     DELAY = args.delay
+    args.release = args.release or None  # --release "" (no release yet) shows no tag
+    if args.release and not args.map:
+        p.error("--release requires --map")
 
     if args.from_json:
         if not args.map:
@@ -252,7 +263,7 @@ def main():
             sys.exit(f"Could not read --from-json {args.from_json}: {e!r}")
         # files written before the scan metadata existed have no "scan" key
         scan = data.get("scan")
-        render(offers, args.map, scan if isinstance(scan, dict) else None)
+        render(offers, args.map, scan if isinstance(scan, dict) else None, args.release)
         return
 
     if args.list and (args.map or args.json_out):
@@ -297,7 +308,7 @@ def main():
         Path(args.json_out).write_text(out + "\n", encoding="utf-8")
         print(f"data ({len(records)} offers): {Path(args.json_out).resolve()}")
     if args.map:
-        render(records, args.map, scan)
+        render(records, args.map, scan, args.release)
 
 
 if __name__ == "__main__":
