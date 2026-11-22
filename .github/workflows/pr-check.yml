@@ -37,8 +37,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # actions/setup-python has no 3.8 build for ubuntu-24.04; uv downloads its own.
-      - uses: astral-sh/setup-uv@v10
+      # actions/setup-python has no 3.8 build for ubuntu-24.04 and newer; uv downloads its own.
+      # setup-uv publishes no major tag (v10), only full versions.
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           python-version: "3.8"
           enable-cache: false
