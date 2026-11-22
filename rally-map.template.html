@@ -2,34 +2,79 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>roadsurfer Rally map</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230066cc'/%3E%3Cpath d='M8 24Q9 9 24 8' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='24' r='4' fill='%230066cc' stroke='%23fff' stroke-width='2.5'/%3E%3Ccircle cx='24' cy='8' r='4.5' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <style>
-  html, body { height: 100%; margin: 0; font: 13px system-ui, sans-serif; }
+  :root { --accent: #06c; --link: #067a3f; --muted: #555; }
+  html, body { height: 100%; margin: 0; font: 13px system-ui, sans-serif; color: #1a1a1a; }
   body { display: flex; flex-direction: column; }
-  #bar { box-sizing: border-box; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; background: #f4f4f4; border-bottom: 1px solid #ccc; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #bar { box-sizing: border-box; padding: 6px 12px 8px; display: flex; flex-direction: column; gap: 6px; background: #f4f4f4; border-bottom: 1px solid #ccc; }
+  #top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  h1 { margin: 0 auto 0 0; font-size: 15px; }
+  #updated { color: var(--muted); white-space: nowrap; }
+  #updated:not(:empty)::after { content: " \00b7"; }
+  #count { font-weight: 600; white-space: nowrap; }
+  #bar input, #bar select, #bar button { font: inherit; color: inherit; padding: 3px 6px; border: 1px solid #767676; border-radius: 4px; background: #fff; }
+  #bar button { cursor: pointer; }
+  #bar button:hover { background: #e8e8e8; }
+  #filters { display: none; }
+  #filt { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 14px; }
+  #filt fieldset { margin: 0; padding: 0 0 0 7px; border: 0; border-left: 3px solid transparent; }
+  #filt legend { padding: 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+  #filt fieldset.on { border-left-color: var(--accent); }
+  #filt fieldset.on legend { color: var(--accent); }
+  .f { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+  .f label { display: flex; gap: 4px; align-items: center; }
+  #filt select { max-width: 170px; }
+  #kmin, #kmax { width: 60px; }
+  #bar #week { width: 90px; padding: 0; border: 0; accent-color: var(--accent); }
+  #bar input.on, #bar select.on { border-color: var(--accent); background: #e6f0fa; box-shadow: inset 0 0 0 1px var(--accent); }
+  #main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   #map { flex: 1; }
-  #bar label { display: flex; gap: 4px; align-items: center; white-space: nowrap; }
-  #bar select { max-width: 170px; }
-  #updated { margin-left: auto; font-weight: 600; white-space: nowrap; }
-  #count { font-weight: 600; }
-  #reset, #view { cursor: pointer; }
-  .a a { color: #0b6; }
   #list { flex: 1; overflow: auto; display: none; }
   body.list #map { display: none; }
   body.list #list { display: block; }
-  #list table { border-collapse: collapse; width: 100%; }
+  #list table, .pop table { border-collapse: collapse; width: 100%; }
   #list th, #list td { padding: 5px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid #e4e4e4; }
-  #list th { position: sticky; top: 0; background: #fafafa; }
-  #list th button { font: inherit; font-weight: 600; border: 0; padding: 0; background: none; cursor: pointer; }
+  #list th, .pop th { position: sticky; top: 0; background: #fafafa; }
+  #list th button { font: inherit; font-weight: 600; color: inherit; border: 0; padding: 0; background: none; cursor: pointer; }
   #list td.km { text-align: right; }
   #list tbody tr { cursor: pointer; }
   #list tbody tr:hover, #list tbody tr:focus { background: #eef5ff; }
-  #list td a { color: #0b6; }
-  #release { padding: 2px 12px; font-size: 11px; color: #666; background: #f4f4f4; border-top: 1px solid #ccc; }
+  #list td a, .pop a { color: var(--link); font-weight: 600; }
+  .pop { font-size: 13px; }
+  .pop h2 { margin: 0 0 2px; font-size: 14px; }
+  .pop p { margin: 0 0 6px; color: var(--muted); }
+  .pop .trips { max-height: 220px; overflow: auto; }
+  .pop th, .pop td { padding: 3px 8px 3px 0; text-align: left; white-space: nowrap; border-bottom: 1px solid #eee; }
+  .pop th { font-weight: 600; color: var(--muted); }
+  .legend { background: #fff; padding: 6px 8px; font-size: 12px; }
+  .legend summary { cursor: pointer; font-weight: 600; }
+  .legend ul { list-style: none; margin: 4px 0 0; padding: 0; }
+  .legend li { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+  .legend svg { width: 28px; height: 14px; flex: none; }
+  .leaflet-control-attribution a { color: #005f87; }
+  #release { padding: 2px 12px; font-size: 11px; color: var(--muted); background: #f4f4f4; border-top: 1px solid #ccc; }
   #release:empty { display: none; }
-  @media (max-width: 600px) {
+  #release a { color: var(--accent); }
+  @media (max-width: 700px) {
+    #updated { order: 3; flex-basis: 100%; font-size: 11px; }
+    #updated:not(:empty)::after { content: none; }
+    #count { margin-right: auto; }
+    h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    #filters { display: inline-block; }
+    #filt { display: none; max-height: 60vh; overflow: auto; flex-direction: column; align-items: stretch; gap: 8px; padding-top: 2px; }
+    body.filt #filt { display: flex; }
+    #bar input, #bar select, #bar button { font-size: 16px; }
+    #filt select { max-width: none; flex: 1; min-width: 0; }
+    #bar #week { flex: 1; }
+    #from, #to { flex: 1; min-width: 0; }
+    .f label { flex-basis: 100%; }
+    #reset { align-self: flex-start; }
     #list table { font-size: 12px; }
     #list th, #list td { padding: 4px 3px; }
     #list td.st, #list td.d { white-space: normal; }
@@ -37,22 +82,39 @@
 </style>
 </head>
 <body>
-<div id="bar">
-  <label>Start <input type="date" id="from"></label>
-  <label>to <input type="date" id="to"></label>
-  <label>Week <input type="range" id="week" min="0" max="0" value="0" style="width:140px"></label>
-  <label>Distance <input type="number" id="kmin" min="0" step="50" style="width:65px"> to <input type="number" id="kmax" min="0" step="50" style="width:65px"> km</label>
-  <label>From country <select id="fcc"></select></label>
-  <label>From <select id="fst"></select></label>
-  <label>To country <select id="tcc"></select></label>
-  <label>To <select id="tst"></select></label>
-  <button id="reset">Reset</button>
-  <button id="view">List</button>
-  <span id="updated"></span>
-  <span id="count"></span>
-</div>
-<div id="map"></div>
-<div id="list"></div>
+<header id="bar">
+  <div id="top">
+    <h1>roadsurfer Rally map</h1>
+    <span id="updated"></span>
+    <span id="count" aria-live="polite" aria-atomic="true"></span>
+    <button id="filters" aria-expanded="false" aria-controls="filt">Filters</button>
+    <button id="view">List</button>
+  </div>
+  <div id="filt">
+    <fieldset id="gdate"><legend>Start date</legend><div class="f">
+      <input type="date" id="from" aria-label="Earliest start date"> &ndash;
+      <input type="date" id="to" aria-label="Latest start date">
+      <label>week <input type="range" id="week" min="0" max="0" value="0" aria-valuetext="all dates"></label>
+    </div></fieldset>
+    <fieldset id="gkm"><legend>Distance</legend><div class="f">
+      <input type="number" id="kmin" min="0" step="50" aria-label="Minimum distance in km"> &ndash;
+      <input type="number" id="kmax" min="0" step="50" aria-label="Maximum distance in km"> km
+    </div></fieldset>
+    <fieldset id="gfrom"><legend>Pick-up</legend><div class="f">
+      <select id="fcc" aria-label="Pick-up country"></select>
+      <select id="fst" aria-label="Pick-up station"></select>
+    </div></fieldset>
+    <fieldset id="gto"><legend>Return</legend><div class="f">
+      <select id="tcc" aria-label="Return country"></select>
+      <select id="tst" aria-label="Return station"></select>
+    </div></fieldset>
+    <button id="reset">Reset</button>
+  </div>
+</header>
+<main id="main">
+  <div id="map" role="region" aria-label="Route map"></div>
+  <div id="list" role="region" aria-label="Trip list"></div>
+</main>
 <footer id="release"></footer>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script>
@@ -62,6 +124,20 @@ const RELEASE = /*RELEASE*/null;
 const map = L.map('map').setView([50.0, 9.0], 5);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Tiles © Esri' }).addTo(map);
 const layer = L.layerGroup().addTo(map);
+const legend = L.control({ position: 'bottomleft' });
+legend.onAdd = () => {
+  const d = L.DomUtil.create('details', 'legend leaflet-bar');
+  const line = w => `<svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7H26" stroke="#06c" stroke-width="${w}" stroke-opacity=".75"/></svg>`;
+  const dot = (r, fill) => `<svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="${r}" stroke="#06c" stroke-width="3" fill="${fill}"/></svg>`;
+  d.innerHTML = '<summary>Legend</summary><ul>' +
+    `<li>${line(3)} route with 1 trip</li><li>${line(7)} route with 5 or more trips</li>` +
+    `<li>${dot(4, '#fff')} pick-up station</li><li>${dot(5, '#06c')} return station</li></ul>`;
+  d.open = matchMedia('(min-width: 701px)').matches;
+  L.DomEvent.disableClickPropagation(d);
+  L.DomEvent.disableScrollPropagation(d);
+  return d;
+};
+legend.addTo(map);
 
 function arc(a, b, n = 40) {
   const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
@@ -93,7 +169,7 @@ $('week').max = min ? Math.ceil((day(max) - day(min)) / 864e5 / 7) : 0;
 // scan metadata is absent in pages rendered from older data files: show nothing
 const done = SCAN && typeof SCAN.finished_at === 'string' ? Date.parse(SCAN.finished_at) : NaN;
 if (!isNaN(done)) {
-  $('updated').textContent = 'updated ' + new Date(done).toISOString().slice(0, 16).replace('T', ' ') + ' UTC \u00b7';
+  $('updated').textContent = 'updated ' + new Date(done).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
   $('updated').title = `scan finished ${SCAN.finished_at} \u00b7 ${SCAN.offers} offers \u00b7 ${SCAN.requests} requests, ${SCAN.failed} failed`;
 }
 
@@ -112,6 +188,25 @@ const FILTERS = {
   tcc: r => r.to.cc,   tst: r => r.to.name,
 };
 const sel = {};  // current selections, '' = any
+const NOUN = { fcc: 'country', fst: 'station', tcc: 'country', tst: 'station' };
+// a filter is active when it differs from its reset value; groups mirror the fieldsets
+const GROUPS = { gdate: ['from', 'to'], gkm: ['kmin', 'kmax'], gfrom: ['fcc', 'fst'], gto: ['tcc', 'tst'] };
+const RESET = { from: min || '', to: max || '' };
+
+function markActive() {
+  let n = 0;
+  for (const g in GROUPS) {
+    let on = false;
+    for (const id of GROUPS[g]) {
+      const a = $(id).value !== (RESET[id] || '');
+      $(id).classList.toggle('on', a);
+      on = on || a;
+    }
+    $(g).classList.toggle('on', on);
+    n += on;
+  }
+  $('filters').textContent = n ? `Filters (${n})` : 'Filters';
+}
 
 function passes(r, skip) {
   if (day(r.start) < day($('from').value) || day(r.start) > day($('to').value)) return false;
@@ -127,7 +222,7 @@ function fillSelects() {
     for (const r of DATA) if (passes(r, k)) counts.set(FILTERS[k](r), (counts.get(FILTERS[k](r)) || 0) + 1);
     if (sel[k] && !counts.has(sel[k])) sel[k] = '';  // selection became impossible -> clear it
     const el = $(k);
-    el.innerHTML = '<option value="">any (' + [...counts.values()].reduce((a, b) => a + b, 0) + ')</option>' +
+    el.innerHTML = `<option value="">any ${NOUN[k]} (` + [...counts.values()].reduce((a, b) => a + b, 0) + ')</option>' +
       [...counts].sort((a, b) => a[0].localeCompare(b[0]))
         .map(([v, n]) => `<option value="${esc(v)}"${v === sel[k] ? ' selected' : ''}>${esc(v)} (${n})</option>`).join('');
   }
@@ -146,7 +241,7 @@ function renderList() {
     const a = f(x), b = f(y);
     return (a < b ? -1 : a > b ? 1 : 0) * sortDir || x.start.localeCompare(y.start) || x.from.name.localeCompare(y.from.name);
   });
-  const th = (k, t) => `<th><button data-sort="${k}">${t}${k === sortKey ? (sortDir > 0 ? ' \u25b2' : ' \u25bc') : ''}</button></th>`;
+  const th = (k, t) => `<th aria-sort="${k === sortKey ? (sortDir > 0 ? 'ascending' : 'descending') : 'none'}"><button data-sort="${k}">${t}${k === sortKey ? (sortDir > 0 ? ' \u25b2' : ' \u25bc') : ''}</button></th>`;
   // narrow screens may wrap a date after its year
   const d = s => esc(s).replace('-', '-<wbr>');
   const rows = shown.map(r => `<tr tabindex="0" data-key="${esc(routeKey(r))}"><td class="d">${d(r.start)}</td><td class="d">${d(r.end)}</td>` +
@@ -154,7 +249,7 @@ function renderList() {
     `<td class="km">${roadKm(r.from, r.to)}</td>${hasPrice ? `<td>${r.price ? esc(r.price) : ''}</td>` : ''}` +
     `<td><a href="${esc(r.link)}" target="_blank" rel="noopener">book</a></td></tr>`).join('');
   $('list').innerHTML = `<table><thead><tr>${th('start', 'Start')}${th('end', 'End')}<th>From</th><th>To</th>${th('km', 'km')}` +
-    `${hasPrice ? '<th>Price</th>' : ''}<th></th></tr></thead><tbody>` +
+    `${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Booking</span></th></tr></thead><tbody>` +
     (rows || `<tr><td colspan="${hasPrice ? 7 : 6}">No trips match the filters.</td></tr>`) + '</tbody></table>';
 }
 
@@ -164,12 +259,14 @@ function setView(list) {
   if (!list) map.invalidateSize();
 }
 
-function showRoute(tr) {
+function showRoute(tr, keyboard) {
   const line = lines.get(tr.dataset.key);
   if (!line) return;
   setView(false);
   map.fitBounds(line.getBounds(), { padding: [40, 40], maxZoom: 8, animate: false });
   line.openPopup();
+  // the focused row is hidden now: keep keyboard users in the popup
+  if (keyboard) line.getPopup().getElement().querySelector('a').focus();
 }
 
 function render() {
@@ -193,9 +290,12 @@ function render() {
     const a = [g.from.latitude, g.from.longitude], b = [g.to.latitude, g.to.longitude];
     const t = g.trips, N = t.length, km = roadKm(g.from, g.to);
     const head = `${esc(g.from.name)} (${esc(g.from.cc)}) \u2192 ${esc(g.to.name)} (${esc(g.to.cc)})`;
-    const rows = t.map(r => `<li>${r.start} \u2192 ${r.end}${r.price ? ' \u00b7 ' + esc(r.price) : ''} \u00b7 <a href="${esc(r.link)}" target="_blank">book</a></li>`).join('');
-    const pop = `<div class="a"><b>${head}</b><br>~${km} km by road \u00b7 ${N} trip${N > 1 ? 's' : ''}<ul style="margin:4px 0 0;padding-left:18px;max-height:220px;overflow:auto">${rows}</ul></div>`;
-    const tip = `${head}<br>~${km} km \u00b7 ${N} trip${N > 1 ? 's' : ''}: ${t[0].start}${N > 1 ? ' \u2026 ' + t[N - 1].start : ''}`;
+    const rows = t.map(r => `<tr><td>${esc(r.start)}</td><td>${esc(r.end)}</td>${hasPrice ? `<td>${r.price ? esc(r.price) : ''}</td>` : ''}` +
+      `<td><a href="${esc(r.link)}" target="_blank" rel="noopener">book</a></td></tr>`).join('');
+    const pop = `<div class="pop"><h2>${head}</h2><p>~${km} km by road \u00b7 ${N} trip${N > 1 ? 's' : ''}</p>` +
+      `<div class="trips"><table><thead><tr><th>Start</th><th>End</th>${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Booking</span></th></tr></thead>` +
+      `<tbody>${rows}</tbody></table></div></div>`;
+    const tip = `${head}<br>~${km} km \u00b7 ${N} trip${N > 1 ? 's' : ''}: ${esc(t[0].start)}${N > 1 ? ' \u2026 ' + esc(t[N - 1].start) : ''}`;
     const col = '#06c';
     const line = L.polyline(arc(a, b), { color: col, weight: Math.min(2 + N, 7), opacity: .75 }).addTo(layer).bindPopup(pop).bindTooltip(tip, { sticky: true });
     lines.set(key, line);
@@ -203,14 +303,18 @@ function render() {
     L.circleMarker(a, { radius: 4, color: col, fillColor: '#fff', fillOpacity: 1 }).addTo(layer).bindPopup(pop).bindTooltip(tip);
     L.circleMarker(b, { radius: 6, color: col, fillColor: col, fillOpacity: 1 }).addTo(layer).bindPopup(pop).bindTooltip(tip);
   }
+  // Chrome puts every clickable SVG path in the tab order; keyboard users reach routes via the list
+  layer.eachLayer(l => l.getElement().setAttribute('tabindex', '-1'));
   $('count').textContent = routes.size + ' routes \u00b7 ' + n + ' / ' + DATA.length + ' trips';
   renderList();
+  markActive();
 }
 
 $('week').oninput = () => {
   const s = day(min) + $('week').value * 7 * 864e5;
   $('from').value = iso(Math.max(s, day(min)));
   $('to').value = iso(Math.min(s + 6 * 864e5, day(max)));
+  $('week').setAttribute('aria-valuetext', 'week of ' + $('from').value);
   render();
 };
 for (const k in FILTERS) $(k).onchange = () => { sel[k] = $(k).value; render(); };
@@ -218,7 +322,13 @@ for (const k in FILTERS) $(k).onchange = () => { sel[k] = $(k).value; render(); 
 $('reset').onclick = () => {
   for (const k in FILTERS) sel[k] = '';
   $('from').value = min; $('to').value = max; $('week').value = 0; $('kmin').value = $('kmax').value = '';
+  $('week').setAttribute('aria-valuetext', 'all dates');
   render();
+};
+$('filters').onclick = () => {
+  const open = document.body.classList.toggle('filt');
+  $('filters').setAttribute('aria-expanded', open);
+  map.invalidateSize();
 };
 $('view').onclick = () => setView(!document.body.classList.contains('list'));
 $('list').onclick = e => {
@@ -227,13 +337,18 @@ $('list').onclick = e => {
     sortDir = b.dataset.sort === sortKey ? -sortDir : 1;
     sortKey = b.dataset.sort;
     renderList();
+    $('list').querySelector(`[data-sort="${sortKey}"]`).focus();  // the header was redrawn
     return;
   }
   const tr = e.target.closest('tr[data-key]');
   if (tr && !e.target.closest('a')) showRoute(tr);
 };
+// Leaflet closes popups on Escape only while the map itself has focus
+$('map').addEventListener('keydown', e => {
+  if (e.key === 'Escape' && e.target.closest('.leaflet-popup')) { map.closePopup(); $('map').focus(); }
+});
 $('list').onkeydown = e => {
-  if (e.key === 'Enter' && e.target.matches('tr[data-key]')) showRoute(e.target);
+  if (e.key === 'Enter' && e.target.matches('tr[data-key]')) showRoute(e.target, true);
 };
 render();
 </script>
