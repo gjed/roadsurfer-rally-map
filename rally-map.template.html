@@ -13,8 +13,24 @@
   #bar select { max-width: 170px; }
   #updated { margin-left: auto; font-weight: 600; white-space: nowrap; }
   #count { font-weight: 600; }
-  #reset { cursor: pointer; }
+  #reset, #view { cursor: pointer; }
   .a a { color: #0b6; }
+  #list { flex: 1; overflow: auto; display: none; }
+  body.list #map { display: none; }
+  body.list #list { display: block; }
+  #list table { border-collapse: collapse; width: 100%; }
+  #list th, #list td { padding: 5px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid #e4e4e4; }
+  #list th { position: sticky; top: 0; background: #fafafa; }
+  #list th button { font: inherit; font-weight: 600; border: 0; padding: 0; background: none; cursor: pointer; }
+  #list td.km { text-align: right; }
+  #list tbody tr { cursor: pointer; }
+  #list tbody tr:hover, #list tbody tr:focus { background: #eef5ff; }
+  #list td a { color: #0b6; }
+  @media (max-width: 600px) {
+    #list table { font-size: 12px; }
+    #list th, #list td { padding: 4px 3px; }
+    #list td.st, #list td.d { white-space: normal; }
+  }
 </style>
 </head>
 <body>
@@ -28,10 +44,12 @@
   <label>To country <select id="tcc"></select></label>
   <label>To <select id="tst"></select></label>
   <button id="reset">Reset</button>
+  <button id="view">List</button>
   <span id="updated"></span>
   <span id="count"></span>
 </div>
 <div id="map"></div>
+<div id="list"></div>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script>
 const DATA = /*DATA*/[];
@@ -102,20 +120,62 @@ function fillSelects() {
   }
 }
 
+// the list shows the same trips as the map: render() hands it what passes()
+const hasPrice = DATA.some(r => r.price);
+const SORTS = { start: r => r.start, end: r => r.end, km: r => roadKm(r.from, r.to) };
+let shown = [], sortKey = 'start', sortDir = 1;
+const lines = new Map();  // route key -> arc, to open a route from the list
+const routeKey = r => r.from.name + '>' + r.to.name;
+
+function renderList() {
+  const f = SORTS[sortKey];
+  shown.sort((x, y) => {
+    const a = f(x), b = f(y);
+    return (a < b ? -1 : a > b ? 1 : 0) * sortDir || x.start.localeCompare(y.start) || x.from.name.localeCompare(y.from.name);
+  });
+  const th = (k, t) => `<th><button data-sort="${k}">${t}${k === sortKey ? (sortDir > 0 ? ' \u25b2' : ' \u25bc') : ''}</button></th>`;
+  // narrow screens may wrap a date after its year
+  const d = s => esc(s).replace('-', '-<wbr>');
+  const rows = shown.map(r => `<tr tabindex="0" data-key="${esc(routeKey(r))}"><td class="d">${d(r.start)}</td><td class="d">${d(r.end)}</td>` +
+    `<td class="st">${esc(r.from.name)} (${esc(r.from.cc)})</td><td class="st">${esc(r.to.name)} (${esc(r.to.cc)})</td>` +
+    `<td class="km">${roadKm(r.from, r.to)}</td>${hasPrice ? `<td>${r.price ? esc(r.price) : ''}</td>` : ''}` +
+    `<td><a href="${esc(r.link)}" target="_blank" rel="noopener">book</a></td></tr>`).join('');
+  $('list').innerHTML = `<table><thead><tr>${th('start', 'Start')}${th('end', 'End')}<th>From</th><th>To</th>${th('km', 'km')}` +
+    `${hasPrice ? '<th>Price</th>' : ''}<th></th></tr></thead><tbody>` +
+    (rows || `<tr><td colspan="${hasPrice ? 7 : 6}">No trips match the filters.</td></tr>`) + '</tbody></table>';
+}
+
+function setView(list) {
+  document.body.classList.toggle('list', list);
+  $('view').textContent = list ? 'Map' : 'List';
+  if (!list) map.invalidateSize();
+}
+
+function showRoute(tr) {
+  const line = lines.get(tr.dataset.key);
+  if (!line) return;
+  setView(false);
+  map.fitBounds(line.getBounds(), { padding: [40, 40], maxZoom: 8, animate: false });
+  line.openPopup();
+}
+
 function render() {
   fillSelects();
   layer.clearLayers();
+  lines.clear();
+  shown = [];
   // one arc per route (from -> to); all matching dates are listed in its popup
   const routes = new Map();
   let n = 0;
   for (const r of DATA) {
     if (!passes(r)) continue;
     n++;
-    const key = r.from.name + '>' + r.to.name;
+    shown.push(r);
+    const key = routeKey(r);
     if (!routes.has(key)) routes.set(key, { from: r.from, to: r.to, trips: [] });
     routes.get(key).trips.push(r);
   }
-  for (const g of routes.values()) {
+  for (const [key, g] of routes) {
     g.trips.sort((x, y) => x.start.localeCompare(y.start));
     const a = [g.from.latitude, g.from.longitude], b = [g.to.latitude, g.to.longitude];
     const t = g.trips, N = t.length, km = roadKm(g.from, g.to);
@@ -125,11 +185,13 @@ function render() {
     const tip = `${head}<br>~${km} km \u00b7 ${N} trip${N > 1 ? 's' : ''}: ${t[0].start}${N > 1 ? ' \u2026 ' + t[N - 1].start : ''}`;
     const col = '#06c';
     const line = L.polyline(arc(a, b), { color: col, weight: Math.min(2 + N, 7), opacity: .75 }).addTo(layer).bindPopup(pop).bindTooltip(tip, { sticky: true });
+    lines.set(key, line);
     line.on('mouseover', () => line.setStyle({ opacity: 1, color: '#e60' })).on('mouseout', () => line.setStyle({ opacity: .75, color: col }));
     L.circleMarker(a, { radius: 4, color: col, fillColor: '#fff', fillOpacity: 1 }).addTo(layer).bindPopup(pop).bindTooltip(tip);
     L.circleMarker(b, { radius: 6, color: col, fillColor: col, fillOpacity: 1 }).addTo(layer).bindPopup(pop).bindTooltip(tip);
   }
   $('count').textContent = routes.size + ' routes \u00b7 ' + n + ' / ' + DATA.length + ' trips';
+  renderList();
 }
 
 $('week').oninput = () => {
@@ -144,6 +206,21 @@ $('reset').onclick = () => {
   for (const k in FILTERS) sel[k] = '';
   $('from').value = min; $('to').value = max; $('week').value = 0; $('kmin').value = $('kmax').value = '';
   render();
+};
+$('view').onclick = () => setView(!document.body.classList.contains('list'));
+$('list').onclick = e => {
+  const b = e.target.closest('button[data-sort]');
+  if (b) {
+    sortDir = b.dataset.sort === sortKey ? -sortDir : 1;
+    sortKey = b.dataset.sort;
+    renderList();
+    return;
+  }
+  const tr = e.target.closest('tr[data-key]');
+  if (tr && !e.target.closest('a')) showRoute(tr);
+};
+$('list').onkeydown = e => {
+  if (e.key === 'Enter' && e.target.matches('tr[data-key]')) showRoute(e.target);
 };
 render();
 </script>
