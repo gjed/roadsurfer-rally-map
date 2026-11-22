@@ -49,7 +49,7 @@ jobs:
           set -euo pipefail
           { uv python install 3.8 && uv run --no-project python -c 'import sys; assert sys.version_info[:2] == (3, 8), sys.version'; } || {
             EXIT_CODE=$?
-            echo "::error::uv could not provide Python 3.8. If uv no longer ships 3.8, raise the minimum in README.md, CONTRIBUTING.md, AGENTS.md, ruff.toml and this job together."
+            echo "::error::uv could not provide Python 3.8. If uv no longer ships 3.8, raise the minimum in README.md, CONTRIBUTING.md, AGENTS.md, ruff.toml, this job and the Python 3.8 requirements in openspec/specs/ together, through an OpenSpec change."
             exit $EXIT_CODE
           }
           uv run --no-project python --version
