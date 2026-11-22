@@ -16,7 +16,7 @@ not cost an extra scan: the roadsurfer API is hit only by the twice-weekly scan.
   creates the tag `vX.Y.Z` and a GitHub release with generated notes. It pushes no
   commit to `main` (no changelog file, no version bump in a file).
 - When a release is published, the workflow rebuilds the page without scanning: it
-  downloads the `offers` artifact of the latest successful `scan.yml` run on `main`,
+  downloads the newest unexpired `offers` artifact of a `scan.yml` run on `main`,
   renders it with `--from-json` and the new tag, and deploys it to GitHub Pages.
   Without such an artifact the release job fails with an error and nothing is
   deployed; it never falls back to a scan.

@@ -56,9 +56,11 @@ jobs:
           TAG: ${{ steps.release.outputs.new_release_git_tag }}
         run: |
           set -euo pipefail
-          RUN="$(gh run list --workflow scan.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          # newest unexpired artifact, not newest successful run: a scan whose deploy is
+          # still queued or was cancelled is not "success" yet, but its data is the freshest
+          RUN="$(gh api "repos/$GH_REPO/actions/artifacts?name=offers&per_page=100" --jq '[.artifacts[] | select(.expired | not) | select(.workflow_run.head_branch == "main")] | sort_by(.created_at) | last | .workflow_run.id // empty')"
           if [ -z "$RUN" ] || ! gh run download "$RUN" --name offers --dir scan-data; then
-            echo "::error::Release $TAG is published, but the page was not redeployed: there is no successful scan.yml run on main with an unexpired 'offers' artifact${RUN:+ (latest successful run: $RUN)}. Dispatch scan.yml (gh workflow run scan.yml); its deploy will show $TAG."
+            echo "::error::Release $TAG is published, but the page was not redeployed: there is no unexpired 'offers' artifact from a scan.yml run on main${RUN:+ (newest: run $RUN)}. Dispatch scan.yml (gh workflow run scan.yml); its deploy will show $TAG."
             exit 1
           fi
           echo "Using the offers artifact of scan.yml run $RUN"

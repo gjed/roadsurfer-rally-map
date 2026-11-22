@@ -9,7 +9,7 @@
 ## 2. Release workflow
 
 - [x] 2.1 Add `.releaserc.json` (branch `main`, tag `v${version}`, commit-analyzer, release-notes-generator, github)
-- [x] 2.2 Add `release.yml`: semantic-release job, offline render from the last successful scan's `offers` artifact, deploy job
+- [x] 2.2 Add `release.yml`: semantic-release job, offline render from the newest `offers` artifact on `main`, deploy job
 - [x] 2.3 Fail the release job with an error when the scan data is missing; never scan
 
 ## 3. Scheduled scan

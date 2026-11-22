@@ -119,7 +119,7 @@ the commit types decide the version:
 
 A release creates the tag `vX.Y.Z` and a GitHub release; it commits nothing to
 `main`. Then the workflow renders the page with `--from-json` from the `offers`
-artifact of the latest successful `scan.yml` run on `main` and `--release vX.Y.Z`,
+artifact of the newest `scan.yml` run on `main` that uploaded one, and `--release vX.Y.Z`,
 and deploys it. It never scans and never contacts roadsurfer: keep it that way. With
 no such artifact the release job fails and nothing is deployed. `scan.yml` renders
 with the latest release tag too, so the version stays on the page between releases.
