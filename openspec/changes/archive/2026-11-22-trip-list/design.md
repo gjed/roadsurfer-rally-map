@@ -36,8 +36,9 @@ uses.
 - **Columns and narrow screens.** Start, end, from (cc), to (cc), distance in km,
   price (only when some record has a price) and a `book` link with
   `target="_blank" rel="noopener"`. The table scrolls inside its own container with a
-  sticky header; at 375 px the station cells wrap and the padding shrinks, so the
-  dates, distance and link stay readable, and the rest scrolls sideways.
+  sticky header; below 600 px the font and padding shrink and the station and date
+  cells wrap, so every column, including the booking link, fits at 375 px without
+  sideways scrolling.
 - **Sorting.** Default is start date, ascending. Start, end and distance headers are
   buttons, so they work from the keyboard; clicking the active one reverses the
   order. Ties fall back to start date, then pick-up station, so the order is stable.
