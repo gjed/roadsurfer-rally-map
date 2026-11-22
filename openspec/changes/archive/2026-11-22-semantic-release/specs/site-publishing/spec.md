@@ -41,8 +41,8 @@ concurrency group `pages` without cancelling a run in progress, and the workflow
 ### Requirement: Release deploy
 
 When `release.yml` publishes a release, it SHALL render the page with `--from-json`
-from the `offers` artifact of the latest successful `scan.yml` run on `main`, with the
-new release tag, assemble the Pages artifact as `scan.yml` does, and deploy it from a
+from the newest unexpired `offers` artifact of a `scan.yml` run on `main`, whether
+or not that run's deploy job has finished, with the new release tag, assemble the Pages artifact as `scan.yml` does, and deploy it from a
 job that needs the release job, runs only when a release was published, has
 `pages: write` and `id-token: write`, and uses the concurrency group `pages` without
 cancelling a run in progress.
@@ -52,6 +52,12 @@ cancelling a run in progress.
 - **WHEN** release `v1.3.0` is published
 - **THEN** the page is redeployed with the offers and scan time of the last scan and
   `v1.3.0` in its footer
+
+#### Scenario: Scan deploy still queued
+
+- **WHEN** a release is published while the deploy job of a scan that uploaded its
+  `offers` artifact is still queued or running
+- **THEN** the release deploy renders that scan's offers, not an older scan's
 
 #### Scenario: No release, no deploy
 
@@ -70,13 +76,13 @@ any request to `booking.roadsurfer.com`.
 
 ### Requirement: Missing scan data on release
 
-When no successful `scan.yml` run on `main` exists or its `offers` artifact cannot be
-downloaded, the release workflow SHALL fail with an error that says the page was not
+When no unexpired `offers` artifact from a `scan.yml` run on `main` exists or it
+cannot be downloaded, the release workflow SHALL fail with an error that says the page was not
 redeployed, SHALL deploy nothing and SHALL NOT scan.
 
 #### Scenario: Artifact expired
 
-- **WHEN** a release is published and the last successful scan's `offers` artifact
-  has expired
+- **WHEN** a release is published and the newest `offers` artifact from `main` has
+  expired
 - **THEN** the release job fails with an error, the release stays published and the
   published page is unchanged

@@ -161,7 +161,7 @@ types cut no release. A release is a `vX.Y.Z` tag and a
 generated notes; nothing is committed back to `main`.
 
 A release also redeploys the page without scanning: the workflow renders it from the
-`offers` artifact of the latest successful `scan.yml` run on `main`, with the new tag
+newest unexpired `offers` artifact of a `scan.yml` run on `main`, with the new tag
 in the page footer, so code changes reach the map without waiting for the next scan
 and without any request to roadsurfer. If that artifact is missing or expired (after
 90 days), the release job fails with an error and the page stays as it is; dispatch

@@ -33,12 +33,16 @@ that requires signed commits and linear history; it targets branches only.
 - **Action pinned to a commit.** `cycjimmy/semantic-release-action` is third-party,
   so it is pinned to the v8.1.4 commit with a version comment for Renovate, as
   `pr-check.yml` does for `setup-uv`. semantic-release itself is held to major 24.
-- **Data from the last successful scan on `main`.** The release job finds it with
-  `gh run list --workflow scan.yml --branch main --status success --limit 1` and
-  downloads its `offers` artifact with `gh run download`, which needs
-  `actions: read`. A dispatched scan on another branch is not used.
-- **No data: fail, do not skip and never scan.** If there is no successful scan or
-  its artifact has expired, the release job fails with an `::error::` that says the
+- **Data from the newest `offers` artifact on `main`.** The release job lists the
+  repository's `offers` artifacts, keeps the unexpired ones from runs on `main`,
+  takes the newest and downloads it with `gh run download`, which needs
+  `actions: read`. It does not pick the newest successful run: a scan whose deploy
+  job is still queued (behind the `pages` group) or was cancelled is not `success`,
+  and the release would then redeploy an older scan over the fresh page. The
+  artifact is uploaded only after a scan that was not blocked, so any artifact is
+  good data. A dispatched scan on another branch is not used.
+- **No data: fail, do not skip and never scan.** If there is no unexpired `offers`
+  artifact from `main`, the release job fails with an `::error::` that says the
   release was published, the page was not redeployed, and how to fix it (dispatch
   `scan.yml`). A silent skip would leave the old version on the page with a green
   run. The release itself is already published at that point and stays.
