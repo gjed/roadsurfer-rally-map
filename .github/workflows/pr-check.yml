@@ -38,8 +38,8 @@ jobs:
       - uses: actions/checkout@v7
 
       # actions/setup-python has no 3.8 build for ubuntu-24.04 and newer; uv downloads its own.
-      # setup-uv publishes no major tag (v10), only full versions.
-      - uses: astral-sh/setup-uv@v10.4.0
+      # Third-party action: pinned to a commit; the version comment lets Renovate update it.
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: "3.8"
           enable-cache: false

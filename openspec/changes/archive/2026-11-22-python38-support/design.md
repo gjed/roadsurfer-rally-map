@@ -14,7 +14,8 @@ and `actions/setup-python` has no 3.8 build for 24.04 or newer.
 - **uv on `ubuntu-latest`, not `setup-python` on `ubuntu-22.04`.** GitHub retires
   runner images on a schedule, and `ubuntu-22.04` is the oldest image left; once it
   is retired the job would stop starting. uv downloads a python-build-standalone 3.8
-  on any image. `setup-uv` publishes no major tag, so the job pins a full version.
+  on any image. `setup-uv` is the only third-party action, so the job pins its commit
+  SHA with a `# v10.4.0` comment that Renovate uses to update it.
   The risk moves to uv: 3.8 is end of life and receives no new builds, and a future
   uv could stop offering it. The install step fails with an `::error::` that says to
   raise the minimum everywhere at once when that happens.
