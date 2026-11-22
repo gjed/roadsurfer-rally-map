@@ -92,6 +92,8 @@ python3 roadsurfer-rally.py --from-json offers.json --map index.html  # render o
 `--to` or `--prices`. `--map` without `--from-json` scans and renders in one run.
 `--from-json` embeds the file's `scan` object as is; a file without one, written
 before the metadata existed, still renders, with no timestamp in the toolbar.
+`--release TAG` (with `--map`) shows the tag in a footer linked to its GitHub
+release; without it, or with an empty tag, the page has no footer.
 
 ### Usage
 
@@ -102,7 +104,8 @@ label the options section `optional arguments:`.
 usage: roadsurfer-rally.py [-h] [--to [TO ...]] [--from [ORIGIN ...]]
                            [--start START] [--end END] [--prices]
                            [--map FILE.html] [--json-out FILE.json]
-                           [--from-json FILE.json] [--delay DELAY] [--list]
+                           [--from-json FILE.json] [--delay DELAY]
+                           [--release TAG] [--list]
 
 Query roadsurfer Rally (one-way relocation) offers.
 
@@ -128,15 +131,17 @@ options:
                         render --map from a --json-out file, without network
                         access
   --delay DELAY         seconds between requests (default 0.5)
+  --release TAG         release tag to show in the --map footer, e.g. v1.2.0
   --list                list stations and exit
 ```
 
 ## Published map
 
 The workflow [`scan.yml`](.github/workflows/scan.yml) scans on Monday and Thursday at
-03:17 UTC, and on manual dispatch, with `--delay 5`. It publishes `index.html` and
-`vendor/` to <https://gjed.github.io/roadsurfer-rally-map/>. The run also keeps the
-scanned `offers.json` as the workflow artifact `offers`. When the scan fails, nothing
+03:17 UTC, and on manual dispatch, with `--delay 5`. It renders the page from the scan
+with the latest release tag (none before the first release) and publishes
+`index.html` and `vendor/` to <https://gjed.github.io/roadsurfer-rally-map/>. The run
+also keeps the scanned `offers.json` as the workflow artifact `offers`. When the scan fails, nothing
 is deployed and the published page stays at the last good scan. GitHub pauses
 scheduled workflows after 60 days without repository activity; a maintainer then
 re-enables the scan with `gh workflow enable scan.yml` (or Actions → Enable).
@@ -145,6 +150,25 @@ The workflow scans without `--prices`, so the published popups show dates and th
 booking link but no models or prices. `--prices` would add one request per offer on
 top of the scan, and every rally costs the same flat price anyway (see Known
 behaviour).
+
+### Releases
+
+The workflow [`release.yml`](.github/workflows/release.yml) runs
+[semantic-release](https://semantic-release.gitbook.io/) on every push to `main`.
+A `feat` commit bumps the minor version, a `fix` or `perf` commit the patch; other
+types cut no release. A release is a `vX.Y.Z` tag and a
+[GitHub release](https://github.com/gjed/roadsurfer-rally-map/releases) with
+generated notes; nothing is committed back to `main`.
+
+A release also redeploys the page without scanning: the workflow renders it from the
+`offers` artifact of the latest successful `scan.yml` run on `main`, with the new tag
+in the page footer, so code changes reach the map without waiting for the next scan
+and without any request to roadsurfer. If that artifact is missing or expired (after
+90 days), the release job fails with an error and the page stays as it is; dispatch
+`scan.yml` to publish a fresh page with the tag.
+
+The deploy jobs of both workflows share the concurrency group `pages`, so two deploys
+never overlap and a queued scan and a queued release do not cancel each other.
 
 ## Vendored Leaflet
 
