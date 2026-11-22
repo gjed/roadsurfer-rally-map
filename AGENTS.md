@@ -80,8 +80,8 @@ checks the generated page; run `make lint test map` before pushing.
 Python 3.8 is the minimum, for the scanner and the tests. `ruff.toml` targets it and
 the PR check's `python38` job runs the scanner and the tests on it
 (`uv run --python 3.8 python -m unittest discover -s tests -v` locally). To change
-the minimum, update README.md, CONTRIBUTING.md, AGENTS.md, `ruff.toml` and that job
-together.
+the minimum, update README.md, CONTRIBUTING.md, AGENTS.md, `ruff.toml`, that job and
+the Python 3.8 requirements in `openspec/specs/` together, through an OpenSpec change.
 
 ## OpenSpec workflow
 
