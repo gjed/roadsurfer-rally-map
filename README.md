@@ -35,6 +35,12 @@ counts, for example `updated 2026-11-18 03:12 UTC · 12 routes · 724 / 724 trip
 Hovering it shows the offer, request and failed-request counts of that scan. A page
 rendered from a data file without scan metadata shows no timestamp.
 
+Below the counts, the filters are grouped by start date, distance, pick-up and
+return. Each dropdown only offers stations and countries that still have trips under
+the other filters. Active filters are highlighted, and `Reset` clears them all. On a
+phone the filters fold behind a `Filters` button, which shows how many groups are
+active. The legend in the corner of the map explains the line weight (more trips,
+thicker line) and the hollow pick-up and filled return markers.
 The `List` button swaps the map for a table of the trips that pass the current
 filters, one row per trip with its dates, stations, estimated distance, price when
 scanned with `--prices`, and booking link. The filters and the counts stay as they
