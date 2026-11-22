@@ -140,6 +140,20 @@ class RenderTest(unittest.TestCase):
         self.assertEqual(json.loads(scan), SCAN)
         self.assertEqual(json.loads(page_data(html)), self.offers)
 
+    def test_no_release(self):
+        self.assertNotIn("/*RELEASE*/null", self.html)
+        self.assertIsNone(json.loads(page_data(self.html, "RELEASE")))
+
+    def test_release(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            rally.render(self.offers, self.out, SCAN, "v1.3.0</script>")
+        html = self.out.read_text(encoding="utf-8")
+        release = page_data(html, "RELEASE")
+        self.assertNotIn("</", release)
+        self.assertEqual(json.loads(release), "v1.3.0</script>")
+        self.assertEqual(json.loads(page_data(html, "SCAN")), SCAN)
+        self.assertEqual(json.loads(page_data(html)), self.offers)
+
 
 class FindOffersTest(unittest.TestCase):
     ROUTES: ClassVar = {1: {"returns": [3, 4]}, 2: {"returns": [3]}}
@@ -242,10 +256,10 @@ class FromJsonTest(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         self.dir = Path(tmp.name)
 
-    def run_cli(self, src):
+    def run_cli(self, src, *extra):
         return subprocess.run(
             [sys.executable, str(SCRIPT), "--from-json", str(src)]
-            + ["--map", str(self.dir / "index.html")],
+            + ["--map", str(self.dir / "index.html"), *extra],
             capture_output=True,
             text=True,
             check=False,
@@ -287,6 +301,31 @@ class FromJsonTest(unittest.TestCase):
         r = self.run_cli(src)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(self.page_scan(), SCAN)
+
+    def page_release(self):
+        html = (self.dir / "index.html").read_text(encoding="utf-8")
+        return json.loads(page_data(html, "RELEASE"))
+
+    def test_release_option(self):
+        r = self.run_cli(FIXTURE, "--release", "v1.3.0")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.page_release(), "v1.3.0")
+
+    def test_empty_release_is_no_release(self):
+        # scan.yml passes --release "" before the first release
+        r = self.run_cli(FIXTURE, "--release", "")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIsNone(self.page_release())
+
+    def test_release_requires_map(self):
+        r = subprocess.run(
+            [sys.executable, str(SCRIPT), "--release", "v1.3.0", "--list"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("--release requires --map", r.stderr)
 
     def test_malformed_scan_ignored(self):
         src = self.dir / "odd.json"
