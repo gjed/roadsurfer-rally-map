@@ -17,9 +17,9 @@ time.
 
 ## Run it locally
 
-You need Python 3.8 or newer. Only the standard library is used. The script compiles
-and runs `--help` on Python 3.8 through 3.14, and real scans were run on 3.8 and
-3.14.
+You need Python 3.8 or newer. Only the standard library is used. The PR check runs
+the unit tests and renders the map on Python 3.8 and on the newest Python 3, and real
+scans were run on 3.8 and 3.14.
 
 ```sh
 python3 roadsurfer-rally.py --map index.html
