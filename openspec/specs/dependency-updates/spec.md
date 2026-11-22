@@ -27,7 +27,8 @@ PRs for them, except major updates of mdformat: `mdformat-tables` 1.0.0 requires
 
 #### Scenario: Outdated hook
 
-- **WHEN** a hook `rev` is older than the latest tag of its repository
+- **WHEN** a hook `rev` is older than the latest tag of its repository, and the update
+  is not a major mdformat update
 - **THEN** Renovate opens a PR that updates the `rev`
 
 #### Scenario: mdformat major release
