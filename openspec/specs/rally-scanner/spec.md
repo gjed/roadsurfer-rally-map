@@ -203,8 +203,8 @@ be escaped before it is inserted as HTML.
 
 ### Requirement: Trip list sorting
 
-Rows SHALL be sorted by start date by default and SHALL be re-sortable by start date
-and by distance from the column headers.
+Rows SHALL be sorted by start date by default and SHALL be re-sortable by start date,
+end date and distance from the column headers.
 
 #### Scenario: Sort by distance
 
