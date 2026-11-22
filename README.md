@@ -35,6 +35,12 @@ counts, for example `updated 2026-11-18 03:12 UTC · 12 routes · 724 / 724 trip
 Hovering it shows the offer, request and failed-request counts of that scan. A page
 rendered from a data file without scan metadata shows no timestamp.
 
+The `List` button swaps the map for a table of the trips that pass the current
+filters, one row per trip with its dates, stations, estimated distance, price when
+scanned with `--prices`, and booking link. The filters and the counts stay as they
+are when you switch. Rows are sorted by start date; click the start, end or `km`
+header to re-sort, and click a row to see that route on the map with its popup open.
+
 Other useful options:
 
 ```sh
