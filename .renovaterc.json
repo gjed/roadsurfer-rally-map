@@ -30,13 +30,6 @@
   ],
   "packageRules": [
     {
-      "description": "mdformat-tables 1.0.0 requires mdformat<0.8, so mdformat 1.x can't install with it (that is why mdformat is pinned to 0.7.22); re-enable when mdformat-tables supports mdformat 1.x",
-      "matchManagers": ["pre-commit"],
-      "matchPackageNames": ["executablebooks/mdformat"],
-      "matchUpdateTypes": ["major"],
-      "enabled": false
-    },
-    {
       "description": "A Leaflet PR only bumps VERSION: never automerge it, the vendored files are updated by hand on its branch",
       "matchManagers": ["custom.regex"],
       "matchDepNames": ["leaflet"],

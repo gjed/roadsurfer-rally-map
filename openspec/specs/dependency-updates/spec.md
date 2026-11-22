@@ -19,23 +19,6 @@ The repository SHALL have a Renovate configuration that extends the shared
   latest release
 - **THEN** Renovate opens a PR that updates it
 
-### Requirement: Pre-commit hook updates
-
-Renovate SHALL detect the hook revisions in `.pre-commit-config.yaml` and open update
-PRs for them, except major updates of mdformat: `mdformat-tables` 1.0.0 requires
-`mdformat<0.8`, so mdformat 1.x cannot be installed with it.
-
-#### Scenario: Outdated hook
-
-- **WHEN** a hook `rev` is older than the latest tag of its repository, and the update
-  is not a major mdformat update
-- **THEN** Renovate opens a PR that updates the `rev`
-
-#### Scenario: mdformat major release
-
-- **WHEN** a new major mdformat version is tagged
-- **THEN** Renovate opens no PR for it
-
 ### Requirement: Vendored Leaflet updates
 
 Renovate SHALL read the vendored Leaflet version from `vendor/leaflet/VERSION`, look it
@@ -53,3 +36,13 @@ update procedure on its branch.
 
 - **WHEN** npm has only prerelease versions newer than the vendored stable version
 - **THEN** Renovate opens no Leaflet PR
+
+### Requirement: Pre-commit hook revision updates
+
+Renovate SHALL detect the hook revisions in `.pre-commit-config.yaml` and open update
+PRs for them.
+
+#### Scenario: Outdated hook
+
+- **WHEN** a hook `rev` is older than the latest tag of its repository
+- **THEN** Renovate opens a PR that updates the `rev`
