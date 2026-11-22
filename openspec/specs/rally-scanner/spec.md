@@ -219,3 +219,13 @@ Selecting a row SHALL show that route on the map with its popup open.
 
 - **WHEN** the user selects a row outside its booking link
 - **THEN** the page shows the map zoomed to that route with the route's popup open
+
+### Requirement: Supported Python versions
+
+The scanner SHALL run on Python 3.8 and every newer Python 3 release, using only the
+standard library.
+
+#### Scenario: Oldest supported Python
+
+- **WHEN** the user runs `python3 roadsurfer-rally.py --help` on Python 3.8
+- **THEN** the help text is printed and the exit status is 0
