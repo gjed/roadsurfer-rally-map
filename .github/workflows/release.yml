@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: read # download the offers artifact of a scan.yml run
+
+jobs:
+  release:
+    name: Semantic release
+    runs-on: ubuntu-latest
+    # one semantic-release at a time; a pending run that gets replaced loses nothing,
+    # the newer run sees the same commits
+    concurrency:
+      group: "release"
+      cancel-in-progress: false
+    outputs:
+      published: ${{ steps.release.outputs.new_release_published }}
+      tag: ${{ steps.release.outputs.new_release_git_tag }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # semantic-release needs full history for tags
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # Third-party action: pinned to a commit; the version comment lets Renovate update it.
+      - name: Semantic release
+        id: release
+        uses: cycjimmy/semantic-release-action@ad51787758d9654d5a75150a89a6fa9b3ccef95e # v8.1.4
+        with:
+          semantic_version: 24
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # The page is rebuilt from the last scheduled scan's data: a release never scans.
+      - uses: actions/setup-python@v7
+        if: steps.release.outputs.new_release_published == 'true'
+        with:
+          python-version: "3.x"
+
+      - name: Download the last scan's data
+        if: steps.release.outputs.new_release_published == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.release.outputs.new_release_git_tag }}
+        run: |
+          set -euo pipefail
+          RUN="$(gh run list --workflow scan.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          if [ -z "$RUN" ] || ! gh run download "$RUN" --name offers --dir scan-data; then
+            echo "::error::Release $TAG is published, but the page was not redeployed: there is no successful scan.yml run on main with an unexpired 'offers' artifact${RUN:+ (latest successful run: $RUN)}. Dispatch scan.yml (gh workflow run scan.yml); its deploy will show $TAG."
+            exit 1
+          fi
+          echo "Using the offers artifact of scan.yml run $RUN"
+
+      - name: Render the map from the scan data (offline)
+        if: steps.release.outputs.new_release_published == 'true'
+        env:
+          TAG: ${{ steps.release.outputs.new_release_git_tag }}
+        run: python3 roadsurfer-rally.py --from-json scan-data/offers.json --map index.html --release "$TAG"
+
+      - name: Assemble site
+        if: steps.release.outputs.new_release_published == 'true'
+        run: |
+          mkdir _site
+          cp index.html _site/
+          cp -r vendor _site/
+
+      - name: Upload site artifact
+        if: steps.release.outputs.new_release_published == 'true'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - name: Report release
+        env:
+          PUBLISHED: ${{ steps.release.outputs.new_release_published }}
+          TAG: ${{ steps.release.outputs.new_release_git_tag }}
+        run: |
+          if [ "$PUBLISHED" = "true" ]; then
+            echo "Released $TAG"
+          else
+            echo "No release cut for this push."
+          fi
+
+  deploy-site:
+    name: Deploy site to GitHub Pages
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    # shared with scan.yml's deploy job only, so a queued scan and a queued release
+    # never cancel each other's whole run, and two deploys never overlap
+    concurrency:
+      group: "pages"
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
