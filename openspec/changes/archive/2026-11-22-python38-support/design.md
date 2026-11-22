@@ -3,8 +3,8 @@
 ## Context
 
 `roadsurfer-rally.py` uses only the standard library and has run on Python 3.8 since
-the prototype. The PR check runs on `ubuntu-latest` (24.04), where
-`actions/setup-python` has no 3.8 build.
+the prototype. The PR check runs on `ubuntu-latest` (moving from 24.04 to 26.04),
+and `actions/setup-python` has no 3.8 build for 24.04 or newer.
 
 ## Decisions
 
@@ -12,8 +12,9 @@ the prototype. The PR check runs on `ubuntu-latest` (24.04), where
   with one test edit, and checking it costs one short job. Raising the minimum would
   drop users for no code gain.
 - **uv on `ubuntu-latest`, not `setup-python` on `ubuntu-22.04`.** GitHub retires
-  runner images on a schedule, and `ubuntu-22.04` will be retired before
-  `ubuntu-24.04`; the job would then stop starting. uv downloads a python-build-standalone 3.8 on any image.
+  runner images on a schedule, and `ubuntu-22.04` is the oldest image left; once it
+  is retired the job would stop starting. uv downloads a python-build-standalone 3.8
+  on any image. `setup-uv` publishes no major tag, so the job pins a full version.
   The risk moves to uv: 3.8 is end of life and receives no new builds, and a future
   uv could stop offering it. The install step fails with an `::error::` that says to
   raise the minimum everywhere at once when that happens.
