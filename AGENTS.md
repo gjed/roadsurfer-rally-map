@@ -18,11 +18,14 @@ roadsurfer.
 
 ```text
 roadsurfer-rally.py         scanner, JSON writer and map renderer
-rally-map.template.html     map page template; render() fills /*DATA*/[]
+rally-map.template.html     map page template; render() fills /*DATA*/[], /*SCAN*/null
+                            and /*RELEASE*/null
 tests/                      offline unittest suite and fixtures/offers.json
 vendor/leaflet/             unmodified upstream Leaflet
 openspec/                   specs and changes (OpenSpec)
-.github/workflows/          scan.yml (scheduled scan + Pages), pr-check.yml
+.github/workflows/          scan.yml (scheduled scan + Pages), release.yml
+                            (semantic-release + Pages), pr-check.yml
+.releaserc.json             semantic-release config
 Makefile                    local entry points
 ```
 
@@ -103,6 +106,24 @@ Behaviour changes go through [OpenSpec](https://github.com/Fission-AI/OpenSpec):
   `git add -A` or `git add .`.
 - The project is experimental: never mark a commit as breaking (no `!`, no
   `BREAKING CHANGE` footer).
+
+## Releases
+
+`release.yml` runs semantic-release (`.releaserc.json`) on every push to `main`, so
+the commit types decide the version:
+
+- `feat` cuts a minor release, `fix` and `perf` a patch release.
+- `docs`, `chore`, `ci`, `build`, `style`, `refactor` and `test` cut no release.
+- The first release from the current history is `v1.0.0`: semantic-release starts at
+  1.0.0 and no commit is marked breaking.
+
+A release creates the tag `vX.Y.Z` and a GitHub release; it commits nothing to
+`main`. Then the workflow renders the page with `--from-json` from the `offers`
+artifact of the latest successful `scan.yml` run on `main` and `--release vX.Y.Z`,
+and deploys it. It never scans and never contacts roadsurfer: keep it that way. With
+no such artifact the release job fails and nothing is deployed. `scan.yml` renders
+with the latest release tag too, so the version stays on the page between releases.
+Only the two deploy jobs share the concurrency group `pages`.
 
 ## vendor/
 
