@@ -47,7 +47,8 @@ Out of scope: a changelog file, a `package.json`, release assets, the page resty
 
 - `site-publishing`: a release redeploys the page from the last scan's data, the
   page carries the release tag, and the concurrency group sits on the deploy jobs.
-- `rally-scanner`: `--release` embeds a release tag in the map page.
+- `rally-scanner`: `--release` embeds a release tag in the map page, shown in a
+  footer. These are new requirements next to "Map output", which is unchanged.
 
 ## Impact
 
