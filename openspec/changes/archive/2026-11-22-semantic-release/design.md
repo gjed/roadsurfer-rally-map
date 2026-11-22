@@ -56,7 +56,9 @@ that requires signed commits and linear history; it targets branches only.
   `offers.json`; a render step then reads the tag with
   `gh release list --exclude-drafts --exclude-pre-releases --limit 1` and renders
   with `--from-json`. `gh release list` prints nothing when there is no release, so
-  "no release yet" renders without a tag, while an API error still fails the step.
+  "no release yet" renders without a tag. A failed lookup (API error, rate limit)
+  also renders without a tag, with a warning: a cosmetic footer must not discard a
+  finished scan and its `offers` artifact.
   Reading the tag after the 70 to 90 minute scan, not before it, picks up a release
   cut during the scan.
 - **`pages` concurrency on the deploy jobs only.** GitHub keeps one pending run per

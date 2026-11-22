@@ -7,9 +7,8 @@
 The workflow `.github/workflows/scan.yml` SHALL run the scanner twice a week on a
 schedule and on manual dispatch, with `--delay 5`, and deploy the generated map to
 GitHub Pages. After the scan it SHALL render the page from the scan's data file with
-the latest published release tag, or without a tag when no release exists. Its deploy
-job SHALL use the concurrency group `pages` without cancelling a run in progress, and
-the workflow SHALL grant only `contents: read` outside the deploy job.
+the latest release tag it can read, or without one. Its deploy job SHALL use the
+concurrency group `pages` without cancelling a run in progress, and the workflow SHALL grant only `contents: read` outside the deploy job.
 
 #### Scenario: Scheduled run
 
@@ -30,6 +29,12 @@ the workflow SHALL grant only `contents: read` outside the deploy job.
 
 - **WHEN** a scheduled scan runs before any release exists
 - **THEN** the deployed page has no release footer and the workflow succeeds
+
+#### Scenario: Release lookup fails
+
+- **WHEN** the latest release cannot be read after a successful scan
+- **THEN** the page is rendered without a release footer, a warning is logged, and
+  the page and the `offers` artifact are still published
 
 ## ADDED Requirements
 
