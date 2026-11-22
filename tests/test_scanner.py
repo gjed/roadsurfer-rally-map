@@ -210,12 +210,10 @@ class ScanMetadataTest(unittest.TestCase):
         out, page = Path(tmp.name) / "offers.json", Path(tmp.name) / "index.html"
         argv = ["x", "--from", "1", "--start", "2026-11-01"]
         argv += ["--json-out", str(out), "--map", str(page)]
-        with (
-            mock.patch.object(rally, "get", side_effect=self.fake_get),
-            mock.patch.multiple(rally, REQUESTS=40, FAILED=3, RATE_LIMITED=2),
-            mock.patch.object(sys, "argv", argv),
-            contextlib.redirect_stdout(io.StringIO()),
-        ):
+        fake_get = mock.patch.object(rally, "get", side_effect=self.fake_get)
+        counters = mock.patch.multiple(rally, REQUESTS=40, FAILED=3, RATE_LIMITED=2)
+        args, quiet = mock.patch.object(sys, "argv", argv), io.StringIO()
+        with fake_get, counters, args, contextlib.redirect_stdout(quiet):
             rally.main()
         data = json.loads(out.read_text(encoding="utf-8"))
         html = page.read_text(encoding="utf-8")

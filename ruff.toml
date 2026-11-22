@@ -1,0 +1,2 @@
+# Keep in step with the minimum Python stated in README.md and checked by pr-check.yml.
+target-version = "py38"

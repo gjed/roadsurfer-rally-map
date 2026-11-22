@@ -275,7 +275,7 @@ def main():
     records = run(args, stations)
     scan = {
         # timezone.utc, not datetime.UTC (3.11+): the script supports Python 3.8
-        "finished_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),  # noqa: UP017
+        "finished_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "offers": len(records),
         "requests": REQUESTS,
         "failed": FAILED,
