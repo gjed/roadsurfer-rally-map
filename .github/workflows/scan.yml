@@ -8,10 +8,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
   build:
     name: Scan and build site
@@ -29,7 +25,19 @@ jobs:
 
       # exits non-zero and writes nothing when more than 10% of requests fail
       - name: Scan
-        run: python3 roadsurfer-rally.py --delay 5 --json-out offers.json --map index.html
+        run: python3 roadsurfer-rally.py --delay 5 --json-out offers.json
+
+      # read after the scan, so a release cut during it is shown
+      - name: Render the map with the latest release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # empty before the first release: the page then has no release footer
+          TAG="$(gh release list --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // empty')"
+          echo "Release tag: ${TAG:-none}"
+          python3 roadsurfer-rally.py --from-json offers.json --map index.html --release "$TAG"
 
       - name: Assemble site
         run: |
@@ -53,6 +61,11 @@ jobs:
     name: Deploy to GitHub Pages
     needs: build
     runs-on: ubuntu-latest
+    # shared with release.yml's deploy job only, so a queued scan and a queued release
+    # never cancel each other's whole run, and two deploys never overlap
+    concurrency:
+      group: "pages"
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write
