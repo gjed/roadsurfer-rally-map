@@ -83,6 +83,19 @@ long-lived AWS keys, commit the cache file or upload it as an artifact.
 - **WHEN** `ROAD_DISTANCE_CACHE_BUCKET` or `ROAD_DISTANCE_CACHE_ROLE_ARN` is not set
 - **THEN** the AWS steps are skipped and the scan uses the Actions cache only
 
+### Requirement: Scans do not overlap
+
+The build job of the scan workflow SHALL use the concurrency group
+`road-distance-scan` without cancelling a run in progress, so that two scans never
+write the road distance cache at the same time. The group SHALL NOT be `pages`, which
+only the deploy jobs share.
+
+#### Scenario: Dispatch during a scheduled scan
+
+- **WHEN** a maintainer dispatches the workflow while a scan is running
+- **THEN** the new run waits until the running scan has finished, and the running scan
+  is not cancelled
+
 ### Requirement: AWS failures never block the scan
 
 A failure of any AWS step (credentials, network, access denied, download or upload)
