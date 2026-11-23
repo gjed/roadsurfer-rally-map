@@ -22,16 +22,17 @@
   #bar button { cursor: pointer; }
   #bar button:hover { background: #e8e8e8; }
   #filters { display: none; }
-  #filt { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 14px; }
-  #filt fieldset { margin: 0; padding: 0 0 0 7px; border: 0; border-left: 3px solid transparent; }
+  #filt { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 10px; }
+  #filt fieldset { margin: 0; padding: 0 0 0 5px; border: 0; border-left: 3px solid transparent; }
   #filt legend { padding: 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
   #filt fieldset.on { border-left-color: var(--accent); }
   #filt fieldset.on legend { color: var(--accent); }
   .f { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
   .f label { display: flex; gap: 4px; align-items: center; }
-  #filt select { max-width: 170px; }
-  #kmin, #kmax { width: 60px; }
-  #bar #week { width: 90px; padding: 0; border: 0; accent-color: var(--accent); }
+  #filt select { max-width: 140px; }
+  #from, #to { width: 104px; }
+  #kmin, #kmax { width: 54px; }
+  #bar #week { width: 70px; padding: 0; border: 0; accent-color: var(--accent); }
   #bar input.on, #bar select.on { border-color: var(--accent); background: #e6f0fa; box-shadow: inset 0 0 0 1px var(--accent); }
   #main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   #map { flex: 1; }
@@ -66,15 +67,15 @@
   #credit:empty, #release:empty { display: none; }
   #release a { color: var(--accent); }
   @media (max-width: 700px) {
-    #updated { order: 3; flex-basis: 100%; font-size: 11px; }
+    #filters, #view { order: 1; }
+    #count { order: 2; }
+    #updated { order: 3; font-size: 11px; }
     #updated:not(:empty)::after { content: none; }
-    #count { margin-right: auto; }
-    h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     #filters { display: inline-block; }
     #filt { display: none; max-height: 60vh; overflow: auto; flex-direction: column; align-items: stretch; gap: 8px; padding-top: 2px; }
     body.filt #filt { display: flex; }
     #bar input, #bar select, #bar button { font-size: 16px; }
-    #filt select { max-width: none; flex: 1; min-width: 0; }
+    #filt select { max-width: none; flex: 1 1 100%; min-width: 0; }
     #bar #week { flex: 1; }
     #from, #to { flex: 1; min-width: 0; }
     .f label { flex-basis: 100%; }
@@ -95,7 +96,7 @@
 <body>
 <header id="bar">
   <div id="top">
-    <h1>roadsurfer Rally map</h1>
+    <h1><span class="wide">roadsurfer </span>Rally map</h1>
     <span id="updated"></span>
     <span id="count" aria-live="polite" aria-atomic="true"></span>
     <button id="filters" aria-expanded="false" aria-controls="filt">Filters</button>
@@ -377,7 +378,13 @@ $('week').oninput = () => {
   render();
 };
 for (const k in FILTERS) $(k).onchange = () => { sel[k] = $(k).value; render(); };
-['from', 'to', 'kmin', 'kmax'].forEach(id => $(id).oninput = render);
+['kmin', 'kmax'].forEach(id => $(id).oninput = render);
+// typed dates no longer match the week slider
+['from', 'to'].forEach(id => $(id).oninput = () => {
+  $('week').value = 0;
+  $('week').setAttribute('aria-valuetext', 'custom dates');
+  render();
+});
 $('reset').onclick = () => {
   for (const k in FILTERS) sel[k] = '';
   $('from').value = min; $('to').value = max; $('week').value = 0; $('kmin').value = $('kmax').value = '';
