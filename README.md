@@ -39,13 +39,18 @@ Below the counts, the filters are grouped by start date, distance, pick-up and
 return. Each dropdown only offers stations and countries that still have trips under
 the other filters. Active filters are highlighted, and `Reset` clears them all. On a
 phone the filters fold behind a `Filters` button, which shows how many groups are
-active. The legend in the corner of the map explains the line weight (more trips,
-thicker line) and the hollow pick-up and filled return markers.
+active. The map opens fitted to the routes. Each station is one marker: click it to
+filter the pick-ups to that station, or hover it for its departures and arrivals. A
+route is highlighted while hovered or while its popup is open. The legend in the
+corner of the map explains the line weight (more trips, thicker line), the station
+marker and the arcs, which bend to the right of the direction of travel from the
+pick-up to the return.
 The `List` button swaps the map for a table of the trips that pass the current
 filters, one row per trip with its dates, stations, road distance, price when
 scanned with `--prices`, and booking link. The filters and the counts stay as they
 are when you switch. Rows are sorted by start date; click the start, end or `km`
-header to re-sort, and click a row to see that route on the map with its popup open.
+header to re-sort, and press the `map` button of a row to see that route on the map
+with its popup open. Escape closes the popup and goes back to that button.
 
 Distances are road distances in km. A distance that could not be routed is an
 estimate, shown with a leading `~` and a note under the map; see "Road distances".
@@ -101,8 +106,8 @@ python3 roadsurfer-rally.py --from-json offers.json --map index.html  # render o
 `--to` or `--prices`. `--map` without `--from-json` scans and renders in one run.
 `--from-json` embeds the file's `scan` object as is; a file without one, written
 before the metadata existed, still renders, with no timestamp in the toolbar.
-`--release TAG` (with `--map`) shows the tag in a footer linked to its GitHub
-release; without it, or with an empty tag, the page has no footer.
+`--release TAG` (with `--map`) shows the tag in the map's attribution, linked to its
+GitHub release; without it, or with an empty tag, the page shows no release.
 
 ### Road distances
 
@@ -175,7 +180,8 @@ options:
                         render --map from a --json-out file, without network
                         access
   --delay DELAY         seconds between requests (default 0.5)
-  --release TAG         release tag to show in the --map footer, e.g. v1.2.0
+  --release TAG         release tag to show in the --map attribution, e.g.
+                        v1.2.0
   --road-cache FILE.json
                         cache of road distances per station pair (default
                         road-distances.json)
@@ -214,7 +220,7 @@ generated notes; nothing is committed back to `main`.
 
 A release also redeploys the page without scanning: the workflow renders it from the
 newest unexpired `offers` artifact of a `scan.yml` run on `main`, with the new tag
-in the page footer, so code changes reach the map without waiting for the next scan
+in the map attribution, so code changes reach the map without waiting for the next scan
 and without any request to roadsurfer. If that artifact is missing or expired (after
 90 days), the release job fails with an error and the page stays as it is; dispatch
 `scan.yml` to publish a fresh page with the tag.
