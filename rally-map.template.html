@@ -378,7 +378,9 @@ function render() {
     // popupclose while isPopupOpen() is still true, so popupclose resets unconditionally.
     line.on('mouseover popupopen', () => { style(hot, true); line.bringToFront(); })
       .on('mouseout', () => { if (!line.isPopupOpen()) style(base, false); })
-      .on('popupclose', () => style(base, false));
+      .on('popupclose', () => { style(base, false); fromRow = null; })
+      // any popup opened here is from the map; showRoute sets fromRow once openPopup returns
+      .on('popupopen', () => { fromRow = null; });
     for (const [s, k] of [[g.from, 'dep'], [g.to, 'arr']]) {
       if (!stations.has(s.name)) stations.set(s.name, { s, dep: 0, arr: 0 });
       stations.get(s.name)[k] += N;
