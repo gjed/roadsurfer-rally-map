@@ -13,7 +13,8 @@ The workflow `.github/workflows/scan.yml` SHALL run the scanner twice a week on 
 schedule and on manual dispatch, with `--delay 5`, and deploy the generated map to
 GitHub Pages. After the scan it SHALL render the page from the scan's data file with
 the latest release tag it can read, or without one. Its deploy job SHALL use the
-concurrency group `pages` without cancelling a run in progress, and the workflow SHALL grant only `contents: read` outside the deploy job.
+concurrency group `pages` without cancelling a run in progress, and the workflow SHALL
+grant only `contents: read` outside the deploy and build jobs.
 
 #### Scenario: Scheduled run
 
@@ -123,11 +124,10 @@ redeployed, SHALL deploy nothing and SHALL NOT scan.
 
 The scan workflow SHALL restore the road distance cache file with
 `actions/cache/restore` before the scan, under the key `road-distances-<run id>` with
-the restore key prefix `road-distances-`, and SHALL save it with `actions/cache/save`
-under the same key after the scan step succeeded. It SHALL NOT save the cache after a
-scan that failed or crashed, SHALL NOT commit the cache file or upload it as an
-artifact, and SHALL keep `contents: read` as the only permission outside the deploy
-job.
+the restore key prefix `road-distances-`, then download the S3 object
+`road-distances.json` over it when it can be read. After the scan step succeeded it
+SHALL upload the file to S3 when it exists and save it with `actions/cache/save` under
+the same key, and SHALL do neither after a scan that failed or crashed.
 
 #### Scenario: Next scan reuses the cache
 
@@ -138,7 +138,17 @@ job.
 #### Scenario: Failed scan saves no cache
 
 - **WHEN** the scan step exits non-zero
-- **THEN** no cache is saved and the next run restores the last good one
+- **THEN** no cache is saved or uploaded and the next run restores the last good one
+
+#### Scenario: S3 copy preferred
+
+- **WHEN** the Actions cache and the S3 bucket both have the file
+- **THEN** the scan runs with the S3 copy
+
+#### Scenario: Actions cache evicted
+
+- **WHEN** the Actions cache entry is gone and the S3 bucket has the file
+- **THEN** the scan runs with the S3 copy and routes only the pairs not in it
 
 ### Requirement: No routing on release
 
@@ -163,3 +173,35 @@ file written by an earlier scan SHALL offer chains too.
   chains existed
 - **THEN** the deployed page offers chains and the release job sends no request to
   roadsurfer or to a routing server
+
+### Requirement: AWS access of the road distance cache
+
+The S3 bucket SHALL be the one named by the Actions variable
+`ROAD_DISTANCE_CACHE_BUCKET`. The build job, and not the deploy job, SHALL
+authenticate with GitHub OIDC through `aws-actions/configure-aws-credentials`, pinned
+to a commit SHA, assuming the role in `ROAD_DISTANCE_CACHE_ROLE_ARN` in `eu-central-1`,
+and SHALL grant `contents: read` and `id-token: write`. The workflow SHALL NOT use
+long-lived AWS keys, commit the cache file or upload it as an artifact.
+
+#### Scenario: Variables unset
+
+- **WHEN** `ROAD_DISTANCE_CACHE_BUCKET` or `ROAD_DISTANCE_CACHE_ROLE_ARN` is not set
+- **THEN** the AWS steps are skipped and the scan uses the Actions cache only
+
+### Requirement: AWS failures never block the scan
+
+A failure of any AWS step (credentials, network, access denied, download or upload)
+SHALL log a warning and SHALL NOT fail or block the scan. A missing S3 object on
+download is not a failure.
+
+#### Scenario: Bucket empty or unreachable
+
+- **WHEN** the S3 object does not exist, or authentication, the network or the
+  download fails
+- **THEN** the scan runs with the Actions cache copy, or with no cache when there is
+  none, and a failure other than a missing object logs a warning
+
+#### Scenario: Upload fails
+
+- **WHEN** the scan succeeded and the S3 upload fails
+- **THEN** a warning is logged, the Actions cache is still saved and the run goes on
