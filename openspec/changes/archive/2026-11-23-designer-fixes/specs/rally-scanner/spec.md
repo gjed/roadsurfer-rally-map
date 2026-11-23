@@ -112,16 +112,33 @@ first position and its `aria-valuetext` SHALL read `custom dates`.
 - **WHEN** the user moves the week slider and then edits the earliest start date
 - **THEN** the slider is back at its first position and announces `custom dates`
 
+### Requirement: Return from a route popup
+
+Escape in a route popup SHALL close it. For a popup opened from a list row, Escape
+SHALL also show the list again with focus on the `map` button that opened it; for any
+other popup, focus SHALL move to the map.
+
+#### Scenario: Escape returns to the row
+
+- **WHEN** the user presses Escape in a popup that was opened from a list row
+- **THEN** the popup closes, the list is shown again and focus is on that row's `map`
+  button
+
+#### Scenario: Escape in a popup opened on the map
+
+- **WHEN** the user presses Escape in a popup opened by clicking a route on the map
+- **THEN** the popup closes and focus is on the map
+
 ## MODIFIED Requirements
 
 ### Requirement: Trip list columns
 
 Each list row SHALL show the start date, end date, pick-up station and country,
-return station and country, estimated road distance, the price when the page has
-prices, a booking link that opens in a new tab and a `map` button. Below 700 px the
-dates SHALL show as `MM-DD`, with the full date in the cell's `title` and still read
-in full by assistive technology. Every value from the API SHALL be escaped before it
-is inserted as HTML.
+return station and country, road distance (with `~` when estimated), the price when
+the page has prices, a booking link that opens in a new tab and a `map` button. Below
+700 px the dates SHALL show as `MM-DD`, with the full date in the cell's `title` and
+still read in full by assistive technology. Every value from the API SHALL be escaped
+before it is inserted as HTML.
 
 #### Scenario: Booking from the list
 
@@ -135,13 +152,10 @@ is inserted as HTML.
 
 ### Requirement: Trip list selection
 
-Each list row SHALL have a `map` button whose accessible name is
-`Show <from> to <to> on map`, and it SHALL be the only way to open a route from the
-list: the row itself SHALL NOT be focusable, clickable or have a key handler.
-Activating the button SHALL show that route on the map with its popup open. When the
-button is activated with the keyboard, focus SHALL move to the popup's first booking
-link. Escape in the popup SHALL close it and, for a popup opened from the list, return
-to the list with focus on the button that opened it.
+Each list row SHALL have a `map` button named `Show <from> to <to> on map`, the only
+way to open a route from the list: the row itself SHALL NOT be focusable, clickable or
+have a key handler. Activating the button SHALL show that route on the map with its
+popup open; with the keyboard, focus SHALL move to the popup's first booking link.
 
 #### Scenario: Row selection
 
@@ -152,12 +166,6 @@ to the list with focus on the button that opened it.
 
 - **WHEN** a keyboard user activates the `map` button of a row
 - **THEN** the map shows the route's popup and focus is on its first booking link
-
-#### Scenario: Escape returns to the row
-
-- **WHEN** the user presses Escape in a popup that was opened from a list row
-- **THEN** the popup closes, the list is shown again and focus is on that row's `map`
-  button
 
 #### Scenario: Click on a row
 
@@ -181,13 +189,11 @@ the arcs. The legend SHALL start open at desktop widths and collapsed below 700 
 ### Requirement: Map page toolbar layout
 
 The map page toolbar SHALL have a summary row with the page title, the last-updated
-time, the route and trip counts and the map/list toggle, and a filter area that
-groups the filters as start date (from, to, week), distance, pick-up (country,
-station) and return (country, station), followed by the reset button. Below 700 px
-the page title SHALL be the short `Rally map` and the filter area SHALL be hidden
-behind a `Filters` button that shows and hides it and reports its state with
-`aria-expanded`, so the map or list fills the rest of the screen. In the open filter
-area below 700 px, each country and station dropdown SHALL have a row of its own.
+time, the route and trip counts and the map/list toggle, and a filter area with the
+groups start date (from, to, week), distance, pick-up and return (country and station
+each), followed by the reset button. Below 700 px the title SHALL be the short
+`Rally map`, the filter area SHALL fold behind a `Filters` button that reports its
+state with `aria-expanded`, and each dropdown SHALL have a row of its own.
 
 #### Scenario: Phone width
 
