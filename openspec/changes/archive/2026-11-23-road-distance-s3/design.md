@@ -47,6 +47,12 @@ noncurrent versions expire after 30 days). The role trusts only
   Actions cache save today: only after the Scan step succeeded, so a blocked or
   crashed scan uploads nothing. It runs only when the file exists. It comes before
   the Actions cache save so a failure there cannot skip it.
+- **One scan at a time.** The upload is a plain `aws s3 cp`, last write wins, so two
+  overlapping scans (a dispatch during the 70-90 minute scheduled run) would make one
+  drop the pairs the other routed. The build job gets its own concurrency group,
+  `road-distance-scan`, with `cancel-in-progress: false`; the deploy jobs keep `pages`.
+  GitHub keeps at most one waiting run per group and cancels an older waiting one in
+  favour of a newer one, which costs nothing here because the newer run scans anyway.
 - **Actions cache stays.** It is the fallback and costs nothing. No change to its key
   or restore key.
 - **Variables through `env`, not inline in the script.** The bucket name is passed as
