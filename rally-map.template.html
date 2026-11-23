@@ -122,17 +122,23 @@
 const DATA = /*DATA*/[];
 const SCAN = /*SCAN*/null;
 const RELEASE = /*RELEASE*/null;
-const map = L.map('map').setView([50.0, 9.0], 5);
+const COL = '#06c', HOT = '#e60';
+const map = L.map('map');
+map.createPane('stations').style.zIndex = 450;  // above the route lines, so a raised line never covers a station
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Tiles © Esri' }).addTo(map);
-const layer = L.layerGroup().addTo(map);
+const layer = L.featureGroup().addTo(map);
+const weight = n => Math.min(1.5 + n * .7, 5);
 const legend = L.control({ position: 'bottomleft' });
 legend.onAdd = () => {
   const d = L.DomUtil.create('details', 'legend leaflet-bar');
-  const line = w => `<svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7H26" stroke="#06c" stroke-width="${w}" stroke-opacity=".75"/></svg>`;
-  const dot = (r, fill) => `<svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="${r}" stroke="#06c" stroke-width="3" fill="${fill}"/></svg>`;
+  const line = w => `<svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7H26" stroke="${COL}" stroke-width="${w}" stroke-opacity=".4"/></svg>`;
+  const dot = `<svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="5" stroke="#fff" stroke-width="1.5" fill="${COL}"/></svg>`;
+  // arc() bends every route to the right of its direction of travel (pick-up -> return)
+  const bend = `<svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 3Q14 15 26 3M21.5 3.5L26 3L25.5 7.5" fill="none" stroke="${COL}" stroke-width="1.5"/></svg>`;
   d.innerHTML = '<summary>Legend</summary><ul>' +
-    `<li>${line(3)} route with 1 trip</li><li>${line(7)} route with 5 or more trips</li>` +
-    `<li>${dot(4, '#fff')} pick-up station</li><li>${dot(5, '#06c')} return station</li></ul>`;
+    `<li>${line(weight(1))} route with 1 trip</li><li>${line(weight(5))} route with 5 or more trips</li>` +
+    `<li>${dot} station (click to filter pick-ups)</li>` +
+    `<li>${bend} arcs bend right of the way you travel, from pick-up to return</li></ul>`;
   d.open = matchMedia('(min-width: 701px)').matches;
   L.DomEvent.disableClickPropagation(d);
   L.DomEvent.disableScrollPropagation(d);
@@ -245,6 +251,7 @@ const hasPrice = DATA.some(r => r.price);
 const SORTS = { start: r => r.start, end: r => r.end, km: r => dist(r).km };
 let shown = [], sortKey = 'start', sortDir = 1;
 const lines = new Map();  // route key -> arc, to open a route from the list
+let fitted = false;
 const routeKey = r => r.from.name + '>' + r.to.name;
 
 const kmCell = r => {
@@ -292,7 +299,7 @@ function render() {
   lines.clear();
   shown = [];
   // one arc per route (from -> to); all matching dates are listed in its popup
-  const routes = new Map();
+  const routes = new Map(), stations = new Map();
   let n = 0;
   for (const r of DATA) {
     if (!passes(r)) continue;
@@ -313,12 +320,33 @@ function render() {
       `<div class="trips"><table><thead><tr><th>Start</th><th>End</th>${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Booking</span></th></tr></thead>` +
       `<tbody>${rows}</tbody></table></div></div>`;
     const tip = `${head}<br>${d.est ? '~' : ''}${d.km} km${d.est ? ' (estimated)' : ''} \u00b7 ${N} trip${N > 1 ? 's' : ''}: ${esc(t[0].start)}${N > 1 ? ' \u2026 ' + esc(t[N - 1].start) : ''}`;
-    const col = '#06c';
-    const line = L.polyline(arc(a, b), { color: col, weight: Math.min(2 + N, 7), opacity: .75 }).addTo(layer).bindPopup(pop).bindTooltip(tip, { sticky: true });
+    const base = { color: COL, weight: weight(N), opacity: .4 };
+    const line = L.polyline(arc(a, b), base).addTo(layer).bindPopup(pop).bindTooltip(tip, { sticky: true });
     lines.set(key, line);
-    line.on('mouseover', () => line.setStyle({ opacity: 1, color: '#e60' })).on('mouseout', () => line.setStyle({ opacity: .75, color: col }));
-    L.circleMarker(a, { radius: 4, color: col, fillColor: '#fff', fillOpacity: 1 }).addTo(layer).bindPopup(pop).bindTooltip(tip);
-    L.circleMarker(b, { radius: 6, color: col, fillColor: col, fillOpacity: 1 }).addTo(layer).bindPopup(pop).bindTooltip(tip);
+    // hot while hovered or while its popup is open; a tap fires mouseover but no mouseout, so popupclose resets too
+    line.on('mouseover popupopen', () => { line.setStyle({ color: HOT, opacity: 1 }); line.bringToFront(); })
+      .on('mouseout', () => { if (!line.isPopupOpen()) line.setStyle(base); })
+      .on('popupclose', () => line.setStyle(base));
+    for (const [s, k] of [[g.from, 'dep'], [g.to, 'arr']]) {
+      if (!stations.has(s.name)) stations.set(s.name, { s, dep: 0, arr: 0 });
+      stations.get(s.name)[k] += N;
+    }
+  }
+  // one marker per station: a stack of per-route markers would open an arbitrary route on click
+  const count = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  for (const [name, g] of stations) {
+    L.circleMarker([g.s.latitude, g.s.longitude], { pane: 'stations', radius: 5, color: '#fff', weight: 1.5, fillColor: COL, fillOpacity: 1 })
+      .addTo(layer)
+      .bindTooltip(`${esc(name)} (${esc(g.s.cc)})<br>${count(g.dep, 'departure')} \u00b7 ${count(g.arr, 'arrival')}`)
+      .on('click', () => {
+        if (!g.dep) return;  // arrival only: the pick-up dropdown has no such option
+        sel.fst = name; $('fst').value = name; render();
+      });
+  }
+  if (!fitted) {
+    fitted = true;
+    const bounds = layer.getBounds();
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [20, 20], maxZoom: 8 }); else map.setView([50, 9], 5);
   }
   // Chrome puts every clickable SVG path in the tab order; keyboard users reach routes via the list
   layer.eachLayer(l => l.getElement().setAttribute('tabindex', '-1'));
