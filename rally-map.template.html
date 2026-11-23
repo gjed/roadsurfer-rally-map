@@ -63,9 +63,8 @@
   .legend li { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
   .legend svg { width: 28px; height: 14px; flex: none; }
   .leaflet-control-attribution a { color: #005f87; }
-  #credit, #release { padding: 2px 12px; font-size: 11px; color: var(--muted); background: #f4f4f4; border-top: 1px solid #ccc; }
-  #credit:empty, #release:empty { display: none; }
-  #release a { color: var(--accent); }
+  #credit { padding: 2px 12px; font-size: 11px; color: var(--muted); background: #f4f4f4; border-top: 1px solid #ccc; }
+  #credit:empty { display: none; }
   @media (max-width: 700px) {
     #filters, #view { order: 1; }
     #count { order: 2; }
@@ -128,7 +127,6 @@
   <div id="list" role="region" aria-label="Trip list"></div>
 </main>
 <footer id="credit"></footer>
-<footer id="release"></footer>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script>
 const DATA = /*DATA*/[];
@@ -203,12 +201,9 @@ if (DATA.some(r => !dist(r).est)) credit.push('Road distances: <a href="https://
 if (DATA.some(r => dist(r).est)) credit.push('~ marks an estimated distance (straight line \u00d7 1.3), not routed.');
 $('credit').innerHTML = credit.join(' ');
 
-// release tag, null when rendered without --release: the footer stays empty and hidden
+// release tag, null when rendered without --release: the attribution then shows no release
 if (typeof RELEASE === 'string' && RELEASE) {
-  const a = document.createElement('a');
-  a.href = 'https://github.com/gjed/roadsurfer-rally-map/releases/tag/' + encodeURIComponent(RELEASE);
-  a.textContent = RELEASE;
-  $('release').append('release ', a);
+  map.attributionControl.addAttribution(`release <a href="https://github.com/gjed/roadsurfer-rally-map/releases/tag/${encodeURIComponent(RELEASE)}" target="_blank" rel="noopener">${esc(RELEASE)}</a>`);
 }
 
 // Faceted filters: each dropdown only offers values that still have offers
