@@ -38,13 +38,17 @@
   #list { flex: 1; overflow: auto; display: none; }
   body.list #map { display: none; }
   body.list #list { display: block; }
-  #list table, .pop table { border-collapse: collapse; width: 100%; }
+  #list table, .pop table { border-collapse: collapse; }
+  #list table { width: auto; min-width: 60%; }
+  .pop table { width: 100%; }
   #list th, #list td { padding: 5px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid #e4e4e4; }
   #list th, .pop th { position: sticky; top: 0; background: #fafafa; }
+  #list th { box-shadow: inset 0 -1px #ccc; }
   #list th button { font: inherit; font-weight: 600; color: inherit; border: 0; padding: 0; background: none; cursor: pointer; }
-  #list td.km { text-align: right; }
-  #list tbody tr { cursor: pointer; }
-  #list tbody tr:hover, #list tbody tr:focus { background: #eef5ff; }
+  #list th.km, #list td.km { text-align: right; }
+  #list tbody tr:hover, #list tbody tr:focus-within { background: #eef5ff; }
+  #list button.show { font: inherit; color: inherit; padding: 1px 6px; border: 1px solid #767676; border-radius: 4px; background: #fff; cursor: pointer; }
+  #list button.show:hover { background: #e8e8e8; }
   #list td a, .pop a { color: var(--link); font-weight: 600; }
   .pop { font-size: 13px; }
   .pop h2 { margin: 0 0 2px; font-size: 14px; }
@@ -75,9 +79,16 @@
     #from, #to { flex: 1; min-width: 0; }
     .f label { flex-basis: 100%; }
     #reset { align-self: flex-start; }
-    #list table { font-size: 12px; }
-    #list th, #list td { padding: 4px 3px; }
-    #list td.st, #list td.d { white-space: normal; }
+    #list table { width: 100%; font-size: 12px; }
+    .wide { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    #list th, #list td { padding: 4px 2px; }
+    #list button.show { padding: 1px 4px; font-size: 11px; }
+    #list td.st { white-space: normal; }
+  }
+  /* grow the tap area, not the rows */
+  @media (pointer: coarse) {
+    #list td a, .pop td a { display: inline-block; padding: 6px 0; margin: -6px 0; }
+    #list button.show { padding: 6px 4px; margin: -6px 0; }
   }
 </style>
 </head>
@@ -265,16 +276,17 @@ function renderList() {
     const a = f(x), b = f(y);
     return (a < b ? -1 : a > b ? 1 : 0) * sortDir || x.start.localeCompare(y.start) || x.from.name.localeCompare(y.from.name);
   });
-  const th = (k, t) => `<th aria-sort="${k === sortKey ? (sortDir > 0 ? 'ascending' : 'descending') : 'none'}"><button data-sort="${k}">${t}${k === sortKey ? (sortDir > 0 ? ' \u25b2' : ' \u25bc') : ''}</button></th>`;
-  // narrow screens may wrap a date after its year
-  const d = s => esc(s).replace('-', '-<wbr>');
-  const rows = shown.map(r => `<tr tabindex="0" data-key="${esc(routeKey(r))}"><td class="d">${d(r.start)}</td><td class="d">${d(r.end)}</td>` +
+  const th = (k, t) => `<th${k === 'km' ? ' class="km"' : ''} aria-sort="${k === sortKey ? (sortDir > 0 ? 'ascending' : 'descending') : 'none'}"><button data-sort="${k}">${t}${k === sortKey ? (sortDir > 0 ? ' \u25b2' : ' \u25bc') : ''}</button></th>`;
+  // narrow screens show MM-DD; the year stays in the title and for screen readers
+  const d = s => `<td class="d" title="${esc(s)}"><span class="wide">${esc(s.slice(0, 5))}</span>${esc(s.slice(5))}</td>`;
+  const rows = shown.map(r => `<tr>${d(r.start)}${d(r.end)}` +
     `<td class="st">${esc(r.from.name)} (${esc(r.from.cc)})</td><td class="st">${esc(r.to.name)} (${esc(r.to.cc)})</td>` +
     `<td class="km">${kmCell(r)}</td>${hasPrice ? `<td>${r.price ? esc(r.price) : ''}</td>` : ''}` +
-    `<td><a href="${esc(r.link)}" target="_blank" rel="noopener">book</a></td></tr>`).join('');
+    `<td><a href="${esc(r.link)}" target="_blank" rel="noopener">book</a></td>` +
+    `<td><button class="show" data-key="${esc(routeKey(r))}" aria-label="Show ${esc(r.from.name)} to ${esc(r.to.name)} on map">map</button></td></tr>`).join('');
   $('list').innerHTML = `<table><thead><tr>${th('start', 'Start')}${th('end', 'End')}<th>From</th><th>To</th>${th('km', 'km')}` +
-    `${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Booking</span></th></tr></thead><tbody>` +
-    (rows || `<tr><td colspan="${hasPrice ? 7 : 6}">No trips match the filters.</td></tr>`) + '</tbody></table>';
+    `${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Booking</span></th><th><span class="sr">Map</span></th></tr></thead><tbody>` +
+    (rows || `<tr><td colspan="${hasPrice ? 8 : 7}">No trips match the filters.</td></tr>`) + '</tbody></table>';
 }
 
 function setView(list) {
@@ -283,13 +295,15 @@ function setView(list) {
   if (!list) map.invalidateSize();
 }
 
-function showRoute(tr, keyboard) {
-  const line = lines.get(tr.dataset.key);
+let fromRow = null;  // the list button that opened the current popup, to go back to it
+function showRoute(btn, keyboard) {
+  const line = lines.get(btn.dataset.key);
   if (!line) return;
   setView(false);
   map.fitBounds(line.getBounds(), { padding: [40, 40], maxZoom: 8, animate: false });
   line.openPopup();
-  // the focused row is hidden now: keep keyboard users in the popup
+  fromRow = { btn, line };
+  // the focused button is hidden now: keep keyboard users in the popup
   if (keyboard) line.getPopup().getElement().querySelector('a').focus();
 }
 
@@ -385,16 +399,18 @@ $('list').onclick = e => {
     $('list').querySelector(`[data-sort="${sortKey}"]`).focus();  // the header was redrawn
     return;
   }
-  const tr = e.target.closest('tr[data-key]');
-  if (tr && !e.target.closest('a')) showRoute(tr);
+  const m = e.target.closest('button[data-key]');
+  if (m) showRoute(m, e.detail === 0);  // detail 0: activated with the keyboard
 };
-// Leaflet closes popups on Escape only while the map itself has focus
+// Leaflet closes popups on Escape only while the map itself has focus.
+// A popup opened from the list goes back to the list: its button is hidden while the map shows.
+const back = () => fromRow && fromRow.line.isPopupOpen() && document.body.contains(fromRow.btn) ? fromRow.btn : null;
 $('map').addEventListener('keydown', e => {
-  if (e.key === 'Escape' && e.target.closest('.leaflet-popup')) { map.closePopup(); $('map').focus(); }
+  if (e.key !== 'Escape' || !e.target.closest('.leaflet-popup')) return;
+  const btn = back();
+  map.closePopup();
+  if (btn) { setView(true); btn.focus(); } else $('map').focus();
 });
-$('list').onkeydown = e => {
-  if (e.key === 'Enter' && e.target.matches('tr[data-key]')) showRoute(e.target, true);
-};
 render();
 </script>
 </body>
