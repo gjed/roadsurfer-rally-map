@@ -31,26 +31,31 @@ map tiles still come from Esri, so viewing the page needs an internet connection
 full scan makes about 850 sequential requests and takes several minutes.
 
 The toolbar shows when the data was scanned, in UTC, before the route and trip
-counts, for example `updated 2026-11-18 03:12 UTC · 12 routes · 724 / 724 trips`.
+counts, for example `updated 2026-11-18 03:12 UTC · 12 routes · 724 of 724 trips`.
 Hovering it shows the offer, request and failed-request counts of that scan. A page
 rendered from a data file without scan metadata shows no timestamp.
 
 Below the counts, the filters are grouped by start date, distance, pick-up and
 return. Each dropdown only offers stations and countries that still have trips under
-the other filters. Active filters are highlighted, and `Reset` clears them all. On a
-phone the filters fold behind a `Filters` button, which shows how many groups are
-active. The map opens fitted to the routes. Each station is one marker: click it to
-filter the pick-ups to that station, or hover it for its departures and arrivals. A
-route is highlighted while hovered or while its popup is open. The legend in the
-corner of the map explains the line weight (more trips, thicker line), the station
-marker and the arcs, which bend to the right of the direction of travel from the
-pick-up to the return.
+the other filters. Active filters are highlighted, and `Reset`, next to the counts,
+clears them all; it only shows while a filter is active. On a phone the filters fold
+behind a `Filters` button, which shows how many groups are active.
+
+The map opens fitted to the stations, on a light grey Esri basemap. Each station is
+one marker: click it to filter the pick-ups to that station (click it again to clear
+the filter), or hover it for its departures and arrivals. Lines get thicker and more
+opaque with the number of trips, and a route is highlighted in deep orange while
+hovered or while its popup is open. The legend in the corner of the map explains the
+line weights, the highlighted route and the station marker. When no trip matches the
+filters the map says so and offers `Reset filters`.
+
 The `List` button swaps the map for a table of the trips that pass the current
 filters, one row per trip with its dates, stations, road distance, price when
 scanned with `--prices`, and booking link. The filters and the counts stay as they
 are when you switch. Rows are sorted by start date; click the start, end or `km`
-header to re-sort, and press the `map` button of a row to see that route on the map
-with its popup open. Escape closes the popup and goes back to that button.
+header to re-sort, and press the `Map` button of a row to see that route on the map
+with its popup open. Escape closes the popup and goes back to that button. On a phone
+each trip is a two-line card.
 
 Distances are road distances in km. A distance that could not be routed is an
 estimate, shown with a leading `~` and a note under the map; see "Road distances".
