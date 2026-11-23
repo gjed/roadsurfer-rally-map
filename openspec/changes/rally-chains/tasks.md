@@ -6,7 +6,7 @@
   each window, the rest-day and connection rules, the best dates per chain.
 - [x] 1.2 Add the `Chains` toolbar button and the legs, rest days and connection
   controls; apply the date, distance, pick-up and return filters to chains.
-- [x] 1.3 Draw the listed chains on the map: legs solid, connections dashed, the
+- [x] 1.3 Draw the listed chains on the map: legs solid, connections dotted, the
   chain opened from the list on top with a popup of per-leg booking links.
 - [x] 1.4 List the chains with a booking link per leg, rest days and connection
   distance, sortable by start, end, days and km driven, on desktop and on a phone.
