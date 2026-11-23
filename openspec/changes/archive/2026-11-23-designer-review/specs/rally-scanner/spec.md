@@ -106,13 +106,12 @@ load from Esri's World Light Gray Canvas, base and reference labels, up to zoom 
 
 ### Requirement: Station markers
 
-The map SHALL draw one marker per station that has a trip under the active filters,
-above the route lines, with a dark outline that contrasts with the basemap. Clicking a
-marker SHALL set the pick-up filter to that station, or clear it when that station is
-already selected, and SHALL NOT open any route popup; the selected station SHALL be
-filled and larger. The tooltip SHALL show `Name, CC`, the departures and arrivals among
-the trips that pass the filters, and what a click does. A station with no departures
-SHALL ignore the click.
+The map SHALL draw one dark-outlined marker per station with a trip under the active
+filters, above the route lines. Clicking one SHALL toggle the pick-up filter to that
+station without opening a route popup; the selected station SHALL be filled and
+larger, and a station with no departures SHALL ignore the click. The tooltip SHALL
+show `Name, CC`, the departures and arrivals among the trips that pass the filters,
+and what a click does.
 
 #### Scenario: Busy station
 
@@ -196,10 +195,10 @@ desktop widths and collapsed below 700 px.
 ### Requirement: Trip list columns
 
 Each list row SHALL show the start date, end date, pick-up and return station as
-`Name, CC`, estimated road distance, the price when the page has prices, a `Map`
-button and a `Book` link that opens in a new tab. Below 700 px the dates SHALL show
-as `Thu 19 Nov`, with the ISO date in the cell's `title`. Every value from the API
-SHALL be escaped before it is inserted as HTML.
+`Name, CC`, road distance (with `~` when estimated), the price when the page has
+prices, a `Map` button and a `Book` link that opens in a new tab. Below 700 px the
+dates SHALL show as `Thu 19 Nov`, with the ISO date in the cell's `title`. Every value
+from the API SHALL be escaped before it is inserted as HTML.
 
 #### Scenario: Booking from the list
 
