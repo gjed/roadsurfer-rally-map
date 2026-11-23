@@ -58,8 +58,8 @@
   .legend li { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
   .legend svg { width: 28px; height: 14px; flex: none; }
   .leaflet-control-attribution a { color: #005f87; }
-  #release { padding: 2px 12px; font-size: 11px; color: var(--muted); background: #f4f4f4; border-top: 1px solid #ccc; }
-  #release:empty { display: none; }
+  #credit, #release { padding: 2px 12px; font-size: 11px; color: var(--muted); background: #f4f4f4; border-top: 1px solid #ccc; }
+  #credit:empty, #release:empty { display: none; }
   #release a { color: var(--accent); }
   @media (max-width: 700px) {
     #updated { order: 3; flex-basis: 100%; font-size: 11px; }
@@ -115,6 +115,7 @@
   <div id="map" role="region" aria-label="Route map"></div>
   <div id="list" role="region" aria-label="Trip list"></div>
 </main>
+<footer id="credit"></footer>
 <footer id="release"></footer>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script>
@@ -150,11 +151,16 @@ function arc(a, b, n = 40) {
   return pts;
 }
 
-// estimate: great-circle distance x 1.3 to approximate driving distance
+// fallback for records without a routed km: great-circle distance x 1.3
 function roadKm(a, b) {
   const R = Math.PI / 180, dLa = (b.latitude - a.latitude) * R, dLo = (b.longitude - a.longitude) * R;
   const h = Math.sin(dLa / 2) ** 2 + Math.cos(a.latitude * R) * Math.cos(b.latitude * R) * Math.sin(dLo / 2) ** 2;
   return Math.round(12742 * Math.asin(Math.sqrt(h)) * 1.3 / 10) * 10;
+}
+// the scanner stores the routed km in the record; km_estimated marks its own x 1.3 fallback
+function dist(r) {
+  if (typeof r.km === 'number' && isFinite(r.km)) return { km: r.km, est: r.km_estimated === true };
+  return { km: roadKm(r.from, r.to), est: true };
 }
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
@@ -162,7 +168,7 @@ const day = s => Date.parse(s + 'T00:00:00Z');
 const iso = ms => new Date(ms).toISOString().slice(0, 10);
 const min = DATA.map(r => r.start).sort()[0], max = DATA.map(r => r.end).sort().pop();
 if (min) { $('from').value = min; $('to').value = max; }
-const kms = DATA.map(r => roadKm(r.from, r.to));
+const kms = DATA.map(r => dist(r).km);
 if (kms.length) { $('kmin').placeholder = Math.min(...kms); $('kmax').placeholder = Math.max(...kms); }
 $('week').max = min ? Math.ceil((day(max) - day(min)) / 864e5 / 7) : 0;
 
@@ -172,6 +178,12 @@ if (!isNaN(done)) {
   $('updated').textContent = 'updated ' + new Date(done).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
   $('updated').title = `scan finished ${SCAN.finished_at} \u00b7 ${SCAN.offers} offers \u00b7 ${SCAN.requests} requests, ${SCAN.failed} failed`;
 }
+
+// OSRM routes on OpenStreetMap data; ~ marks a distance that was not routed
+const credit = [];
+if (DATA.some(r => !dist(r).est)) credit.push('Road distances: <a href="https://project-osrm.org/" target="_blank" rel="noopener">OSRM</a>, data \u00a9 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors.');
+if (DATA.some(r => dist(r).est)) credit.push('~ marks an estimated distance (straight line \u00d7 1.3), not routed.');
+$('credit').innerHTML = credit.join(' ');
 
 // release tag, null when rendered without --release: the footer stays empty and hidden
 if (typeof RELEASE === 'string' && RELEASE) {
@@ -210,7 +222,7 @@ function markActive() {
 
 function passes(r, skip) {
   if (day(r.start) < day($('from').value) || day(r.start) > day($('to').value)) return false;
-  const km = roadKm(r.from, r.to);
+  const km = dist(r).km;
   if (km < +$('kmin').value || ($('kmax').value !== '' && km > +$('kmax').value)) return false;
   for (const k in FILTERS) if (k !== skip && sel[k] && FILTERS[k](r) !== sel[k]) return false;
   return true;
@@ -230,10 +242,15 @@ function fillSelects() {
 
 // the list shows the same trips as the map: render() hands it what passes()
 const hasPrice = DATA.some(r => r.price);
-const SORTS = { start: r => r.start, end: r => r.end, km: r => roadKm(r.from, r.to) };
+const SORTS = { start: r => r.start, end: r => r.end, km: r => dist(r).km };
 let shown = [], sortKey = 'start', sortDir = 1;
 const lines = new Map();  // route key -> arc, to open a route from the list
 const routeKey = r => r.from.name + '>' + r.to.name;
+
+const kmCell = r => {
+  const d = dist(r);
+  return d.est ? `<span title="estimated: straight line \u00d7 1.3, not routed">~${d.km}</span>` : d.km;
+};
 
 function renderList() {
   const f = SORTS[sortKey];
@@ -246,7 +263,7 @@ function renderList() {
   const d = s => esc(s).replace('-', '-<wbr>');
   const rows = shown.map(r => `<tr tabindex="0" data-key="${esc(routeKey(r))}"><td class="d">${d(r.start)}</td><td class="d">${d(r.end)}</td>` +
     `<td class="st">${esc(r.from.name)} (${esc(r.from.cc)})</td><td class="st">${esc(r.to.name)} (${esc(r.to.cc)})</td>` +
-    `<td class="km">${roadKm(r.from, r.to)}</td>${hasPrice ? `<td>${r.price ? esc(r.price) : ''}</td>` : ''}` +
+    `<td class="km">${kmCell(r)}</td>${hasPrice ? `<td>${r.price ? esc(r.price) : ''}</td>` : ''}` +
     `<td><a href="${esc(r.link)}" target="_blank" rel="noopener">book</a></td></tr>`).join('');
   $('list').innerHTML = `<table><thead><tr>${th('start', 'Start')}${th('end', 'End')}<th>From</th><th>To</th>${th('km', 'km')}` +
     `${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Booking</span></th></tr></thead><tbody>` +
@@ -288,14 +305,14 @@ function render() {
   for (const [key, g] of routes) {
     g.trips.sort((x, y) => x.start.localeCompare(y.start));
     const a = [g.from.latitude, g.from.longitude], b = [g.to.latitude, g.to.longitude];
-    const t = g.trips, N = t.length, km = roadKm(g.from, g.to);
+    const t = g.trips, N = t.length, d = dist(t[0]);
     const head = `${esc(g.from.name)} (${esc(g.from.cc)}) \u2192 ${esc(g.to.name)} (${esc(g.to.cc)})`;
     const rows = t.map(r => `<tr><td>${esc(r.start)}</td><td>${esc(r.end)}</td>${hasPrice ? `<td>${r.price ? esc(r.price) : ''}</td>` : ''}` +
       `<td><a href="${esc(r.link)}" target="_blank" rel="noopener">book</a></td></tr>`).join('');
-    const pop = `<div class="pop"><h2>${head}</h2><p>~${km} km by road \u00b7 ${N} trip${N > 1 ? 's' : ''}</p>` +
+    const pop = `<div class="pop"><h2>${head}</h2><p>${d.est ? `~${d.km} km (estimated)` : `${d.km} km by road`} \u00b7 ${N} trip${N > 1 ? 's' : ''}</p>` +
       `<div class="trips"><table><thead><tr><th>Start</th><th>End</th>${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Booking</span></th></tr></thead>` +
       `<tbody>${rows}</tbody></table></div></div>`;
-    const tip = `${head}<br>~${km} km \u00b7 ${N} trip${N > 1 ? 's' : ''}: ${esc(t[0].start)}${N > 1 ? ' \u2026 ' + esc(t[N - 1].start) : ''}`;
+    const tip = `${head}<br>${d.est ? '~' : ''}${d.km} km${d.est ? ' (estimated)' : ''} \u00b7 ${N} trip${N > 1 ? 's' : ''}: ${esc(t[0].start)}${N > 1 ? ' \u2026 ' + esc(t[N - 1].start) : ''}`;
     const col = '#06c';
     const line = L.polyline(arc(a, b), { color: col, weight: Math.min(2 + N, 7), opacity: .75 }).addTo(layer).bindPopup(pop).bindTooltip(tip, { sticky: true });
     lines.set(key, line);
