@@ -72,6 +72,8 @@ the workflow cannot reach AWS from a branch or a PR, and the bucket and role liv
   deploy job uses the `github-pages` environment, which changes the OIDC `sub` claim.
 - An AWS failure only warns; it never fails or blocks the scan. Unset variables skip
   the AWS steps.
+- The build job keeps its own concurrency group (`road-distance-scan`, not `pages`),
+  so two scans never overwrite each other's upload.
 - A blocked or crashed scan uploads nothing.
 - `release.yml` never reads the bucket.
 

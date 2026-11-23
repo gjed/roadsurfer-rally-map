@@ -268,7 +268,8 @@ The scan uses the first copy it finds, in this order:
    overwrites it, so the S3 copy wins when there is one;
 1. none: the scanner routes every station pair it needs, at one request per second.
 
-A problem with AWS (credentials, network, access denied, a failed upload) logs a
+The build job runs in its own concurrency group, so two scans never overlap and
+overwrite each other's upload. A problem with AWS (credentials, network, access denied, a failed upload) logs a
 warning and never fails the scan; a missing object on the first run logs a notice. The
 Actions cache is saved as before, so it stays the fallback.
 
