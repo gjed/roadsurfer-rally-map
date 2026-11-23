@@ -46,8 +46,9 @@ one marker: click it to filter the pick-ups to that station (click it again to c
 the filter), or hover it for its departures and arrivals. Lines get thicker and more
 opaque with the number of trips, and a route is highlighted in deep orange while
 hovered or while its popup is open. The legend in the corner of the map explains the
-line weights, the highlighted route and the station marker. When no trip matches the
-filters the map says so and offers `Reset filters`.
+line weights, the highlighted route, the station marker and, when the page has an
+estimate, the `~`. When no trip matches the filters the map says so and offers
+`Reset filters`.
 
 The `List` button swaps the map for a table of the trips that pass the current
 filters, one row per trip with its dates, stations, road distance, price when
@@ -58,7 +59,7 @@ with its popup open. Escape closes the popup and goes back to that button. On a 
 each trip is a two-line card.
 
 Distances are road distances in km. A distance that could not be routed is an
-estimate, shown with a leading `~` and a note under the map; see "Road distances".
+estimate, shown with a leading `~` that the legend explains; see "Road distances".
 
 Other useful options:
 
@@ -124,7 +125,7 @@ that value.
 - **Service.** The public [OSRM](https://project-osrm.org/) demo server
   (`router.project-osrm.org`, `--routing-url` points to another OSRM server). Its
   routes are built on [OpenStreetMap](https://www.openstreetmap.org/copyright) data,
-  credited in a footer on the page. The scanner follows the demo server's usage
+  credited in the map's attribution. The scanner follows the demo server's usage
   policy: requests are sequential, one per second at most, with a User-Agent that
   names this project. It asks for one `/table` request per pick-up station (50
   return stations at most), about 60 requests for a first full scan. Routing is
