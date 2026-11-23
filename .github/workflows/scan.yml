@@ -23,9 +23,25 @@ jobs:
         with:
           python-version: "3.x"
 
+      # cache keys are immutable: each run saves under its own key and restores the
+      # newest earlier one, so only station pairs that are new get routed
+      - name: Restore road distance cache
+        uses: actions/cache/restore@v6
+        with:
+          path: road-distances.json
+          key: road-distances-${{ github.run_id }}
+          restore-keys: road-distances-
+
       # exits non-zero and writes nothing when more than 10% of requests fail
       - name: Scan
         run: python3 roadsurfer-rally.py --delay 5 --json-out offers.json
+
+      # runs only after a scan that exited 0: a blocked or crashed scan saves nothing
+      - name: Save road distance cache
+        uses: actions/cache/save@v6
+        with:
+          path: road-distances.json
+          key: road-distances-${{ github.run_id }}
 
       # read after the scan, so a release cut during it is shown
       - name: Render the map with the latest release tag
