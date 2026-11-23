@@ -14,6 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     # ~850 requests at --delay 5 plus jitter take 70-90 minutes
     timeout-minutes: 150
+    # one scan at a time: two overlapping runs would each upload their own cache copy and
+    # the last write would drop the pairs the other one routed. Not the `pages` group, which
+    # only the deploy jobs share
+    concurrency:
+      group: road-distance-scan
+      cancel-in-progress: false
     # id-token lets the AWS steps trade the OIDC token for the cache role; it stays off the
     # workflow and the deploy job, which uses the github-pages environment and its own sub claim
     permissions:
