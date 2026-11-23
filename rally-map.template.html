@@ -433,7 +433,10 @@ const ENDS = {
   fcc: c => c.legs[0].r.from.cc, fst: c => c.legs[0].r.from.name,
   tcc: c => c.legs[c.legs.length - 1].r.to.cc, tst: c => c.legs[c.legs.length - 1].r.to.name,
 };
-const endsPass = (c, skip) => { for (const k in ENDS) if (k !== skip && sel[k] && ENDS[k](c) !== sel[k]) return false; return true; };
+// the selections a mode applies: chain mode works on a copy, so a station no chain satisfies is dropped there
+// without being forgotten, and trip mode gets it back
+let eff = sel;
+const endsPass = (c, skip) => { for (const k in ENDS) if (k !== skip && eff[k] && ENDS[k](c) !== eff[k]) return false; return true; };
 let chainMemo = { key: '', list: [], ms: 0 };  // the chains for the current chain settings, filters and dates
 function chainList() {
   const o = { legs: +$('cn').value, gap: +$('cg').value, conn: +$('ck').value, lo: dn($('from').value), hi: dn($('to').value) };
@@ -449,14 +452,15 @@ function chainList() {
 
 function fillSelects() {
   const rows = chainMode ? chainList() : DATA, F = chainMode ? ENDS : FILTERS;
+  eff = chainMode ? { ...sel } : sel;
   for (const k in FILTERS) {
     const counts = new Map();
     for (const r of rows) if (chainMode ? endsPass(r, k) : passes(r, k)) counts.set(F[k](r), (counts.get(F[k](r)) || 0) + 1);
-    if (sel[k] && !counts.has(sel[k])) sel[k] = '';  // selection became impossible -> clear it
+    if (eff[k] && !counts.has(eff[k])) eff[k] = '';  // selection became impossible -> clear it
     const el = $(k);
     el.innerHTML = `<option value="">Any ${NOUN[k]}</option>` +
       [...counts].sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([v, n]) => `<option value="${esc(v)}"${v === sel[k] ? ' selected' : ''}>${esc(v)} (${n})</option>`).join('');
+        .map(([v, n]) => `<option value="${esc(v)}"${v === eff[k] ? ' selected' : ''}>${esc(v)} (${n})</option>`).join('');
   }
 }
 
@@ -698,7 +702,7 @@ function render() {
   const { stations, routes, n } = chainMode ? drawChains() : drawTrips();
   // one marker per station: a stack of per-route markers would open an arbitrary route on click
   for (const [name, g] of stations) {
-    const on = sel.fst === name;
+    const on = eff.fst === name;
     // arrival only: the pick-up dropdown has no such option, so the click does nothing
     const hint = g.dep ? `<br>${on ? 'Click to show all pick-ups' : `Click to show ${chainMode ? 'chains starting' : 'trips from'} here`}` : '';
     const tally = chainMode ? `${count(g.dep, 'chain')} starting \u00b7 ${count(g.arr, 'chain')} ending` : `${count(g.dep, 'departure')} \u00b7 ${count(g.arr, 'arrival')}`;
