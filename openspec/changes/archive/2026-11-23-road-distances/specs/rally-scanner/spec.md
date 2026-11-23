@@ -26,7 +26,7 @@ great-circle distance × 1.3 rounded to 10 km and `km_estimated` `true`.
 - **WHEN** a scan writes neither `--json-out` nor `--map`
 - **THEN** no routing request is sent
 
-#### Scenario: Blocked scan
+#### Scenario: Blocked scan routes nothing
 
 - **WHEN** more than 10% of the roadsurfer requests of a scan fail
 - **THEN** no routing request is sent and the road distance cache is not written
