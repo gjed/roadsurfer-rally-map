@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     # ~850 requests at --delay 5 plus jitter take 70-90 minutes
     timeout-minutes: 150
+    # id-token lets the AWS steps trade the OIDC token for the cache role; it stays off the
+    # workflow and the deploy job, which uses the github-pages environment and its own sub claim
+    permissions:
+      contents: read
+      id-token: write
     env:
       PYTHONUNBUFFERED: "1"
     steps:
@@ -23,8 +28,9 @@ jobs:
         with:
           python-version: "3.x"
 
-      # cache keys are immutable: each run saves under its own key and restores the
-      # newest earlier one, so only station pairs that are new get routed
+      # fallback copy of the road distance cache; the S3 download below overwrites it when
+      # the bucket has the file. Cache keys are immutable: each run saves under its own key
+      # and restores the newest earlier one, so only station pairs that are new get routed
       - name: Restore road distance cache
         uses: actions/cache/restore@v6
         with:
@@ -32,11 +38,55 @@ jobs:
           key: road-distances-${{ github.run_id }}
           restore-keys: road-distances-
 
+      # AWS problems never fail the scan: this step may fail, and the steps after it are
+      # skipped. The variables are unset in a fork, so the AWS steps are skipped there
+      - name: Configure AWS credentials
+        id: aws
+        if: ${{ vars.ROAD_DISTANCE_CACHE_BUCKET != '' && vars.ROAD_DISTANCE_CACHE_ROLE_ARN != '' }}
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.ROAD_DISTANCE_CACHE_ROLE_ARN }}
+          aws-region: eu-central-1
+
+      - name: Warn that AWS credentials failed
+        if: ${{ steps.aws.outcome == 'failure' }}
+        run: echo "::warning::Could not get AWS credentials; the road distance cache comes from the Actions cache."
+
+      # a missing object is a 404 (the role may list the bucket); it is the normal first run
+      - name: Download road distance cache from S3
+        if: ${{ steps.aws.outcome == 'success' }}
+        env:
+          BUCKET: ${{ vars.ROAD_DISTANCE_CACHE_BUCKET }}
+        run: |
+          if out="$(aws s3 cp "s3://${BUCKET}/road-distances.json" road-distances.s3.json 2>&1)"; then
+            mv road-distances.s3.json road-distances.json
+            echo "Road distance cache: using the S3 copy."
+          elif grep -qE '\(404\)|NoSuchKey|Key ".*" does not exist' <<<"$out"; then
+            echo "::notice::No road distance cache in S3 yet; using the Actions cache copy, if any."
+          else
+            echo "::warning::Could not download the road distance cache from S3; using the Actions cache copy, if any. ${out//$'\n'/ }"
+          fi
+
       # exits non-zero and writes nothing when more than 10% of requests fail
       - name: Scan
         run: python3 roadsurfer-rally.py --delay 5 --json-out offers.json
 
-      # runs only after a scan that exited 0: a blocked or crashed scan saves nothing
+      # the upload and the save run only after a scan that exited 0: a blocked or crashed
+      # scan stores nothing. A failed upload only warns, so the save below still runs
+      - name: Upload road distance cache to S3
+        if: ${{ steps.aws.outcome == 'success' }}
+        env:
+          BUCKET: ${{ vars.ROAD_DISTANCE_CACHE_BUCKET }}
+        run: |
+          if [ ! -f road-distances.json ]; then
+            echo "::notice::No road distance cache file to upload."
+          elif out="$(aws s3 cp road-distances.json "s3://${BUCKET}/road-distances.json" 2>&1)"; then
+            echo "Road distance cache uploaded to S3."
+          else
+            echo "::warning::Could not upload the road distance cache to S3. ${out//$'\n'/ }"
+          fi
+
       - name: Save road distance cache
         uses: actions/cache/save@v6
         with:
