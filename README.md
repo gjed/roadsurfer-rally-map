@@ -42,10 +42,13 @@ phone the filters fold behind a `Filters` button, which shows how many groups ar
 active. The legend in the corner of the map explains the line weight (more trips,
 thicker line) and the hollow pick-up and filled return markers.
 The `List` button swaps the map for a table of the trips that pass the current
-filters, one row per trip with its dates, stations, estimated distance, price when
+filters, one row per trip with its dates, stations, road distance, price when
 scanned with `--prices`, and booking link. The filters and the counts stay as they
 are when you switch. Rows are sorted by start date; click the start, end or `km`
 header to re-sort, and click a row to see that route on the map with its popup open.
+
+Distances are road distances in km. A distance that could not be routed is an
+estimate, shown with a leading `~` and a note under the map; see "Road distances".
 
 Other useful options:
 
@@ -101,6 +104,37 @@ before the metadata existed, still renders, with no timestamp in the toolbar.
 `--release TAG` (with `--map`) shows the tag in a footer linked to its GitHub
 release; without it, or with an empty tag, the page has no footer.
 
+### Road distances
+
+A scan looks up the driving distance of every pick-up and return pair once and
+stores it in each offer record as `km`, with `km_estimated` set to `false`. The
+page's distance filter, the `km` column and sort, and the popups and tooltips all use
+that value.
+
+- **Service.** The public [OSRM](https://project-osrm.org/) demo server
+  (`router.project-osrm.org`, `--routing-url` points to another OSRM server). Its
+  routes are built on [OpenStreetMap](https://www.openstreetmap.org/copyright) data,
+  credited in a footer on the page. The scanner follows the demo server's usage
+  policy: requests are sequential, one per second at most, with a User-Agent that
+  names this project. It asks for one `/table` request per pick-up station (50
+  return stations at most), about 60 requests for a first full scan. Routing is
+  separate from the roadsurfer API and does not change its rate rules.
+- **Cache.** Results are kept in `road-distances.json` (`--road-cache FILE.json`
+  changes the path, git ignores the default), keyed by the pick-up and return
+  coordinates, in that order, since a road can be one-way. Only pairs missing from it
+  are routed, so a second scan with no new station pair sends no routing request.
+  `scan.yml` keeps the file in the GitHub Actions cache between runs and saves it only
+  after a scan that succeeded.
+- **Fallback.** When routing fails, or OSRM finds no route, the pair gets the
+  straight-line distance × 1.3 rounded to 10 km, with `km_estimated` set to `true`.
+  It is not cached, so the next scan tries it again, and it never fails the scan. After
+  a 429 answer or three failed requests in a row the scanner stops routing for that
+  run. Routing runs only when the scan writes `--json-out` or `--map`, after the scan
+  check.
+- **Old data.** `--from-json` never routes. A record without `km`, such as a file
+  written before this existed, gets the same × 1.3 estimate in the page, labelled
+  as an estimate.
+
 ### Usage
 
 Output of `python3 roadsurfer-rally.py --help` on Python 3.14. Python 3.8 and 3.9
@@ -111,7 +145,8 @@ usage: roadsurfer-rally.py [-h] [--to [TO ...]] [--from [ORIGIN ...]]
                            [--start START] [--end END] [--prices]
                            [--map FILE.html] [--json-out FILE.json]
                            [--from-json FILE.json] [--delay DELAY]
-                           [--release TAG] [--list]
+                           [--release TAG] [--road-cache FILE.json]
+                           [--routing-url URL] [--list]
 
 Query roadsurfer Rally (one-way relocation) offers.
 
@@ -122,6 +157,9 @@ Unofficial API used by booking.roadsurfer.com (stdlib only):
   GET /api/{lang}/rally/search?stations=[[from,to]]&range=[start,end]&currency=EUR
                                                  models + price for an exact timeframe
 The X-Requested-Alias header must match the route alias or the API returns 404.
+
+Road distances come from an OSRM server (the public demo server by default), one
+table request per pick-up station, and are cached per station pair in a JSON file.
 
 options:
   -h, --help            show this help message and exit
@@ -138,6 +176,11 @@ options:
                         access
   --delay DELAY         seconds between requests (default 0.5)
   --release TAG         release tag to show in the --map footer, e.g. v1.2.0
+  --road-cache FILE.json
+                        cache of road distances per station pair (default
+                        road-distances.json)
+  --routing-url URL     OSRM server for road distances (default
+                        https://router.project-osrm.org)
   --list                list stations and exit
 ```
 
@@ -151,6 +194,9 @@ also keeps the scanned `offers.json` as the workflow artifact `offers`. When the
 is deployed and the published page stays at the last good scan. GitHub pauses
 scheduled workflows after 60 days without repository activity; a maintainer then
 re-enables the scan with `gh workflow enable scan.yml` (or Actions → Enable).
+
+The scan restores `road-distances.json` from the Actions cache first and saves it
+under a key per run afterwards, so only new station pairs are routed.
 
 The workflow scans without `--prices`, so the published popups show dates and the
 booking link but no models or prices. `--prices` would add one request per offer on

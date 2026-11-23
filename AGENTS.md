@@ -46,6 +46,12 @@ The API answers bursts with HTTP 429. Do not weaken these rules:
   0.5 s for local runs; `scan.yml` uses `--delay 5`.
 - A scan with more than 10% failed requests (`MAX_FAILED`) exits with status 1 and
   writes no `--json-out` or `--map` file, so a blocked scan never replaces good data.
+- Road distances come from OSRM, not roadsurfer: sequential `/table` requests at most
+  one per second, with a User-Agent naming the project, and only for station pairs
+  missing from the cache (`--road-cache`, default `road-distances.json`, git-ignored;
+  `scan.yml` keeps it in the Actions cache). A routing failure never counts toward
+  `MAX_FAILED`: the pair falls back to the estimate and is not cached. `--from-json`
+  never routes.
 - A full scan is about 850 requests. Do not run one to test a change: use
   `--from-json` with the fixture, or a narrow `--from`/`--to`/`--start`/`--end`
   window.
@@ -61,7 +67,10 @@ Scanning needs the network; rendering does not.
 The JSON file is an object whose `offers` key holds the list of offer records, the
 same records the page embeds. Each record has the timeframe, the booking link and
 the pick-up and return stations with their coordinates; see
-`tests/fixtures/offers.json` for a real example. Other top-level keys may be added
+`tests/fixtures/offers.json` for a real example. A scan adds `km` (road distance) and
+`km_estimated` (`true` for the straight-line × 1.3 fallback) to every record; records
+without them, like the fixture's, render with the fallback labelled as an estimate.
+Other top-level keys may be added
 (for example scan metadata), so code that reads the file must look up `offers` and
 ignore keys it does not know.
 
@@ -76,7 +85,7 @@ make scan     # full scan into offers.json; slow, hits the live API
 ```
 
 The page loads Leaflet from `vendor/leaflet/` by relative path, so write and serve
-`index.html` from the repo root. `offers.json` and `index.html` are git-ignored.
+`index.html` from the repo root. `offers.json`, `index.html` and `road-distances.json` are git-ignored.
 The PR check (`pr-check.yml`) runs the same lint and tests, renders the fixture and
 checks the generated page; run `make lint test map` before pushing.
 
