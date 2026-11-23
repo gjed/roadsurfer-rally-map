@@ -794,6 +794,10 @@ $('map').addEventListener('keydown', e => {
   if (chainMode) clearPicked();
   if (btn) { setView(true); btn.focus(); } else $('map').focus();
 });
+// Escape also clears the chain after its popup was closed with the x button
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && chainMode && picked.getLayers().length && !document.body.classList.contains('list')) clearPicked();
+});
 // the chain opened from the list stays until Escape, a click on the map or another change
 map.on('click', () => { if (chainMode) clearPicked(); });
 render();
