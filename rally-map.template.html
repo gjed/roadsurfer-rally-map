@@ -43,16 +43,17 @@
   body.list #map { display: none; }
   body.list #list { display: block; }
   #list table, .pop table { border-collapse: collapse; }
-  #list table { width: auto; min-width: 60%; }
+  #list table { width: auto; min-width: min(100%, 720px); }
   .pop table { width: 100%; }
   #list th, #list td { padding: 5px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid #e4e4e4; }
   #list th, .pop th { position: sticky; top: 0; background: #fafafa; }
-  #list th { box-shadow: inset 0 -1px #ccc; }
+  #list th, .pop th { box-shadow: inset 0 -1px #ccc; }
+  .short { display: none; }
   #list th button { font: inherit; font-weight: 600; color: inherit; border: 0; padding: 0; background: none; cursor: pointer; }
   #list th.km, #list td.km { text-align: right; }
   #list tbody tr:hover, #list tbody tr:focus-within { background: #eef5ff; }
-  #list button.show { font: inherit; color: inherit; padding: 1px 6px; border: 1px solid #767676; border-radius: 4px; background: #fff; cursor: pointer; }
-  #list button.show:hover { background: #e8e8e8; }
+  #list button.go, #list button.reset-all { font: inherit; font-size: 12px; color: inherit; padding: 2px 8px; min-height: 24px; border: 1px solid #767676; border-radius: 4px; background: #fff; cursor: pointer; }
+  #list button.go:hover, #list button.reset-all:hover { background: #e8e8e8; }
   #list td a, .pop a { color: var(--link); font-weight: 600; }
   .pop { font-size: 13px; }
   .pop h2 { margin: 0 0 2px; font-size: 14px; }
@@ -85,23 +86,42 @@
     #from, #to { flex: 1; min-width: 0; }
     .f label { flex-basis: 100%; }
     #reset { align-self: flex-start; }
-    #list table { width: 100%; font-size: 12px; }
-    .wide { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-    #list th, #list td { padding: 4px 2px; }
-    #list button.show { padding: 1px 4px; font-size: 11px; }
-    #list td.st { white-space: normal; }
+    #list table { font-size: 12px; }
+    .brand { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .iso { display: none; }
+    .short { display: inline; }
+    #list table, #list tbody { display: block; width: auto; min-width: 0; }
+    #list thead { display: block; position: sticky; top: 0; z-index: 1; background: #fafafa; box-shadow: inset 0 -1px #ccc; }
+    #list thead tr { display: flex; gap: 12px; padding: 4px 10px; }
+    #list thead th:not([aria-sort]) { display: none; }
+    #list th { position: static; padding: 0; border: 0; box-shadow: none; }
+    #list tbody tr { display: grid; grid-template-columns: auto auto 1fr auto auto; grid-template-areas: "s e k m b" "f f f m b" "t t t m b"; column-gap: 8px; padding: 6px 10px; border-bottom: 1px solid #e4e4e4; }
+    #list table.hp tbody tr { grid-template-columns: auto auto 1fr auto auto auto; grid-template-areas: "s e k p m b" "f f f f m b" "t t t t m b"; }
+    #list tbody td { padding: 0; border: 0; white-space: normal; }
+    #list td.ds { grid-area: s; }
+    #list td.de { grid-area: e; }
+    #list td.km { grid-area: k; }
+    #list td.pr { grid-area: p; }
+    #list td.from { grid-area: f; }
+    #list td.to { grid-area: t; }
+    #list td.m { grid-area: m; align-self: center; }
+    #list td.bk { grid-area: b; align-self: center; }
+    #list td.de::before { content: "\2013  "; content: "\2013  " / ""; }
+    #list td.to::before { content: "\2192  "; content: "\2192  " / ""; color: var(--muted); }
+    #list td.km::after { content: " km"; }
+    #list tbody tr.none { display: block; padding: 10px; }
   }
   /* grow the tap area, not the rows */
   @media (pointer: coarse) {
-    #list td a, .pop td a { display: inline-block; padding: 6px 0; margin: -6px 0; }
-    #list button.show { padding: 6px 4px; margin: -6px 0; }
+    #list td a, .pop td a { display: inline-block; padding: 6px 8px; margin: -6px -8px; }
+    #list button.go { min-height: 28px; }
   }
 </style>
 </head>
 <body>
 <header id="bar">
   <div id="top">
-    <h1><span class="wide">roadsurfer </span>Rally map</h1>
+    <h1><span class="brand">roadsurfer </span>Rally map</h1>
     <span id="updated"></span>
     <span id="count" aria-live="polite" aria-atomic="true"></span>
     <button id="filters" aria-expanded="false" aria-controls="filt">Filters</button>
@@ -193,6 +213,10 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
 const day = s => Date.parse(s + 'T00:00:00Z');
 const iso = ms => new Date(ms).toISOString().slice(0, 10);
+const short = s => new Date(day(s)).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+const place = s => `${s.name}, ${s.cc}`;
+// the arrow is read as "rightwards arrow" otherwise
+const ARROW = '<span aria-hidden="true">\u2192</span><span class="sr"> to </span>';
 const min = DATA.map(r => r.start).sort()[0], max = DATA.map(r => r.end).sort().pop();
 if (min) { $('from').value = min; $('to').value = max; }
 const kms = DATA.map(r => dist(r).km);
@@ -284,16 +308,17 @@ function renderList() {
     return (a < b ? -1 : a > b ? 1 : 0) * sortDir || x.start.localeCompare(y.start) || x.from.name.localeCompare(y.from.name);
   });
   const th = (k, t) => `<th${k === 'km' ? ' class="km"' : ''} aria-sort="${k === sortKey ? (sortDir > 0 ? 'ascending' : 'descending') : 'none'}"><button data-sort="${k}">${t}${k === sortKey ? (sortDir > 0 ? ' \u25b2' : ' \u25bc') : ''}</button></th>`;
-  // narrow screens show MM-DD; the year stays in the title and for screen readers
-  const d = s => `<td class="d" title="${esc(s)}"><span class="wide">${esc(s.slice(0, 5))}</span>${esc(s.slice(5))}</td>`;
-  const rows = shown.map(r => `<tr>${d(r.start)}${d(r.end)}` +
-    `<td class="st">${esc(r.from.name)} (${esc(r.from.cc)})</td><td class="st">${esc(r.to.name)} (${esc(r.to.cc)})</td>` +
-    `<td class="km">${kmCell(r)}</td>${hasPrice ? `<td>${r.price ? esc(r.price) : ''}</td>` : ''}` +
-    `<td><a href="${esc(r.link)}" target="_blank" rel="noopener">book</a></td>` +
-    `<td><button class="show" data-key="${esc(routeKey(r))}" aria-label="Show ${esc(r.from.name)} to ${esc(r.to.name)} on map">map</button></td></tr>`).join('');
-  $('list').innerHTML = `<table><thead><tr>${th('start', 'Start')}${th('end', 'End')}<th>From</th><th>To</th>${th('km', 'km')}` +
-    `${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Booking</span></th><th><span class="sr">Map</span></th></tr></thead><tbody>` +
-    (rows || `<tr><td colspan="${hasPrice ? 8 : 7}">No trips match the filters.</td></tr>`) + '</tbody></table>';
+  // phones show the short form; the other is not rendered there, so assistive technology reads one
+  const d = (cls, s) => `<td class="${cls}" title="${esc(s)}"><span class="iso">${esc(s)}</span><span class="short">${esc(short(s))}</span></td>`;
+  const rows = shown.map(r => `<tr>${d('ds', r.start)}${d('de', r.end)}` +
+    `<td class="from">${esc(place(r.from))}</td><td class="to">${esc(place(r.to))}</td>` +
+    `<td class="km">${kmCell(r)}</td>${hasPrice ? `<td class="pr">${r.price ? esc(r.price) : ''}</td>` : ''}` +
+    `<td class="m"><button class="go" data-key="${esc(routeKey(r))}" aria-label="Show ${esc(place(r.from))} to ${esc(place(r.to))} on the map">Map</button></td>` +
+    `<td class="bk"><a href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="Book ${esc(place(r.from))} to ${esc(place(r.to))}, ${esc(short(r.start))}">Book</a></td></tr>`).join('');
+  const none = DATA.length ? 'No trips match the filters. <button class="reset-all">Reset filters</button>' : 'No rally trips are on offer right now.';
+  $('list').innerHTML = `<table${hasPrice ? ' class="hp"' : ''}><thead><tr>${th('start', 'Start')}${th('end', 'End')}<th>From</th><th>To</th>${th('km', 'km')}` +
+    `${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Map</span></th><th><span class="sr">Booking</span></th></tr></thead><tbody>` +
+    (rows || `<tr class="none"><td colspan="${hasPrice ? 8 : 7}">${none}</td></tr>`) + '</tbody></table>';
 }
 
 function setView(list) {
@@ -334,9 +359,9 @@ function render() {
     g.trips.sort((x, y) => x.start.localeCompare(y.start));
     const a = [g.from.latitude, g.from.longitude], b = [g.to.latitude, g.to.longitude];
     const t = g.trips, N = t.length, d = dist(t[0]);
-    const head = `${esc(g.from.name)} (${esc(g.from.cc)}) \u2192 ${esc(g.to.name)} (${esc(g.to.cc)})`;
+    const head = `${esc(place(g.from))} ${ARROW} ${esc(place(g.to))}`;
     const rows = t.map(r => `<tr><td>${esc(r.start)}</td><td>${esc(r.end)}</td>${hasPrice ? `<td>${r.price ? esc(r.price) : ''}</td>` : ''}` +
-      `<td><a href="${esc(r.link)}" target="_blank" rel="noopener">book</a></td></tr>`).join('');
+      `<td><a href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="Book ${esc(short(r.start))}">Book</a></td></tr>`).join('');
     const pop = `<div class="pop"><h2>${head}</h2><p>${d.est ? `~${d.km} km (estimated)` : `${d.km} km by road`} \u00b7 ${N} trip${N > 1 ? 's' : ''}</p>` +
       `<div class="trips"><table><thead><tr><th>Start</th><th>End</th>${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Booking</span></th></tr></thead>` +
       `<tbody>${rows}</tbody></table></div></div>`;
@@ -423,6 +448,7 @@ $('list').onclick = e => {
     $('list').querySelector(`[data-sort="${sortKey}"]`).focus();  // the header was redrawn
     return;
   }
+  if (e.target.closest('button.reset-all')) return $('reset').click();
   const m = e.target.closest('button[data-key]');
   if (m) showRoute(m, e.detail === 0);  // detail 0: activated with the keyboard
 };
