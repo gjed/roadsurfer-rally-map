@@ -8,11 +8,15 @@ Unofficial API used by booking.roadsurfer.com (stdlib only):
   GET /api/{lang}/rally/search?stations=[[from,to]]&range=[start,end]&currency=EUR
                                                  models + price for an exact timeframe
 The X-Requested-Alias header must match the route alias or the API returns 404.
+
+Road distances come from an OSRM server (the public demo server by default), one
+table request per pick-up station, and are cached per station pair in a JSON file.
 """
 
 import argparse
 import http.client
 import json
+import math
 import random
 import sys
 import time
@@ -26,6 +30,15 @@ DELAY = 0.5  # seconds between requests (sequential, ~2 req/s); see --delay
 JITTER = 0.2  # up to this share of DELAY is added at random to each wait
 REQUESTS = FAILED = RATE_LIMITED = 0  # get() calls, calls given up, 429 answers
 MAX_FAILED = 0.10  # a scan with a larger failed share is blocked: no files written
+
+# Road distances: OSRM, a different service from roadsurfer. Its demo server allows
+# at most 1 request per second and asks for a descriptive User-Agent.
+ROUTING_URL = "https://router.project-osrm.org"
+ROUTING_DELAY = 1.0  # seconds before each routing request (sequential)
+ROUTING_CHUNK = 50  # destinations per table request (the demo server allows 99)
+ROUTING_STOP = 3  # consecutive failed routing requests that end routing for the run
+ROAD_CACHE = "road-distances.json"
+USER_AGENT = "roadsurfer-rally-map (+https://github.com/gjed/roadsurfer-rally-map)"
 
 
 def get(path, alias, params=None):
@@ -168,6 +181,130 @@ def run(args, stations):
     return records
 
 
+def estimate_km(a, b):
+    """Great-circle distance x 1.3 in km, to 10 km: the fallback for a pair not routed."""
+    r = math.pi / 180
+    d_lat, d_lon = (
+        (b["latitude"] - a["latitude"]) * r,
+        (b["longitude"] - a["longitude"]) * r,
+    )
+    h = (
+        math.sin(d_lat / 2) ** 2
+        + math.cos(a["latitude"] * r)
+        * math.cos(b["latitude"] * r)
+        * math.sin(d_lon / 2) ** 2
+    )
+    return int(12742 * math.asin(math.sqrt(h)) * 1.3 / 10 + 0.5) * 10
+
+
+def point_key(p):
+    return f"{p['latitude']:.5f},{p['longitude']:.5f}"
+
+
+def pair_key(a, b):
+    """Cache key: the coordinates the router uses, pick-up first (roads are one-way)."""
+    return f"{point_key(a)}>{point_key(b)}"
+
+
+def load_road_cache(path):
+    """Cached km per pair key; a missing or unreadable file is an empty cache."""
+    try:
+        pairs = json.loads(Path(path).read_text(encoding="utf-8"))["pairs"]
+        return {
+            k: v
+            for k, v in pairs.items()
+            if isinstance(v, (int, float)) and not isinstance(v, bool) and v >= 0
+        }
+    except FileNotFoundError:
+        return {}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as e:
+        print(f"warning: ignoring road distance cache {path}: {e!r}", file=sys.stderr)
+        return {}
+
+
+def road_table(base, origin, dests):
+    """Driving metres from origin to each of dests (None where no route): one OSRM request."""
+    coords = ";".join(f"{p['longitude']},{p['latitude']}" for p in [origin, *dests])
+    url = (
+        f"{base.rstrip('/')}/table/v1/driving/{coords}?sources=0"
+        f"&destinations={';'.join(str(i) for i in range(1, len(dests) + 1))}"
+        "&annotations=distance"
+    )
+    req = urllib.request.Request(
+        url, headers={"Accept": "application/json", "User-Agent": USER_AGENT}
+    )
+    with urllib.request.urlopen(req, timeout=30) as r:
+        data = json.load(r)
+    row = data["distances"][0]
+    if data.get("code") != "Ok" or len(row) != len(dests):
+        raise ValueError(f"unexpected routing answer: {data.get('code')}")
+    return row
+
+
+def add_road_km(records, cache_path, base):
+    """Set km and km_estimated on every record from the cache, routing missing pairs.
+
+    A pair that cannot be routed gets the estimate, marked km_estimated, and is not
+    cached, so the next run tries it again. Routing never raises: it stops for the run
+    after a 429 or ROUTING_STOP failed requests in a row.
+    """
+    cache = load_road_cache(cache_path)
+    known = len(cache)
+    todo = {}  # pick-up point key -> (point, {pair key: return point})
+    for r in records:
+        key = pair_key(r["from"], r["to"])
+        if key not in cache:
+            todo.setdefault(point_key(r["from"]), (r["from"], {}))[1][key] = r["to"]
+    pairs = sum(len(d) for _, d in todo.values())
+    requests = failed = streak = 0
+    stopped = False
+    for origin, dests in todo.values():
+        items = list(dests.items())
+        for i in range(0, len(items), ROUTING_CHUNK):
+            if stopped:
+                break
+            chunk = items[i : i + ROUTING_CHUNK]
+            time.sleep(ROUTING_DELAY)
+            requests += 1
+            try:
+                row = road_table(base, origin, [d for _, d in chunk])
+            except (
+                OSError,
+                ValueError,
+                KeyError,
+                TypeError,
+                http.client.HTTPException,
+            ) as e:
+                failed += 1
+                streak += 1
+                stopped = streak >= ROUTING_STOP or getattr(e, "code", None) == 429
+                print(f"warning: routing request failed: {e!r}", file=sys.stderr)
+                continue
+            streak = 0
+            for (key, _), metres in zip(chunk, row):
+                if isinstance(metres, (int, float)) and not isinstance(metres, bool):
+                    cache[key] = round(metres / 1000)
+    estimated = 0
+    for r in records:
+        km = cache.get(pair_key(r["from"], r["to"]))
+        r["km"] = estimate_km(r["from"], r["to"]) if km is None else km
+        r["km_estimated"] = km is None
+        estimated += km is None
+    if len(cache) > known:
+        try:
+            Path(cache_path).write_text(
+                json.dumps({"pairs": cache}, indent=1, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+        except OSError as e:
+            print(f"warning: could not write {cache_path}: {e!r}", file=sys.stderr)
+    print(
+        f"road distances: {len({pair_key(r['from'], r['to']) for r in records})} pairs, "
+        f"{pairs} not cached, {requests} routing requests, {failed} failed, "
+        f"{estimated} offers estimated"
+    )
+
+
 def embed(value):
     """JSON for an inline <script>: `</` is escaped so it can't close the tag."""
     return json.dumps(value, ensure_ascii=False).replace("</", "<\\/")
@@ -241,6 +378,18 @@ def main():
         metavar="TAG",
         help="release tag to show in the --map footer, e.g. v1.2.0",
     )
+    p.add_argument(
+        "--road-cache",
+        metavar="FILE.json",
+        default=ROAD_CACHE,
+        help="cache of road distances per station pair (default %(default)s)",
+    )
+    p.add_argument(
+        "--routing-url",
+        metavar="URL",
+        default=ROUTING_URL,
+        help="OSRM server for road distances (default %(default)s)",
+    )
     p.add_argument("--list", action="store_true", help="list stations and exit")
     args = p.parse_args()
     DELAY = args.delay
@@ -301,6 +450,8 @@ def main():
             f"Scan blocked: {FAILED} of {REQUESTS} requests failed "
             f"(more than {MAX_FAILED:.0%}); not writing any file"
         )
+    if args.json_out or args.map:
+        add_road_km(records, args.road_cache, args.routing_url)
     if args.json_out:
         out = json.dumps(
             {"scan": scan, "offers": records}, ensure_ascii=False, indent=1
