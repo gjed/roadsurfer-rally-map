@@ -134,8 +134,9 @@ that value.
   changes the path, git ignores the default), keyed by the pick-up and return
   coordinates, in that order, since a road can be one-way. Only pairs missing from it
   are routed, so a second scan with no new station pair sends no routing request.
-  `scan.yml` keeps the file in the GitHub Actions cache between runs and saves it only
-  after a scan that succeeded.
+  `scan.yml` keeps the file in an S3 bucket and in the GitHub Actions cache between
+  runs and stores it only after a scan that succeeded; see "Road distance cache in
+  S3" below.
 - **Fallback.** When routing fails, or OSRM finds no route, the pair gets the
   straight-line distance × 1.3 rounded to 10 km, with `km_estimated` set to `true`.
   It is not cached, so the next scan tries it again, and it never fails the scan. After
@@ -241,8 +242,45 @@ is deployed and the published page stays at the last good scan. GitHub pauses
 scheduled workflows after 60 days without repository activity; a maintainer then
 re-enables the scan with `gh workflow enable scan.yml` (or Actions → Enable).
 
-The scan restores `road-distances.json` from the Actions cache first and saves it
-under a key per run afterwards, so only new station pairs are routed.
+The scan keeps `road-distances.json` between runs, so only new station pairs are
+routed (see below).
+
+### Road distance cache in S3
+
+The durable copy of `road-distances.json` is the object `road-distances.json` in an S3
+bucket (`eu-central-1`, versioned, noncurrent versions expire after 30 days). The bucket
+and the role the workflow assumes are managed in the maintainer's AWS account, not in
+this repository. The build job of `scan.yml` signs in with GitHub OIDC (no stored
+keys), downloads the object before the scan and uploads it after a scan that
+succeeded. The role trusts only `main`, so the S3 steps work only on scheduled and
+manually dispatched runs from `main`. `release.yml` never reads the bucket.
+
+The workflow takes two Actions variables (Settings → Secrets and variables → Actions
+→ Variables): `ROAD_DISTANCE_CACHE_BUCKET`, the bucket name, and
+`ROAD_DISTANCE_CACHE_ROLE_ARN`, the ARN of the role. When either is unset, as in a
+fork, the S3 steps are skipped.
+
+The scan uses the first copy it finds, in this order:
+
+1. the S3 object;
+1. the GitHub Actions cache, restored under the key `road-distances-<run id>` with
+   the prefix `road-distances-`; the workflow restores it first and the S3 download
+   overwrites it, so the S3 copy wins when there is one;
+1. none: the scanner routes every station pair it needs, at one request per second.
+
+A problem with AWS (credentials, network, access denied, a failed upload) logs a
+warning and never fails the scan; a missing object on the first run logs a notice. The
+Actions cache is saved as before, so it stays the fallback.
+
+To roll back a bad write, copy an older version of the object back (versions are kept
+for 30 days after they are replaced):
+
+```sh
+aws s3api list-object-versions --bucket "$BUCKET" --prefix road-distances.json
+aws s3api get-object --bucket "$BUCKET" --key road-distances.json \
+  --version-id "$VERSION_ID" road-distances.json
+aws s3 cp road-distances.json "s3://$BUCKET/road-distances.json"
+```
 
 The workflow scans without `--prices`, so the published popups show dates and the
 booking link but no models or prices. `--prices` would add one request per offer on
