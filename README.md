@@ -153,7 +153,7 @@ another, each as its own trip. The `Chains` button in the page toolbar finds tho
 sequences in the offers already on the page, with no request and no scanner change, and
 shows them on the map and in the list.
 
-- **Settings.** Legs: up to 2 (default) or up to 3. Rest days: none (default), up to 1
+- **Settings.** Legs: 2 (default) or 2 or 3. Rest days: none (default), up to 1
   or up to 2; leg N+1 starts on the day leg N ends or that many days later. Connection:
   the same station (default), or a station within 50 or 100 km of where leg N ended. The
   connection is a hop you make yourself, and its distance is the straight line × 1.3, so
@@ -165,15 +165,16 @@ shows them on the map and in the list.
   Sundays and holidays.
 - **List and map.** One row per sequence of routes, with a `Book` link per leg, the rest
   days and the connection distance of each hand-over, and the total days and the km
-  driven (the legs, not the connections). The list sorts by start, end, days and km
+  driven (the legs, not the connections), with the rest days under the total. The list sorts by start, end, days and km
   driven, most days first by default. The map draws the legs solid and the connections
-  dashed; `Map` on a row highlights that chain.
+  dotted; `Map` on a row highlights that chain, numbers its legs and opens a popup with a
+  `Book` link per leg.
 - **Filters.** The start date and the week slider limit the first pick-up day, the
   distance filter limits every leg, the pick-up filters apply to where the chain starts
   and the return filters to where it ends.
 
 Limits: the list and the map show the first 200 chains of the current sort order, and
-the toolbar counts all of them. A chain shows only the best dates for its sequence of
+the toolbar counts all of them (`Showing 200 of N chains`). A chain shows only the best dates for its sequence of
 routes; narrow the dates to see others. The dates are inferred from the offers, so the
 booking page can still refuse a leg, for example on a day a station is closed, and the
 page proposes chains from the offers as of the last scan; the booking pages have the

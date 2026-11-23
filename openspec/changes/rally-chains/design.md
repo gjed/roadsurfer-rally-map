@@ -67,6 +67,10 @@ the data file.
   limits every leg, as it limits a trip. The pick-up filters apply to where the
   chain starts and the return filters to where it ends; stations in between are not
   filtered. The dropdown options count chains.
+- **Connections are dotted, on a white casing.** A dashed line one pixel thick vanishes
+  among 200 legs at overview zoom, and dotted reads as "not driven". The chain opened
+  from the list gets numbered badges on its legs, its own stations drawn again over the
+  dimmed map, and a popup above it, with the chain fitted below the popup.
 - **The list and the map show the same first 200 chains**, in the sort order, and the
   toolbar counts all of them. The real data has thousands of chains and an unbounded
   table is slow on a phone, while a map of all of them is a solid blue blob. Sorting

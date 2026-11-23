@@ -7,13 +7,14 @@
 The map page SHALL have a `Chains` toolbar button, with `aria-pressed`, that switches
 between trips and chains. A chain is a sequence of 2 or 3 rally legs, each booked as its
 own trip, found from the offers on the page without any request. Switching modes SHALL
-keep every filter selection and the view (map or list), and the toolbar count SHALL
-read the number of chains and of routes drawn.
+keep every filter selection and the view (map or list). The toolbar count SHALL read
+`N chains`, or `Showing 200 of N chains` when there are more than 200. The `Chains`
+button SHALL have a title that says what chains are.
 
 #### Scenario: Entering chain mode
 
 - **WHEN** the user presses `Chains` on a page with offers
-- **THEN** the button is pressed and the toolbar reads `N chains · M routes`
+- **THEN** the button is pressed and the toolbar reads `N chains`
 
 #### Scenario: Back to trips
 
@@ -23,23 +24,24 @@ read the number of chains and of routes drawn.
 #### Scenario: No chain exists
 
 - **WHEN** no two offers can be joined under the current settings
-- **THEN** the page shows the empty state `No chains match` with a reset button
+- **THEN** the page shows the empty state `No chains match` with a reset button, and
+  it suggests only the settings that are not already at their maximum
 
 ### Requirement: Chain settings
 
-In chain mode the toolbar SHALL show three more controls: legs (up to 2, up to 3;
-default 2), rest days (none, up to 1, up to 2; default none) and connection (same
+In chain mode the toolbar SHALL show three more controls: legs (`2`, `2 or 3`;
+default `2`), rest days (none, up to 1, up to 2; default none) and connection (same
 station, within 50 km, within 100 km; default same station). They SHALL be hidden in
 trip mode.
 
 #### Scenario: Defaults
 
 - **WHEN** the user enters chain mode
-- **THEN** the controls read `up to 2`, `none` and `same station`
+- **THEN** the controls read `2`, `none` and `same station`
 
 #### Scenario: Three legs
 
-- **WHEN** the user selects `up to 3`
+- **WHEN** the user selects `2 or 3`
 - **THEN** the chains of 3 legs are added to the chains of 2 legs
 
 ### Requirement: Chain legs
@@ -80,8 +82,7 @@ SHALL be the days from the first pick-up to the last return.
 ### Requirement: Chain rest days
 
 Leg N+1 SHALL start on the day leg N ends or up to the selected number of rest days
-later, never earlier. Every hand-over SHALL show its rest days as `same day`,
-`1 rest day` or `2 rest days`.
+later, never earlier. A hand-over at the same station SHALL read `Same-day hand-over in <station>` or `N rest days in <station>`.
 
 #### Scenario: No rest days
 
@@ -99,7 +100,8 @@ later, never earlier. Every hand-over SHALL show its rest days as `same day`,
 Leg N+1 SHALL start at the station where leg N ended or, with a connection selected, at
 another station within that many km of it, measured as the straight line × 1.3 rounded
 to 10 km and shown with `~`. A station SHALL NOT be a pick-up twice in one chain. A
-hand-over SHALL read `same station` or its distance and both stations.
+hand-over to another station SHALL read `Same day` or `N rest days`, then its distance
+and both stations.
 
 #### Scenario: Strictest settings
 
@@ -115,14 +117,15 @@ hand-over SHALL read `same station` or its distance and both stations.
 #### Scenario: Connection shown
 
 - **WHEN** a chain's second leg starts 40 km from where the first ended
-- **THEN** its hand-over reads like `same day · ~40 km connection, A to B`
+- **THEN** its hand-over reads like `Same day · ~40 km from A to B`
 
 ### Requirement: Chain filters
 
 In chain mode the start date filter and the week slider SHALL limit the first pick-up
 day, the distance filter SHALL limit the distance of every leg, the pick-up filters SHALL
-apply to where the chain starts and the return filters to where it ends. The dropdown
-options SHALL count chains. The stations in between SHALL NOT be filtered.
+apply to where the chain starts and the return filters to where it ends, and their
+groups SHALL be labelled `Distance per leg`, `Chain starts at` and `Chain ends at`. The
+dropdown options SHALL count chains. The stations in between SHALL NOT be filtered.
 
 #### Scenario: Pick-up station
 
@@ -136,21 +139,24 @@ options SHALL count chains. The stations in between SHALL NOT be filtered.
 
 ### Requirement: Chain list rows
 
-In chain mode a row SHALL show the first pick-up date, the last return date, the total
-days, the km driven (the legs only, with `~` when any is estimated) and a `Map` button
-named `Show chain <legs> on the map`. Every value from the API SHALL be escaped before
+In chain mode a row SHALL show the first pick-up date and the last return date as
+`Mon 14 Dec` with the ISO date in the cell's `title`, the total days with the rest days
+under them when there are any, the km driven (the legs only, with `~` when any is
+estimated) and a `Map` button named `Show chain <legs> on the map`. The table SHALL have
+a caption that says each leg is booked on its own. Every value from the API SHALL be escaped before
 it is inserted as HTML.
 
 #### Scenario: Row
 
 - **WHEN** a chain starts on 14 December and ends on 28 December
-- **THEN** its row shows `2026-12-14`, `2026-12-28`, `14` days and its km driven
+- **THEN** its row shows `Mon 14 Dec`, `Mon 28 Dec`, `14` days and its km driven
 
 ### Requirement: Chain legs in the list
 
-Each chain row SHALL have one entry per leg with its stations as `Name, CC`, dates,
-nights, distance and a `Book` link that opens in a new tab, named after the leg, and the
-hand-over before every leg after the first.
+Each chain row SHALL have one numbered entry per leg with its stations as `Name, CC`,
+dates, nights, distance and a `Book` link that opens in a new tab, named after the leg,
+and the hand-over before every leg after the first. The popup of a chain SHALL use the
+same entries.
 
 #### Scenario: Booking each leg
 
@@ -160,13 +166,13 @@ hand-over before every leg after the first.
 ### Requirement: Chain list size
 
 The chain list SHALL show the first 200 chains in the sort order, and the toolbar SHALL
-show how many chains there are in all.
+show how many chains there are in all, as `Showing 200 of 23,267 chains`.
 
 #### Scenario: More than 200 chains
 
 - **WHEN** there are 2075 chains
-- **THEN** the toolbar reads `200 of 2075 chains`, the list has 200 rows and a note
-  says how many are shown
+- **THEN** the toolbar reads `Showing 200 of 2,075 chains`, the list has 200 rows and a
+  note says how many are shown
 
 ### Requirement: Chain list sorting
 
@@ -185,23 +191,24 @@ list shows.
 
 In chain mode the map SHALL draw each leg of the listed chains once, as a solid arc
 with the weight and opacity of the number of chains that use it, and each connection to
-another station as a dashed straight line in a second colour. Station markers SHALL show
+another station as a dotted straight line in a second colour on a white casing. Station
+markers SHALL show
 how many chains start and end there, and clicking one that has chains starting there
 SHALL toggle the pick-up filter.
 
-#### Scenario: Connections drawn dashed
+#### Scenario: Connections drawn dotted
 
 - **WHEN** chain mode lists a chain with a 40 km connection
 - **THEN** its two legs are solid arcs and the connection between the two stations is a
-  dashed line
+  dotted line
 
 ### Requirement: Chain selection
 
 The `Map` button of a chain SHALL draw that chain over the others, which are dimmed, with
-its legs in the highlight colour and its connections dashed, fit the map to it and open
-a popup on its first leg with a booking link per leg and the hand-overs. With the
-keyboard, focus SHALL move to the popup's first booking link, and Escape SHALL close the
-popup and return to the list.
+its legs in the highlight colour and numbered, its stations and its connections, and open
+a popup above it that lists the legs with a booking link each, the hand-overs, the rest
+days and the km driven, with the whole chain fitted below the popup. With the keyboard,
+focus SHALL move to the popup's first booking link.
 
 #### Scenario: Chain from the list
 
@@ -214,12 +221,23 @@ popup and return to the list.
 - **WHEN** a keyboard user activates the `Map` button of a chain
 - **THEN** focus is on the first `Book` link of its popup
 
+### Requirement: Chain selection lifetime
+
+The chain opened from the list SHALL stay drawn until Escape, a click on the map or a
+change of the filters or settings. Escape SHALL also close its popup and return to the
+list.
+
+#### Scenario: Closing the popup
+
+- **WHEN** the user closes the popup with its close button
+- **THEN** the chain stays highlighted until the user presses Escape or clicks the map
+
 ### Requirement: Chain legend
 
-In chain mode the legend SHALL read `leg of 1 chain`, `5 or more chains`, `connection between legs`, `selected chain` and `station: click for chains starting here`, and it
+In chain mode the legend SHALL read `leg of 1 chain`, `10 or more chains`, `connection to the next pick-up (train, bus)`, `selected chain` and `station: click for chains starting here`, and it
 SHALL keep the estimate entry when a connection is allowed or a distance is estimated.
 
 #### Scenario: Legend in chain mode
 
 - **WHEN** the user opens the legend in chain mode
-- **THEN** it has an entry with a dashed line labelled `connection between legs`
+- **THEN** it has an entry with a dotted line labelled `connection to the next pick-up (train, bus)`

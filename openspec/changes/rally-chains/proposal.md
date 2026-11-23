@@ -18,7 +18,7 @@ offers is not realistic
 - An offer is a window, not a fixed trip: the page books each leg for the dates that
   make the legs line up inside its window, and builds the booking link for those
   dates.
-- The map draws the legs solid and the connections dashed. The list has one row per
+- The map draws the legs solid and the connections dotted. The list has one row per
   chain with a booking link per leg and can be sorted by start, end, total days and
   km driven. The existing date, distance, pick-up and return filters apply.
 - README describes how chains work and their limits.
