@@ -49,12 +49,31 @@ The API answers bursts with HTTP 429. Do not weaken these rules:
 - Road distances come from OSRM, not roadsurfer: sequential `/table` requests at most
   one per second, with a User-Agent naming the project, and only for station pairs
   missing from the cache (`--road-cache`, default `road-distances.json`, git-ignored;
-  `scan.yml` keeps it in the Actions cache). A routing failure never counts toward
+  `scan.yml` keeps it in an S3 bucket, with the Actions cache as the fallback; see the
+  next section). A routing failure never counts toward
   `MAX_FAILED`: the pair falls back to the estimate and is not cached. `--from-json`
   never routes.
 - A full scan is about 850 requests. Do not run one to test a change: use
   `--from-json` with the fixture, or a narrow `--from`/`--to`/`--start`/`--end`
   window.
+
+## Road distance cache in S3
+
+`scan.yml`'s build job restores `road-distances.json` from the Actions cache, then
+downloads the S3 object `road-distances.json` over it, so the S3 copy wins when it
+exists. After a scan that exited 0 it uploads the file and saves the Actions cache.
+Authentication is GitHub OIDC (`aws-actions/configure-aws-credentials`, pinned to a
+SHA) with the role in the Actions variable `ROAD_DISTANCE_CACHE_ROLE_ARN`; the bucket
+is `ROAD_DISTANCE_CACHE_BUCKET`. The role trusts only `ref:refs/heads/main`, so
+the workflow cannot reach AWS from a branch or a PR, and the bucket and role live in
+`gjed/homelab-aws`. Keep these rules:
+
+- The AWS steps stay in the build job. `id-token: write` is granted there only; the
+  deploy job uses the `github-pages` environment, which changes the OIDC `sub` claim.
+- An AWS failure only warns; it never fails or blocks the scan. Unset variables skip
+  the AWS steps.
+- A blocked or crashed scan uploads nothing.
+- `release.yml` never reads the bucket.
 
 ## Scan and render
 
