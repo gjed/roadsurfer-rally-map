@@ -50,7 +50,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          # empty before the first release: the page then has no release footer
+          # empty before the first release: the page then shows no release tag
           TAG="$(gh release list --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // empty')" || { echo "::warning::Could not read the latest release; rendering without a release tag."; TAG=""; }
           echo "Release tag: ${TAG:-none}"
           python3 roadsurfer-rally.py --from-json offers.json --map index.html --release "$TAG"

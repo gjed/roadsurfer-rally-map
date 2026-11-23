@@ -376,7 +376,7 @@ def main():
     p.add_argument(
         "--release",
         metavar="TAG",
-        help="release tag to show in the --map footer, e.g. v1.2.0",
+        help="release tag to show in the --map attribution, e.g. v1.2.0",
     )
     p.add_argument(
         "--road-cache",
