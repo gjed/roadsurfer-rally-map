@@ -18,7 +18,7 @@ job.
 - **THEN** the later run restores the earlier run's cache and routes only the station
   pairs that are not in it
 
-#### Scenario: Blocked scan
+#### Scenario: Failed scan saves no cache
 
 - **WHEN** the scan step exits non-zero
 - **THEN** no cache is saved and the next run restores the last good one
@@ -28,7 +28,7 @@ job.
 The release workflow SHALL read road distances from the `offers` artifact and SHALL NOT
 send any request to a routing server.
 
-#### Scenario: Release deploy
+#### Scenario: Release shows stored distances
 
 - **WHEN** the release workflow renders the page
 - **THEN** the page shows the distances stored in the downloaded `offers.json`
