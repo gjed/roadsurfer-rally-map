@@ -39,7 +39,9 @@
 
   /* filter bar */
   #fbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 20px; border-bottom: 1px solid var(--line); }
-  #chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  /* the chips share the bar's rows with the count, so a chip that does not fit wraps next to the count, not onto a row
+     of its own */
+  #chips { display: contents; }
   .chipw { display: flex; align-items: center; height: 36px; box-sizing: border-box; border: 1px solid var(--field); border-radius: 18px; background: #fff; transition: background-color .12s; }
   .chip { display: flex; align-items: center; gap: 6px; height: 100%; padding: 0 12px; border: 0; border-radius: 18px; background: none; white-space: nowrap; cursor: pointer; }
   .chip .k { color: var(--muted); }
@@ -53,17 +55,18 @@
   .chipw.on .chip { padding-right: 4px; }
   .chipw.on .x { display: flex; }
   /* the leg filter: a chip that only clears */
-  #gleg { display: flex; align-items: center; gap: 6px; height: 36px; box-sizing: border-box; min-width: 0; margin: 0; padding: 0 3px 0 12px; border: 1px solid var(--accent); border-radius: 18px; background: var(--accent-bg); color: var(--accent-h); white-space: nowrap; }
+  #gleg { position: relative; display: flex; align-items: center; gap: 6px; height: 36px; box-sizing: border-box; min-width: 0; margin: 0; padding: 0 3px 0 12px; border: 1px solid var(--accent); border-radius: 18px; background: var(--accent-bg); color: var(--accent-h); white-space: nowrap; }
   #gleg .v { font-weight: 600; }
-  #gleg .x, .legpill .x { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 14px; background: none; color: inherit; cursor: pointer; }
-  @media (hover: hover) { #gleg .x:hover { background: rgba(29, 95, 184, .14); } .legpill .x:hover { background: rgba(194, 65, 12, .14); } }
+  #gleg .x { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 14px; background: none; color: inherit; cursor: pointer; }
+  @media (hover: hover) { #gleg .x:hover { background: rgba(29, 95, 184, .14); } }
   @media (hover: hover) {
     .chipw:hover { background: #F3F5F7; }
     .chipw.on:hover { background: #DCE8F8; }
     .chipw .x:hover { background: rgba(29, 95, 184, .14); }
   }
   .sep { width: 1px; height: 24px; margin: 0 4px; background: var(--line); }
-  #count { margin-left: auto; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  /* as tall as a chip: a chip that wraps next to it does not make its row taller, so the map does not move */
+  #count { margin-left: auto; min-height: 36px; display: flex; align-items: center; gap: .25em; font-size: 13px; color: var(--muted); white-space: nowrap; }
   #count strong { color: var(--ink); font-weight: 600; }
   .ghost { height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--accent); font-weight: 600; cursor: pointer; }
   @media (hover: hover) { .ghost:hover { background: #F3F5F7; } }
@@ -109,9 +112,6 @@
   .shead > div { flex: 1; min-width: 0; }
   .shead h2 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
   .shead p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
-  .legpill { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 4px 4px 4px 12px; border: 1px solid #FDBA8C; border-radius: 10px; background: #FFF4ED; color: var(--warn); font-size: 13px; }
-  .legpill > span { flex: 1; min-width: 0; }
-  .legpill .k { color: var(--muted); }
   .sortl { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
   .sortl select { height: 32px; padding: 0 8px; border: 1px solid var(--field); border-radius: 8px; background: #fff; font-size: 13px; color: var(--ink); }
   .cards { list-style: none; margin: 0; padding: 0; }
@@ -251,7 +251,7 @@
     #updated { margin-left: 0; font-size: 12px; }
     #updated .uw { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     #fbar { gap: 6px 8px; padding: 8px 12px; }
-    #chips { flex-wrap: nowrap; width: calc(100% + 24px); margin: 0 -12px; padding: 0 12px; box-sizing: border-box; overflow-x: auto; scrollbar-width: none; }
+    #chips { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; width: calc(100% + 24px); margin: 0 -12px; padding: 0 12px; box-sizing: border-box; overflow-x: auto; scrollbar-width: none; }
     #chips > * { flex: none; }
     #count { margin-left: 0; }
     .pop input, .pop select { font-size: 16px; }
@@ -1031,14 +1031,11 @@ function routeDetail(g) {
     `<a class="more" href="#trips" data-act="list">Show these trips in the list <span aria-hidden="true">\u2192</span></a></div>`;
 }
 
-// the leg filter over a chain list, with a button that removes it
-const legPill = () => legFilter ? `<div class="legpill"><span><span class="k">Only chains using</span> <b>${legKind(legFilter)} ${legTitle(legFilter)}</b></span>` +
-  `<button class="x" data-act="noleg" aria-label="Show all chains"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>` : '';
 function chainCards() {
   const n = chains.length, st = eff.fst && STATIONS.get(eff.fst);
   const sub = (n > CHAIN_ROWS ? `The first ${CHAIN_ROWS} \u00b7 ` : '') + (legFilter ? 'Pick one to open it' : 'Rallies you can book back to back');
   const title = legFilter ? `${count(n, 'chain')} ${n === 1 ? 'uses' : 'use'} this ${isHop(legFilter) ? 'hop' : 'leg'}` : st ? `Chains from ${st.name}` : count(n, 'chain');
-  const head = `<div class="shead"><div><h2 id="ch" tabindex="-1">${esc(title)}</h2><p>${esc(st && !legFilter ? `${count(n, 'chain')} \u00b7 ${sub}` : sub)}</p>${legPill()}</div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}</div>`;
+  const head = `<div class="shead"><div><h2 id="ch" tabindex="-1">${esc(title)}</h2><p>${esc(st && !legFilter ? `${count(n, 'chain')} \u00b7 ${sub}` : sub)}</p></div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}</div>`;
   if (!n) return head + noneHtml();
   return head + '<ul class="cards">' + chains.slice(0, CHAIN_ROWS).map(c => `<li><button class="card ch" data-chain="${esc(c.key)}"><span class="t">${chainTitle(c)}</span>` +
     `<span class="d num">${esc(sd(c.start))} \u2013 ${esc(sd(c.end))}</span>${chainBadges(c)}</button></li>`).join('') + '</ul>' +
@@ -1100,7 +1097,7 @@ function tripsTable() {
 function tripsChains() {
   const n = chains.length;
   const head = `<div class="thead"><div><h2>${n > CHAIN_ROWS ? `Showing ${CHAIN_ROWS} of ${n.toLocaleString('en-GB')} chains` : count(n, 'chain')}</h2>` +
-    `<p>Rallies you can book back to back. Each leg is booked on its own.</p>${legPill()}</div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}</div>`;
+    `<p>Rallies you can book back to back. Each leg is booked on its own.</p></div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}</div>`;
   if (!n) return head + `<div class="tbox">${noneHtml()}</div>` + foot();
   return head + '<div class="tbox plain"><ul class="ccards">' + chains.slice(0, CHAIN_ROWS).map(c => `<li class="ccard" data-card="${esc(c.key)}"><div class="sum"><h3>${chainTitle(c)}</h3>` +
     `<p class="num">${esc(sd(c.start))} \u2013 ${esc(sd(c.end))}</p>${chainBadges(c)}</div><ol>` +
@@ -1479,9 +1476,7 @@ function onListClick(e) {
   if ((b = by('[data-chain]'))) return openChain(b.dataset.chain);
   if ((b = by('[data-act]'))) {
     e.preventDefault();
-    const act = b.dataset.act;
-    if (act === 'noleg') return clearLeg(document.querySelector('#side .card, #tlist .ccard button, #csort'));
-    return act === 'back' ? closeDetail() : showInList();
+    return b.dataset.act === 'back' ? closeDetail() : showInList();
   }
   // a click on the rest of a Trips chain card opens it, unless it is a link, another button or a text selection
   if ((b = by('[data-card]')) && !by('a, button') && !getSelection().toString()) return openChain(b.dataset.card);
