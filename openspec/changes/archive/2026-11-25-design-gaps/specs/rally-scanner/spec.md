@@ -32,8 +32,7 @@ the `Single rallies | Chains` switch and the scan time, and a filter bar with on
 per filter, the counts and `Clear all`. Each chip SHALL be a button with
 `aria-haspopup="dialog"` and `aria-expanded` that shows the filter's name and value and
 opens a panel (`role="dialog"`) with its controls, which Escape and a click outside
-close. Below 700 px the app bar SHALL be one row with the logo, `Rally map` and the
-views, and the chips SHALL scroll on one row after a `Filters` chip.
+close. Below 700 px the chips SHALL scroll on one row after a `Filters` chip.
 
 #### Scenario: Phone width
 
@@ -96,8 +95,8 @@ On a wide screen the trips table SHALL fill the page up to 1320 px, inside a box
 scrolls sideways when it must, with the distance header right-aligned over the
 distances and a sticky header with a visible bottom edge. Below 700 px each row SHALL
 be a card that fits the screen without horizontal scrolling, with its dates in bold,
-its distance and nights, its stations and its `Map` and `Book` buttons, under a row
-with `N trips on M routes` and the mode switch and a row with `Sort` and `Group`.
+its distance and nights, its stations and its `Map` and `Book` buttons, under the
+count, the mode switch, `Sort` and `Group`.
 
 #### Scenario: Desktop list
 
@@ -125,12 +124,11 @@ with `N trips on M routes` and the mode switch and a row with `Sort` and `Group`
 ### Requirement: Chain mode
 
 The app bar SHALL have a `Single rallies | Chains` switch whose buttons carry
-`aria-pressed`; below 700 px a `Rallies | Chains` switch in the results sheet and the
-Trips header SHALL take its place. A chain is a sequence of 2 or 3 rally legs, each
+`aria-pressed`. A chain is a sequence of 2 or 3 rally legs, each
 booked as its own trip, found from the offers on the page without any request.
 Switching modes SHALL keep every filter and the view and close an open route or chain.
-The count SHALL read `N chains from M trips`, or `Showing 200 of N chains from M trips`
-above 200. `Chains` SHALL have a title that says what chains are.
+The count SHALL read `N chains from M trips`, M being the offers the chains are built
+from. `Chains` SHALL have a title that says what chains are.
 
 #### Scenario: Entering chain mode
 
@@ -150,8 +148,7 @@ above 200. `Chains` SHALL have a title that says what chains are.
 
 ### Requirement: Chain filters
 
-In chain mode the start date filter and the week slider SHALL limit the first pick-up
-day, the distance filter SHALL limit the distance of every leg, the pick-up filters SHALL
+In chain mode the dates SHALL limit the first pick-up day, the distance filter SHALL limit the distance of every leg, the pick-up filters SHALL
 apply to where the chain starts and the return filters to where it ends. Their chips
 SHALL read `Dates`, `Distance`, `Chain starts at` and `Return`, with the accessible names
 `First pick-up date`, `Distance per leg`, `Chain starts at` and `Chain ends at`. The
@@ -174,14 +171,14 @@ dropdown options SHALL count chains. The stations in between SHALL NOT be filter
 
 ### Requirement: Chain list size
 
-The chain lists SHALL show the first 200 chains in the sort order, and the filter bar
-SHALL show how many chains there are in all, as
-`Showing 200 of 23,267 chains from 781 trips`.
+The chain lists SHALL show the first 200 chains in the sort order and say so, and the
+filter bar SHALL show how many chains there are in all, as
+`23,267 chains from 781 trips`.
 
 #### Scenario: More than 200 chains
 
 - **WHEN** there are 2075 chains
-- **THEN** the filter bar reads `Showing 200 of 2,075 chains`, the list has 200 cards
+- **THEN** the filter bar reads `2,075 chains from M trips`, the list has 200 cards
   and a note says how many are shown
 
 ### Requirement: Chain legend
@@ -199,8 +196,8 @@ connection is allowed or a distance is estimated.
 ### Requirement: Chain options on phones
 
 Below 700 px the `Chain options` panel SHALL be a sheet from the bottom of the screen,
-over a dark backdrop, with `Chains: 2–3 rallies booked back to back. Set how they may connect, then browse them on the map.` above it, the title `Chain options`, a close
-button, 44 px controls and a footer in view. Turning `Chains` on SHALL open it, with
+over a dark backdrop, with `Chains: 2–3 rallies booked back to back. Set how they may connect, then browse them on the map.` above it, a title, a close button, 44 px
+controls and a footer in view. Turning `Chains` on SHALL open it, with
 `aria-expanded` true on its chip. `Show N chains`, the close button, Escape and a tap
 above the sheet SHALL close it; only `Show N chains` SHALL keep its changes.
 
@@ -271,6 +268,17 @@ height it had and the focus to the card that opened it.
 - **THEN** no app bar or filter bar is shown and the map reaches the top of the screen
 
 ## ADDED Requirements
+
+### Requirement: Phone app bar
+
+Below 700 px the app bar SHALL be one row with the logo, `Rally map` and the views; the
+`Rallies | Chains` switch SHALL be in the results sheet header and the Trips header.
+
+#### Scenario: One row
+
+- **WHEN** the page is opened 390 px wide
+- **THEN** the app bar is one row with the logo, `Rally map`, `Map` and `Trips`, and the
+  results sheet header has `Rallies` and `Chains`
 
 ### Requirement: Map controls on phones
 
