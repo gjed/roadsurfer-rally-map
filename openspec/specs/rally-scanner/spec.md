@@ -775,18 +775,17 @@ says what chains are.
 
 ### Requirement: Chain settings
 
-In chain mode a `Chain options` chip, hidden in trip mode, SHALL show the options and
-open a panel with them: legs (`2`, `3`, `2 or 3`; default `2`), `Same day` (on) with 0
-to 7 rest days (0), the next pick-up within (same station, `~25`, `~50`, `~100`,
-`~150`, `~250 km`; same station), the shortest and longest trip days and the max total
-km (empty: any) and `Round trip` (off). Every control SHALL update the results, typed
-numbers after a short pause.
+In chain mode a `Chain options` chip SHALL open a panel with: legs (`2`, `3`, `2 or 3`;
+default `2`), a `Same day` switch (on), 0 to 7 rest days (0), a `Next pick-up within`
+slider from the same station to ~250 km in steps of 25 km (same station), min days, max
+days and max km (empty: any) and a `Round trip` switch (off). Every control SHALL update
+the results; typed numbers after 250 ms and the slider after 150 ms, with `Finding chains…` in the count meanwhile.
 
 #### Scenario: Defaults
 
 - **WHEN** the user enters chain mode
-- **THEN** the controls read `2`, `Same day` checked, `0`, `same station`, empty, empty,
-  empty and `Round trip` unchecked, and the chip is not marked as changed
+- **THEN** the controls read `2`, `Same day` on, `0`, `same station`, empty, empty,
+  empty and `Round trip` off, and the chip is not marked as changed
 
 #### Scenario: Three legs
 
@@ -797,6 +796,12 @@ numbers after a short pause.
 
 - **WHEN** the user selects `3`
 - **THEN** every chain listed has 3 legs
+
+#### Scenario: Moving the slider
+
+- **WHEN** the user drags the next pick-up slider to `~150 km`
+- **THEN** the count reads `Finding chains…` until the slider rests, then the chains
+  with a connection of up to 150 km
 
 ### Requirement: Chain legs
 
@@ -835,15 +840,15 @@ SHALL be the days from the first pick-up to the last return.
 
 ### Requirement: Chain options panel
 
-The `Same day` checkbox and the rest days SHALL read as one sentence: `Same day or up to N rest days` when checked, `Same day 1 to N rest days` when not. The panel SHALL have a
-`Reset` button that restores the chain options only. A control that is not at its
-default SHALL be marked, and so SHALL the chip; the chip SHALL NOT be marked while
-everything is at its default.
+The panel SHALL group the options under `Legs`, `Between legs` and `Whole trip`. The
+rest days stepper SHALL read `Rest days, up to N` while `Same day` is on and `Rest days, 1 to N` while it is off. Legs buttons SHALL carry `aria-pressed`, switches
+`role="switch"`. The panel SHALL end with `Reset` (the chain options only) and `Show N chains`, which counts live and closes it. The chip SHALL be marked exactly while an
+option is not at its default.
 
 #### Scenario: Unchecked
 
-- **WHEN** the user unchecks `Same day` and selects 3 rest days
-- **THEN** the options read `Same day 1 to 3 rest days`
+- **WHEN** the user turns `Same day` off and sets 3 rest days
+- **THEN** the stepper reads `Rest days, 1 to` 3 and its `−` stops at 1
 
 #### Scenario: Tab order
 
@@ -854,6 +859,11 @@ everything is at its default.
 
 - **WHEN** the user changes the legs and presses the panel's `Reset`
 - **THEN** every chain option is back to its default and the other filters are kept
+
+#### Scenario: Show the chains
+
+- **WHEN** the user presses `Show 2,192 chains`
+- **THEN** the panel closes and focus returns to the `Chain options` chip
 
 ### Requirement: Chain rest days
 
@@ -887,9 +897,8 @@ leg N ends. The rest days SHALL go up to 7. A hand-over at the same station SHAL
 
 Leg N+1 SHALL start at the station where leg N ended or, with a next pick-up distance
 selected, at another station within that many km of it, measured as the straight line ×
-1.3 rounded to 10 km and shown with `~`. A station SHALL NOT be a pick-up twice in one
-chain. A hand-over to another station SHALL read `Hop ~N km <A> → <B> on your own`,
-then `same day` or `N rest days`, and be drawn with a dotted rule.
+1.3 rounded to 10 km and shown with `~`; the distance, and the URL's `hop`, SHALL be a
+multiple of 25 km up to 250. A station SHALL NOT be a pick-up twice in a chain. A hand-over to another station SHALL read `Hop ~N km <A> → <B> on your own`, then `same day` or `N rest days`, and be drawn with a dotted rule.
 
 #### Scenario: Strictest settings
 
@@ -911,6 +920,12 @@ then `same day` or `N rest days`, and be drawn with a dotted rule.
 
 - **WHEN** a chain's second leg starts 40 km from where the first ended
 - **THEN** its hand-over reads like `Hop ~40 km A → B on your own · same day`
+
+#### Scenario: A step between the old values
+
+- **WHEN** the user opens a link with `hop=75`
+- **THEN** the slider reads `~75 km` and chains with a connection of up to 75 km are
+  listed; `hop=80` is ignored
 
 ### Requirement: Chain filters
 
@@ -1094,18 +1109,26 @@ its default. In trip mode the options SHALL NOT count.
 
 ### Requirement: Chain options on phones
 
-On a phone, turning `Chains` on SHALL open the `Chain options` panel, with
-`aria-expanded` true on its chip, so that the options show without another tap.
+Below 700 px the `Chain options` panel SHALL be a sheet from the bottom of the screen
+with the title `Chain options`, a close button, controls at least 44 px tall and a
+footer that stays in view. Turning `Chains` on SHALL open it, with `aria-expanded` true
+on its chip. `Show N chains`, the close button, Escape and a tap above the sheet SHALL
+close it.
 
 #### Scenario: Chains on at 375 px
 
 - **WHEN** the user presses `Chains` on a 375 px wide screen
-- **THEN** the chain options panel is open and its chip is expanded
+- **THEN** the chain options sheet is open and its chip is expanded
 
 #### Scenario: Chains off
 
 - **WHEN** the user presses `Single rallies`
-- **THEN** the chain options panel closes and its chip is hidden
+- **THEN** the chain options sheet closes and its chip is hidden
+
+#### Scenario: Back to the map
+
+- **WHEN** the user presses `Show N chains` in the sheet
+- **THEN** the sheet closes and the map and its lines can be tapped
 
 ### Requirement: Chain search time
 
