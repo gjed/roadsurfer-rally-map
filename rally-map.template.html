@@ -276,6 +276,7 @@
   .legend summary { cursor: pointer; font-weight: 600; }
   .legend ul { list-style: none; margin: 6px 0 0; padding: 0; }
   .legend li { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .legend li.hint { color: var(--muted); }
   .legend svg { width: 28px; height: 14px; }
   .legend .tilde { width: 28px; flex: none; text-align: center; font-weight: 600; }
   .legno { background: var(--sel); color: #fff; border-radius: 50%; font: 700 12px/24px system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(0, 0, 0, .25); }
@@ -382,7 +383,7 @@
     .tt td { padding: 0; border: 0; white-space: normal; }
     .tt td.ds { order: 1; }
     .tt td.de { order: 2; flex: 1 0 auto; font-weight: 600; }  /* grows: the km sits right beside the dates, or left under them */
-    .tt td.de::before { content: "\2013  "; content: "\2013  " / ""; }
+    .tt td.de::before { content: "\2192  "; content: "\2192  " / ""; }
     .tt td.km { order: 3; white-space: nowrap; font-size: 13px; color: var(--muted); }
     .tt .kn { display: inline; }
     .tt td.nt { display: none; }
@@ -476,14 +477,14 @@
   <div class="pb">
     <h2 id="h-date">Start date</h2>
     <div class="quick"><button data-quick="any">Any</button><button data-quick="0">This week</button><button data-quick="1">Next week</button></div>
-    <div class="row"><label>Earliest start<input type="date" id="from"></label><label>Latest start<input type="date" id="to"></label></div>
+    <div class="row"><label>Earliest<input type="date" id="from"></label><label>Latest<input type="date" id="to"></label></div>
     <div class="lab"><span class="wkh"><label for="week">Week</label><output id="wkout" for="week">All dates</output></span><input type="range" id="week" min="0" max="0" value="0" aria-valuetext="all dates"></div>
   </div>
   <div class="pf"><button class="ghost" data-clear="gdate">Clear</button><span class="grow"></span><button class="btn" data-done>Done</button></div>
 </div>
 <div class="pop" id="p-km" role="dialog" aria-labelledby="h-km" hidden>
   <div class="pb">
-    <h2 id="h-km">Distance</h2>
+    <h2 id="h-km">Distance by road</h2>
     <div class="row"><label>Min km<input type="number" id="kmin" min="0" step="50" inputmode="numeric"></label><label>Max km<input type="number" id="kmax" min="0" step="50" inputmode="numeric"></label></div>
   </div>
   <div class="pf"><button class="ghost" data-clear="gkm">Clear</button><span class="grow"></span><button class="btn" data-done>Done</button></div>
@@ -527,7 +528,7 @@
     </div>
     <div role="group" aria-labelledby="l-whole" class="ogrp"><span class="ct" id="l-whole">Whole trip</span>
       <div class="row3"><label>Min days<input type="number" id="cdmin" min="1" step="1" inputmode="numeric" placeholder="Any" aria-label="Shortest trip in days"></label><label>Max days<input type="number" id="cdmax" min="1" step="1" inputmode="numeric" placeholder="Any" aria-label="Longest trip in days"></label><label>Max km<input type="number" id="cdrive" min="0" step="100" inputmode="numeric" placeholder="Any" aria-label="Most km driven in total"></label></div>
-      <label class="orow"><span class="t">Round trip<small>End within the next pick-up distance of where you start</small></span><input type="checkbox" role="switch" class="sw" id="cr"></label>
+      <label class="orow"><span class="t">Round trip<small>End near where you start</small></span><input type="checkbox" role="switch" class="sw" id="cr"></label>
     </div>
   </div></fieldset>
   <div class="pf"><button class="ghost" data-clear="gchain">Reset</button><span class="grow"></span><button class="btn" id="cshow" data-done>Show chains</button></div>
@@ -578,14 +579,14 @@ let legendList;
 function legendItems() {
   const line = (w, op, col, dash) => `<svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7H26" stroke="${col}" stroke-width="${w}" stroke-opacity="${op}"${dash ? ` stroke-dasharray="${dash}" stroke-linecap="round"` : ''}/></svg>`;
   const dot = `<svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4.5" stroke="${STN}" stroke-width="2.5" fill="#fff"/></svg>`;
-  const what = chainMode ? 'chain' : 'trip';
-  return (chainMode ? `<li>${line(chainWeight(1), chainOpacity(1), COL)} leg of 1 chain</li><li>${line(chainWeight(10), chainOpacity(10), COL)} 10 or more chains</li>`
-    : `<li>${line(weight(1), opacity(1), COL)} 1 trip on this route</li><li>${line(weight(5), opacity(5), COL)} 5 or more trips</li>`) +
-    (chainMode ? `<li>${line(3, 1, CONN, '1 6')} connection to the next pick-up (train, bus)</li>` : '') +
-    `<li>${line(4, 1, HOT)} selected ${chainMode ? 'chain' : 'route'}</li><li>${dot} station: click to only show ${what}s ${chainMode ? 'starting' : 'from'} here</li>` +
+  // the artboards' wording; in chain mode a hint says that legs and hops can be clicked
+  return (chainMode ? `<li>${line(chainWeight(1), chainOpacity(1), COL)} Leg of 1 chain</li><li>${line(chainWeight(10), chainOpacity(10), COL)} 10 or more chains</li>`
+    : `<li>${line(weight(1), opacity(1), COL)} 1 trip on a route</li><li>${line(weight(5), opacity(5), COL)} 5 or more trips</li>`) +
+    `<li>${line(4, 1, HOT)} Selected</li>` +
+    (chainMode ? `<li>${line(3, 1, CONN, '1 6')} Hop to the next pick-up</li><li class="hint">Click a leg or hop to list its chains</li>` : '') +
+    `<li>${dot} Station \u2014 click to filter ${chainMode ? 'chain starts' : 'pick-ups'}</li>` +
     // ~ marks a distance that was not routed: straight line x 1.3
-    (DATA.some(r => dist(r).est) || (chainMode && +$('ck').value > 0) ? '<li><span class="tilde" aria-hidden="true">~</span> estimated distance, not routed</li>' : '') +
-    (chainMode ? '<li><span class="tilde" aria-hidden="true"></span> click a line to pick a chain</li>' : '');
+    (DATA.some(r => dist(r).est) || (chainMode && +$('ck').value > 0) ? '<li><span class="tilde" aria-hidden="true">~</span> Estimated distance, not routed</li>' : '');
 }
 legend.onAdd = () => {
   const d = L.DomUtil.create('details', 'legend leaflet-bar');
@@ -1194,7 +1195,7 @@ function routeDetail(g) {
     wins.map(r => `<li><div class="w"><div class="d num">${esc(short(r.start))} ${ARROW} ${esc(short(r.end))}</div><div class="m">Up to ${count(nightsOf(r), 'night')}${r.price ? ` \u00b7 ${esc(r.price)}` : ''}</div></div>` +
       `<a class="btn" href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="${esc(`Book ${place(g.from)} to ${place(g.to)}, ${short(r.start)}`)}">Book${EXT}</a></li>`).join('') + '</ul></section>' +
     `<section class="sec" aria-labelledby="h-next"><h3 id="h-next">Continue from ${esc(g.to.name)}</h3>` +
-    (next.length ? `<p class="help">Rallies leaving where this one ends: book them back to back for a longer trip.</p><ul class="nexts">` +
+    (next.length ? `<p class="help">Rallies leaving where this one ends \u2014 book them back to back for a longer trip.</p><ul class="nexts">` +
       next.map(x => `<li><button class="nx" data-route="${esc(x.key)}"><span><b>${esc(x.from.name)} ${ARROW} ${esc(place(x.to))}</b><small>${count(x.trips.length, 'trip')} \u00b7 next ${esc(short(x.first))} \u00b7 ${kmHtml(x.km, x.est)} km</small></span>${CHEVR}</button></li>`).join('') + '</ul>'
       : `<p class="soft">No rally leaves ${esc(g.to.name)} in this scan.</p>`) + '</section>' +
     (also.length ? `<section class="sec" aria-labelledby="h-also"><h3 id="h-also">Also from ${esc(g.from.name)}</h3><div class="also">` +
@@ -1509,7 +1510,7 @@ function applyMode() {
     $(g).querySelector('.x').setAttribute('aria-label', `Clear ${full.toLowerCase()} filter`);
   }
   $('h-date').textContent = chainMode ? 'First pick-up date' : 'Start date';
-  $('h-km').textContent = FULL.gkm[+chainMode];
+  $('h-km').textContent = chainMode ? FULL.gkm[1] : 'Distance by road';
   $('h-from').textContent = FULL.gfrom[+chainMode];
   $('h-to').textContent = FULL.gto[+chainMode];
   if (popOpen && popOpen.pop.id === 'p-chain' && !chainMode) closePop(false);
