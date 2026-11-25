@@ -4,8 +4,7 @@
 
 - **N counts the chains on the map.** The overview is built from the first 200 chains, so
   a leg's weight, its tooltip and the popup all count the same chains, and every chain the
-  popup lists is also on the map and in the list. While the toolbar reads `Showing 200 of
-  N chains`, the heading and the tooltip add `on the map`. `Show all N in the list` counts
+  popup lists is also on the map and in the list. While the toolbar reads `Showing 200 of N chains`, the heading and the tooltip add `on the map`. `Show all N in the list` counts
   every chain that passes the filters, so it is shown only when that total is more than the
   popup lists (more than 8, or more than are on the map).
 - **The popup lists chains in list order** (`chains` after the sort), so the first rows
@@ -19,8 +18,7 @@
   bar as a `Chain uses` group with a `×` button (counted in `Filters (n)`) and as a line
   with `Show all chains` over the list, which is what a phone shows, its panel being
   closed. `Reset`, `×`, `Show all chains` and switching between chains and trips clear it;
-  station clicks and the other filters keep it. When no chain is left, `remove the leg
-  filter` is the first hint. Focus goes to the list caption.
+  station clicks and the other filters keep it. When no chain is left, `remove the leg filter` is the first hint. Focus goes to the list caption.
 - **One key for a leg and for a connection.** A leg is `from>to`; a connection is
   `hop from>to` (the station the chain returns at and the next pick-up). A chain uses a
   connection only when its hand-over is by another station.
@@ -54,8 +52,7 @@
   alone, and `aria-current="true"` on the row's `Map` button, not on the `tr`, which
   screen readers often skip. Switching to the list scrolls the row into view.
 - **Copy:** the station tooltip and the legend say that a click filters, and what a
-  second click does: `Click to show chains starting anywhere`, `Click to show trips from
-  every station`.
+  second click does: `Click to show chains starting anywhere`, `Click to show trips from every station`.
 - **No keyboard route to the leg popups or the leg filter.** Map lines stay out of the tab
   order, as the list view is the keyboard route to every chain; the leg filter is reached
   with a pointer only.

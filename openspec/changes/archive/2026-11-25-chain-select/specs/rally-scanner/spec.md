@@ -126,8 +126,7 @@ end with `click a line to pick a chain`.
 
 ### Requirement: Chain leg popup
 
-In chain mode a click or tap on a leg or a connection SHALL open a popup headed `In N
-chains`, where N counts the chains on the map that use it, with `on the map` added while the
+In chain mode a click or tap on a leg or a connection SHALL open a popup headed `In N chains`, where N counts the chains on the map that use it, with `on the map` added while the
 toolbar reads `Showing 200 of N chains`. Under it the popup SHALL show the leg or
 connection with its distance and list up to 8 of those chains in the order of the list,
 each as a button with its stations, dates, days and km driven. Choosing a chain SHALL

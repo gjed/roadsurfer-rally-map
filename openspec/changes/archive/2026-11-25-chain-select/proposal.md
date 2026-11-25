@@ -23,8 +23,7 @@ leg 2 of the selected chain clears the whole selection (only the first leg has a
 - A click anywhere on a chain row outside its links and buttons shows the chain. Rows
   get a pointer cursor, and the row of the chain on the map is highlighted, with
   `aria-current` on its `Map` button. The `Map` button stays for keyboard users.
-- The station tooltip and the legend say that a click filters: `Click to only show chains
-  starting here`. The legend gains `click a line to pick a chain`.
+- The station tooltip and the legend say that a click filters: `Click to only show chains starting here`. The legend gains `click a line to pick a chain`.
 - Legs and connections get a wider invisible hit area, so a finger can hit them; on a
   phone a tap on one closes the filter panel, which leaves the map a few lines tall.
 - Escape closes a leg popup first and clears the chain on the second press.
