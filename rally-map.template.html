@@ -285,7 +285,6 @@
   #sheet { display: contents; }
   /* between phone and desktop the map stays beside the list */
   @media (max-width: 699px) {
-  @media (max-width: 699px) {
     #appbar { gap: 8px 12px; padding: 8px 12px; }
     .brand .tag { display: none; }
     .brand svg { width: 26px; height: 26px; }
@@ -1687,7 +1686,7 @@ function setSheet(px) {
   $('mapview').style.setProperty('--sheet', px + 'px');  // the attribution and the legend stay above the sheet
 }
 function snapTo(name, remember) {
-  if (remember && !before) before = snap;
+  if (remember) before = snap;
   snap = name;
   setSheet(snapPx(name));
   const g = $('grip'), full = name === 'full';
