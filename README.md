@@ -63,7 +63,15 @@ The `Trips` view lists the trips that pass the current filters, one row per trip
 its dates, nights, stations, road distance, price when scanned with `--prices`, and
 booking link. Rows are sorted by start date; click the `Start` or `Distance` header to
 re-sort, and group the rows by route or by pick-up. `Map` on a row opens that route in
-the map view. On a phone each trip is a card.
+the map view. On a phone each trip is a card with its `Map` and `Book` buttons.
+
+On a phone the map fills the screen and the routes or chains are in a sheet over it.
+Drag its grip, or tap it, to move the sheet between a peek at the first cards, half the
+screen and the full screen; opening a route or a chain puts the sheet at half, with a
+back button and the title floating over the map. The chip row starts with
+`Filters · n`, which opens every filter (and the chain options in chain mode) on one
+sheet: changes apply with `Show N trips`, closing it otherwise leaves the filters as
+they were, and `Reset (n)` clears them all.
 
 The address bar keeps the view, the filters, the open route or chain and the sort
 order (for example `#trips?from=Munich&sort=km`), so a reload or a shared link shows
@@ -168,8 +176,9 @@ shows them on the map and in the `Trips` view.
 
 - **Chain options.** In chain mode a `Chain options` chip joins the filter chips and
   shows the current options. On a desktop it opens a panel under it; on a phone the
-  panel is a sheet from the bottom that opens as soon as `Chains` is pressed and closes
-  with `Show N chains`, its `×`, Escape or a tap above it. `Show N chains` counts the
+  panel is a sheet from the bottom that opens as soon as `Chains` is pressed; it keeps
+  its changes with `Show N chains` and drops them when closed with its `×`, Escape or a
+  tap above it. `Show N chains` counts the
   chains as you change the options. The chip turns blue when an option is not at its
   default, `Reset` in the panel restores them, and `Clear all` restores them with the
   filters. The widest settings (2 or 3 legs, 7 rest days, 250 km) match over 200,000
