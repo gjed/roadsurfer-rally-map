@@ -388,7 +388,8 @@ let chainMode = false;  // chain mode shows chains of rallies instead of single 
 // the rest of what the URL keeps: the view, the opened route or chain, the route order and the grouping
 const S = { view: 'map', route: null, chain: null, rsort: 'start', group: 'none' };
 const still = matchMedia('(prefers-reduced-motion: reduce)');
-const map = L.map('map', { maxZoom: 16, zoomControl: false });
+// a view from the start, so render() finds the route paths in the DOM before the first fitAll()
+const map = L.map('map', { maxZoom: 16, zoomControl: false }).setView([50, 9], 5);
 L.control.zoom({ position: 'topright' }).addTo(map);
 // the bars wrap and the views swap: keep Leaflet's cached size current
 new ResizeObserver(() => map.invalidateSize()).observe(document.getElementById('map'));
@@ -1209,6 +1210,7 @@ function commit(push) {
   $('v-map').href = hashOf('map');
   $('v-trips').href = hashOf('trips');
   if (h === location.hash || (!location.hash && h === '#map')) return;
+  if (!push) pushed = false;  // the entry now holds state the previous one lacks: close the detail in place
   history[push ? 'pushState' : 'replaceState'](null, '', h);
 }
 // unknown or invalid parameters are ignored
@@ -1252,7 +1254,7 @@ function readHash() {
 let opener = null;   // the key of the card or row that opened the detail, to give it focus back
 let pushed = false;  // the detail was opened on the map with a history entry: closing it goes Back
 function openDetail(set) {
-  const was = S.route || S.chain, onMap = S.view === 'map';
+  const onMap = S.view === 'map', was = onMap && (S.route || S.chain);  // a detail on screen, not one left behind Trips
   set();
   if (!was) opener = S.route || S.chain;
   S.view = 'map';
