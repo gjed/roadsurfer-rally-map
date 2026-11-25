@@ -279,7 +279,11 @@
   .leaflet-tooltip.rpill { padding: 6px 10px; border: 1.5px solid var(--sel); border-radius: 8px; font-weight: 600; font-size: 12px; box-shadow: 0 4px 12px rgba(16, 24, 40, .18); }
   .leaflet-tooltip-top.rpill::before { border-top-color: var(--sel); }
 
+  /* phone only: the Filters entry, the filter sheet, the sheet's grip and the floating route title */
+  .fbw, .grip, #mpill, #p-filt { display: none; }
+  #sheet { display: contents; }
   /* between phone and desktop the map stays beside the list */
+  @media (max-width: 699px) {
   @media (max-width: 699px) {
     #appbar { gap: 8px 12px; padding: 8px 12px; }
     .brand .tag { display: none; }
@@ -316,35 +320,76 @@
     #cshow { flex: 1; }
     #p-chain .pf .grow { display: none; }
     .sortl select { font-size: 16px; }
-    #mapview { flex-direction: column; }
-    #mapwrap { flex: 1 1 55%; min-height: 200px; }
-    #side { order: 2; flex: 0 0 45%; border-right: 0; border-top: 1px solid var(--line); }
+    /* the map fills the view; the results are a bottom sheet over it (peek, half, full) */
+    #mapview { position: relative; display: block; }
+    #mapwrap { position: absolute; inset: 0; }
+    #sheet { position: absolute; z-index: 1100; left: 0; right: 0; bottom: 0; height: var(--sh, 330px); display: flex; flex-direction: column; background: #fff; border-radius: 20px 20px 0 0; box-shadow: 0 -6px 24px rgba(16, 24, 40, .16); transition: height .25s ease-out; }
+    #sheet.drag { transition: none; }
+    .grip { flex: none; display: flex; align-items: center; justify-content: center; width: 100%; height: 28px; padding: 0; border: 0; border-radius: 20px 20px 0 0; background: none; cursor: grab; touch-action: none; }
+    .grip span { width: 40px; height: 5px; border-radius: 3px; background: #9AA1AC; }
+    .grip:focus-visible { outline-offset: -4px; }
+    #side { flex: 1; min-height: 0; border: 0; overscroll-behavior: contain; }
+    #side .shead { padding-top: 0; }
+    #side .back { margin-top: 0; }
+    .leaflet-bottom { bottom: var(--sheet, 0); }
+    #mpill:not([hidden]) { position: absolute; z-index: 1001; top: 12px; left: 12px; right: 64px; display: flex; gap: 8px; pointer-events: none; }
+    #mpill > * { pointer-events: auto; height: 44px; box-sizing: border-box; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px rgba(16, 24, 40, .2); }
+    #mpback { flex: none; width: 44px; padding: 0; border: 0; display: flex; align-items: center; justify-content: center; color: var(--ink); cursor: pointer; }
+    #mptitle { flex: 0 1 auto; min-width: 0; padding: 0 14px; line-height: 44px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #mapwrap.pill .leaflet-top.leaflet-left { top: 56px; }
+    /* one row of chips under the app bar: Filters, then the quick chips; the counts live in the sheet and the Trips heading */
+    .fbw { display: block; }
+    .fbtn { height: 36px; padding: 0 12px; border: 1px solid var(--ink); border-radius: 18px; background: var(--ink); color: #fff; font-weight: 600; }
+    .fbtn svg { color: #fff; }
+    #count { position: absolute; width: 1px; height: 1px; min-height: 0; overflow: hidden; clip: rect(0 0 0 0); }
+    #reset { display: none; }
+    /* the filter sheet: full height, every filter, applied with Show */
+    #p-filt:not([hidden]) { display: flex; flex-direction: column; top: 12px !important; left: 0 !important; right: 0; bottom: 0; width: auto; border: 0; border-radius: 20px 20px 0 0; box-shadow: 0 0 0 100vmax rgba(15, 18, 24, .45); font-size: 16px; animation: sheet-up .2s ease-out; }
+    #p-filt .shh { display: flex; align-items: center; gap: 8px; padding: 10px 8px 10px 20px; border-bottom: 1px solid var(--line2); }
+    #p-filt .shh h2 { flex: 1; margin: 0; font-size: 20px; font-weight: 650; }
+    #p-filt .shx { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 22px; background: none; color: var(--ink); cursor: pointer; }
+    #p-filt .fbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 20px; }
+    .fsec { padding: 18px 0; border-bottom: 1px solid var(--line2); }
+    .fsec:last-child { border-bottom: 0; }
+    .fsec > h2, .fsec .pb > h2 { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
+    .fsec .pb { padding: 0; gap: 12px; }
+    .fsec .copt { padding: 0; }
+    .fsec label, .fsec .lab { font-size: 13px; }
+    .fsec input:not([type="checkbox"]):not([type="range"]):not(.step input), .fsec select { height: 44px; border-radius: 10px; }
+    .fsec .quick button { height: 40px; padding: 0 14px; border-radius: 20px; font-size: 14px; }
+    #p-filt .pf { gap: 12px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); }
+    #p-filt .pf button { height: 48px; }
+    #fshow { flex: 1; border-radius: 12px; }
     .shead { padding: 12px 16px 10px; }
     .card, .card.ch { padding: 12px 16px; }
     #tripsview { overflow-y: auto; }
     .inner { flex: none; padding: 16px 12px; }
     .thead h2 { font-size: 22px; }
-    .tbox { overflow: visible; }
+    .tbox { overflow: visible; background: none; border: 0; border-radius: 0; }
     .tt { display: block; min-width: 0; }
-    .tt thead { display: block; position: sticky; top: 0; z-index: 1; background: #FAFBFC; box-shadow: inset 0 -1px var(--line); border-radius: 14px 14px 0 0; }
+    .tt thead { display: block; position: sticky; top: 0; z-index: 1; margin-bottom: 8px; background: #FAFBFC; border: 1px solid var(--line); border-radius: 12px; }
     .tt thead tr { display: flex; gap: 16px; padding: 10px 12px; }
     .tt thead th { position: static; padding: 0; background: none; box-shadow: none; }
     .tt thead th:not([aria-sort]) { display: none; }
     .tt tbody { display: block; }
-    .tt tbody tr { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: "s e k p" "f f f f" "t t t t" "a a a a"; gap: 2px 6px; padding: 12px; border-bottom: 1px solid var(--line2); }
-    .tt tbody tr.gh { display: block; padding: 0; }
-    .tt tbody th { display: block; }
+    /* a trip is a card: dates, km and nights, pick-up, return, then Map (1/3) and Book (2/3) */
+    .tt tbody tr { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: "s e k n" "f f f f" "t t t t" "p p p p" "a a a a"; gap: 2px 6px; margin-bottom: 8px; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+    .tt tbody tr.gh { display: block; margin: 8px 0 6px; padding: 0; background: none; border: 0; }
+    .tt tbody th { display: block; padding: 0 2px; background: none; border: 0; }
     .tt td { padding: 0; border: 0; white-space: normal; }
     .tt td.ds { grid-area: s; }
     .tt td.de { grid-area: e; }
+    .tt td.de { font-weight: 600; }
     .tt td.de::before { content: "\2013  "; content: "\2013  " / ""; }
-    .tt td.km { grid-area: k; }
+    .tt td.km { grid-area: k; justify-self: end; white-space: nowrap; font-size: 13px; color: var(--muted); }
+    .tt td.nt { grid-area: n; font-size: 13px; }
+    .tt td.nt::before { content: "\00b7  "; content: "\00b7  " / ""; }
     .tt td.pr { grid-area: p; }
-    .tt td.nt { display: none; }
     .tt td.from { grid-area: f; margin-top: 4px; }
     .tt td.to { grid-area: t; }
     .tt td.act { grid-area: a; display: flex; gap: 8px; margin-top: 8px; padding: 0; text-align: left; }
-    .tt td.act > * { flex: 1; height: 40px; }
+    .tt td.act > * { flex: 1; height: 44px; }
+    .tt td.act > .btn { flex: 2; }
     .tt td.act .btn2 { margin-right: 0; }
   }
   @media (pointer: coarse) { .wins .btn, .legs .btn, .ccard .btn { min-height: 40px; } }
@@ -369,6 +414,7 @@
 </header>
 <div id="fbar" role="group" aria-label="Filters">
   <div id="chips">
+    <span class="fbw"><button class="chip fbtn" id="fbtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-filt"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 3.5h7M11 3.5h2M1 10.5h2M6 10.5h7M9.5 2v3M4.5 9v3"/></svg><span id="fbtnt">Filters</span></button></span>
     <span class="chipw" id="gdate"><button class="chip" id="c-date" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-date"><svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="1.5" y="2.5" width="12" height="11" rx="2"/><path d="M1.5 6h12M5 1v3M10 1v3"/></svg><span class="k">Dates</span><span class="v">Any</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button><button class="x" data-clear="gdate" aria-label="Clear dates filter"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></span>
     <span class="chipw" id="gkm"><button class="chip" id="c-km" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-km"><svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.5 7.5h12M4 4.5l-2.5 3 2.5 3M11 4.5l2.5 3-2.5 3"/></svg><span class="k">Distance</span><span class="v">Any</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button><button class="x" data-clear="gkm" aria-label="Clear distance filter"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></span>
     <span class="chipw" id="gfrom"><button class="chip" id="c-from" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-from"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="4.5"/></svg><span class="k">Pick-up</span><span class="v">Anywhere</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button><button class="x" data-clear="gfrom" aria-label="Clear pick-up filter"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></span>
@@ -382,9 +428,10 @@
 </div>
 <main id="main">
   <div id="mapview">
-    <aside id="side" aria-label="Routes"></aside>
+    <div id="sheet"><button class="grip" id="grip" aria-controls="side" aria-expanded="false" aria-label="Expand results"><span aria-hidden="true"></span></button><aside id="side" aria-label="Routes"></aside></div>
     <div id="mapwrap">
       <div id="map" role="region" aria-label="Route map"></div>
+      <div id="mpill" hidden><button id="mpback" aria-label="Back to all routes"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4l-5 5 5 5"/></svg></button><span id="mptitle"></span></div>
       <div id="empty" role="status" hidden><span id="empty-msg"></span><button id="empty-reset" class="btn2 sm">Reset filters</button></div>
     </div>
   </div>
@@ -422,6 +469,11 @@
     <label>Station<select id="tst"></select></label>
   </div>
   <div class="pf"><button class="ghost" data-clear="gto">Clear</button><span class="grow"></span><button class="btn" data-done>Done</button></div>
+</div>
+<div class="pop" id="p-filt" role="dialog" aria-labelledby="h-filt" hidden>
+  <div class="shh"><h2 id="h-filt">Filters</h2><button class="shx" data-done aria-label="Close filters"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
+  <div class="fbody"><section class="fsec" data-pop="p-chain" hidden><h2>Chain options</h2></section><section class="fsec" data-pop="p-date"></section><section class="fsec" data-pop="p-km"></section><section class="fsec" data-pop="p-from"></section><section class="fsec" data-pop="p-to"></section></div>
+  <div class="pf"><button class="ghost" id="freset">Reset</button><button class="btn" id="fshow" data-done>Show trips</button></div>
 </div>
 <div class="pop" id="p-chain" role="dialog" aria-labelledby="h-chain" hidden>
   <div class="shh"><h2 id="h-chain">Chain options</h2><button class="shx" data-done aria-label="Close chain options"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
@@ -741,6 +793,8 @@ function markActive() {
   $('gleg').hidden = !leg;
   $('legname').innerHTML = leg ? `${legKind(leg)} ${legTitle(leg)}` : '';
   $('reset').hidden = !n;  // it does nothing in the default state
+  $('fbtnt').textContent = n ? `Filters \u00b7 ${n}` : 'Filters';
+  $('freset').textContent = n ? `Reset (${n})` : 'Reset';
 }
 
 // the chain options chip: legs, rest days and next pick-up, then the trip limits that are set
@@ -1047,14 +1101,15 @@ function fitAll(user) {
   if (!$('map').clientWidth) return;  // the Trips page is shown: fit when the map is
   fitted = true;
   const b = layer.getBounds();
-  if (b.isValid()) map.fitBounds(b, { padding: [16, 16], animate: user && !still.matches });
+  if (b.isValid()) map.fitBounds(b, { paddingTopLeft: [16, 16], paddingBottomRight: [16, 16 + sheetPad()], animate: user && !still.matches });
   else map.setView([50, 9], 5);
 }
 function fitPicked() {
   const b = picked.getBounds();
   if (!$('map').clientWidth || !b.isValid()) return;
   fitted = true;
-  map.fitBounds(b, { paddingTopLeft: [48, 72], paddingBottomRight: [48, 32], maxZoom: 8, animate: !still.matches });
+  const ph = phone();  // on a phone: under the floating title and above the sheet
+  map.fitBounds(b, { paddingTopLeft: ph ? [24, 72] : [48, 72], paddingBottomRight: ph ? [24, 24 + sheetPad()] : [48, 32], maxZoom: 8, animate: !still.matches });
 }
 
 // ---- sidebar ------------------------------------------------------------------------------------
@@ -1187,7 +1242,7 @@ function applyView() {
   $('tripsview').hidden = m;
   $(m ? 'v-map' : 'v-trips').setAttribute('aria-current', 'page');
   $(m ? 'v-trips' : 'v-map').removeAttribute('aria-current');
-  if (m) { map.invalidateSize(); if (!fitted) fitAll(false); }
+  if (m) { if (phone()) snapTo(snap); map.invalidateSize(); if (!fitted) fitAll(false); }
 }
 
 function render() {
@@ -1239,6 +1294,8 @@ function render() {
   updateChips();
   syncChainUI();
   $('cshow').textContent = `Show ${count(n, 'chain')}`;
+  $('fshow').textContent = `Show ${count(n, chainMode ? 'chain' : 'trip')}`;
+  pill();
   placePop();
   commit(false);
 }
@@ -1326,6 +1383,7 @@ function openDetail(set) {
   S.view = 'map';
   // from one detail to the next replaces the entry, so Back still goes to the list
   if (!was) { commit(true); pushed = onMap; }
+  if (phone() && !was) snapTo('half', true);
   render();
   $('side').scrollTop = 0;
   fitPicked();
@@ -1347,6 +1405,7 @@ function pickLeg(key) {
   }
   legFilter = key;
   S.chain = focusKey = null;
+  if (phone() && snap === 'peek') snapTo('half');
   render();
   if (chains.length === 1) return openChain(chains[0].key, key);
   $('side').scrollTop = 0;
@@ -1365,6 +1424,7 @@ function closeDetail() {
   refocus();
 }
 function refocus() {
+  if (phone() && before) { snapTo(before); before = null; }
   const side = $('side'), k = opener && CSS.escape(opener);
   const b = (k && side.querySelector(`.card[data-route="${k}"], .card[data-chain="${k}"]`)) || side.querySelector('.card');
   if (b) b.focus();
@@ -1406,7 +1466,7 @@ function setMode(on) {
   applyMode();
   render();
   // on a phone the options sit behind their chip: open them at once
-  if (on && matchMedia('(max-width: 700px)').matches) openPop($('c-chain'));
+  if (on && phone()) openPop($('c-chain'));
 }
 $('m-trips').onclick = () => setMode(false);
 $('m-chains').onclick = () => setMode(true);
@@ -1523,27 +1583,56 @@ function placePop() {
   p.style.top = r.bottom + 6 + 'px';
   p.style.left = Math.max(8, Math.min(r.left, innerWidth - p.offsetWidth - 8)) + 'px';
 }
+// the filter sheet holds the bodies of the other panels while it is open, so every control keeps its id and handlers
+let lent = [];  // [panel, body] while the filter sheet holds them
+function lend() {
+  for (const sec of $('p-filt').querySelectorAll('.fsec')) {
+    const pop = $(sec.dataset.pop), body = pop.id === 'p-chain' ? $('gchain') : pop.querySelector('.pb');
+    sec.hidden = pop.id === 'p-chain' && !chainMode;
+    if (!sec.hidden) { sec.append(body); lent.push([pop, body]); }
+  }
+}
+function giveBack() {
+  for (const [pop, body] of lent) pop.insertBefore(body, pop.querySelector('.pf'));
+  lent = [];
+}
 function openPop(chip) {
   closePop(false);
   const pop = $(chip.getAttribute('aria-controls'));
+  if (pop.id === 'p-filt') lend();
   pop.hidden = false;
   chip.setAttribute('aria-expanded', 'true');
-  popOpen = { chip, pop };
+  // the phone sheets change the page only with Show: closing them otherwise puts the state back
+  popOpen = { chip, pop, was: phone() && (pop.id === 'p-filt' || pop.id === 'p-chain') ? hashOf(S.view) : null };
   placePop();
   // the first control, not the sheet's close button
   const f = [...pop.querySelectorAll('button, input, select')].find(x => x.offsetParent && !x.disabled && !x.classList.contains('shx'));
   if (f) f.focus();
 }
-function closePop(focus) {
+// keep: the changes stay (Show, Done); otherwise a phone sheet puts back the state it opened with
+function closePop(focus, keep) {
   if (!popOpen) return;
-  const { chip, pop } = popOpen;
+  const { chip, pop, was } = popOpen;
   pop.hidden = true;
   chip.setAttribute('aria-expanded', 'false');
   popOpen = null;
+  if (pop.id === 'p-filt') giveBack();
+  if (was && !keep && was !== hashOf(S.view)) {
+    clearTimeout(typing);
+    history.replaceState(null, '', was);
+    readHash();
+    render();
+  }
   if (focus) chip.focus();
 }
 document.querySelectorAll('.chip').forEach(c => c.onclick = () => c.getAttribute('aria-expanded') === 'true' ? closePop(true) : openPop(c));
-document.querySelectorAll('[data-done]').forEach(b => b.onclick = () => closePop(true));
+// the sheets' x closes without applying, Show and Done apply
+document.querySelectorAll('[data-done]').forEach(b => b.onclick = () => closePop(true, !b.classList.contains('shx')));
+$('freset').onclick = () => {
+  for (const g in CLEAR) if (g !== 'gchain' || chainMode) CLEAR[g]();
+  legFilter = null;
+  render();
+};
 document.addEventListener('pointerdown', e => {
   if (popOpen && !popOpen.pop.contains(e.target) && !popOpen.chip.parentNode.contains(e.target)) closePop(false);
 });
@@ -1556,8 +1645,80 @@ document.querySelectorAll('.pop').forEach(pop => pop.addEventListener('keydown',
   if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
   else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
 }));
-addEventListener('resize', placePop);
+addEventListener('resize', () => { placePop(); if (phone()) snapTo(snap); });
 $('chips').addEventListener('scroll', placePop);
+
+// ---- phone: the results are a bottom sheet over the map --------------------------------------------
+const phone = () => matchMedia('(max-width: 699px)').matches;
+const SNAPS = ['peek', 'half', 'full'];
+let snap = 'peek', before = null;  // before: the snap a detail was opened from, to go back to
+// visible heights in px: peek shows the header and the first cards, half most of the list, full all of the view
+function snapPx(name) {
+  const h = $('mapview').clientHeight, peek = Math.min(330, Math.round(h * .5));
+  return name === 'full' ? h - 8 : name === 'half' ? Math.max(peek + 80, Math.round(h * .62)) : peek;
+}
+// the sheet and the attribution above it
+// the height the sheet is going to, not the one it is passing through
+const sheetPad = () => phone() && S.view === 'map' ? parseFloat($('sheet').style.getPropertyValue('--sh')) + map.attributionControl.getContainer().offsetHeight : 0;
+function setSheet(px) {
+  $('sheet').style.setProperty('--sh', px + 'px');
+  $('mapview').style.setProperty('--sheet', px + 'px');  // the attribution and the legend stay above the sheet
+}
+function snapTo(name, remember) {
+  if (remember && !before) before = snap;
+  snap = name;
+  setSheet(snapPx(name));
+  const g = $('grip'), full = name === 'full';
+  g.setAttribute('aria-expanded', full);
+  g.setAttribute('aria-label', full ? 'Collapse results' : 'Expand results');
+}
+// the grip: a tap or Enter goes to the next snap point, the arrow keys move one, a drag goes to the nearest
+let dragging = null, dragged = false;
+$('grip').onclick = () => {
+  if (dragged) { dragged = false; return; }
+  snapTo(SNAPS[(SNAPS.indexOf(snap) + 1) % 3]);
+};
+$('grip').onkeydown = e => {
+  const i = SNAPS.indexOf(snap), to = { ArrowUp: i + 1, ArrowDown: i - 1, Home: 0, End: 2 }[e.key];
+  if (to === undefined) return;
+  e.preventDefault();
+  snapTo(SNAPS[Math.max(0, Math.min(2, to))]);
+};
+$('grip').onpointerdown = e => {
+  dragging = { y: e.clientY, h: $('sheet').offsetHeight, t: e.timeStamp };
+  dragged = false;
+  $('grip').setPointerCapture(e.pointerId);
+};
+$('grip').onpointermove = e => {
+  if (!dragging) return;
+  const dy = dragging.y - e.clientY;
+  if (!dragged && Math.abs(dy) < 6) return;
+  dragged = true;
+  $('sheet').classList.add('drag');
+  setSheet(Math.max(snapPx('peek') - 120, Math.min(snapPx('full'), dragging.h + dy)));
+};
+$('grip').onpointerup = $('grip').onpointercancel = e => {
+  if (!dragging) return;
+  $('sheet').classList.remove('drag');
+  if (dragged) {
+    // a flick goes one snap point further than where it was let go
+    const h = $('sheet').offsetHeight, v = (dragging.y - e.clientY) / Math.max(1, e.timeStamp - dragging.t);
+    const target = h + v * 200;
+    snapTo(SNAPS.reduce((a, b) => Math.abs(snapPx(b) - target) < Math.abs(snapPx(a) - target) ? b : a));
+  }
+  dragging = null;
+};
+// the floating title over the map while a route or chain is open
+function pill() {
+  const open = S.view === 'map' && (S.route ? ROUTES.get(S.route) : S.chain && chains.find(c => c.key === S.chain));
+  $('mpill').hidden = !open;
+  $('mapwrap').classList.toggle('pill', !!open);
+  if (!open) return;
+  $('mptitle').innerHTML = S.route ? `${esc(open.from.name)} ${ARROW} ${esc(open.to.name)}` : chainTitle(open);
+  $('mpback').setAttribute('aria-label', S.route ? 'Back to all routes' : 'Back to all chains');
+}
+$('mpback').onclick = () => closeDetail();
+snapTo('peek');
 
 // ---- sidebar and Trips page events --------------------------------------------------------------
 function onListClick(e) {
