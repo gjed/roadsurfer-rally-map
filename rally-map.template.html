@@ -92,6 +92,7 @@
   .pop .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
   .pop .quick { display: flex; flex-wrap: wrap; gap: 6px; }
   .pop .quick button { height: 32px; padding: 0 12px; border: 1px solid var(--field); border-radius: 16px; background: #fff; font-size: 13px; cursor: pointer; }
+  .pop .quick button[aria-pressed="true"] { border-color: var(--accent); background: #E8F0FB; color: #174C93; font-weight: 600; }
   @media (hover: hover) { .pop .quick button:hover { background: #F3F5F7; } }
   .pop .wkh { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
   .pop .wkh output { color: var(--ink); font-weight: 600; }
@@ -281,7 +282,7 @@
   .leaflet-tooltip-top.rpill::before { border-top-color: var(--sel); }
 
   /* phone only: the Filters entry, the filter sheet, the sheet's grip and the floating route title */
-  .fbw, .grip, #mpill, #p-filt { display: none; }
+  .fbw, .grip, #mpill, #p-filt, .pmode, .phead, .prow, .chint, .fupd { display: none; }
   #sheet { display: contents; }
   /* between phone and desktop the map stays beside the list */
   @media (max-width: 699px) {
@@ -391,6 +392,38 @@
     .tt td.act > * { flex: 1; height: 44px; }
     .tt td.act > .btn { flex: 2; }
     .tt td.act .btn2 { margin-right: 0; }
+    /* one-row app bar: the mode switch moves to the results sheet and the Trips header, the scan time to the filter sheet */
+    #appbar { flex-wrap: nowrap; padding: 10px 12px; }
+    #appbar > .seg[role="group"], #updated { display: none; }
+    #appbar nav.seg { margin-left: auto; }
+    #appbar nav.seg svg { display: none; }
+    #appbar nav.seg > a { padding: 8px 14px; }
+    .pmode { display: flex; flex: none; }
+    .pmode button { height: 36px; padding: 0 12px; }
+    .shead { align-items: center; }
+    .shead .sortl { display: none; }
+    .fupd { display: block; margin: 0; padding: 14px 0 4px; font-size: 13px; color: var(--muted); }
+    /* a route or chain open: the map takes the whole screen under the floating back button and title */
+    body.detail #appbar, body.detail #fbar { display: none; }
+    #map.dim path.stn { stroke-opacity: .3; fill-opacity: .3; }
+    .wins .btn, .legs .btn, .ccard .btn { min-height: 44px; }
+    /* the map keeps only Fit; zoom is a pinch and the legend's lines read without it */
+    .leaflet-control-zoom, .legend { display: none; }
+    .fitbar { border: 0 !important; border-radius: 12px !important; box-shadow: 0 1px 3px rgba(16, 24, 40, .2); overflow: hidden; }
+    .leaflet-bar.fitbar button.fit { width: 44px; height: 44px; }
+    /* Chains pressed: the options open over a dark page with a short explanation above them */
+    #p-chain:not([hidden]) { box-shadow: 0 -8px 32px rgba(16, 24, 40, .22), 0 0 0 100vmax rgba(55, 63, 77, .94); }
+    #p-chain .chint { display: block; position: absolute; left: 16px; right: 16px; bottom: calc(100% + 20px); margin: 0; padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, .14); color: #fff; font-size: 15px; line-height: 1.4; }
+    /* Trips: one header row with the count and the mode, one with Sort and Group, then the cards */
+    .tq, .thead > div:first-child, .tt thead { display: none; }
+    #tlist { row-gap: 10px; }
+    .phead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .phead p { margin: 0; font-size: 15px; }
+    .phead p span { color: var(--muted); }
+    .prow { display: flex; gap: 12px; }
+    .prow .sortl { flex: 1 1 auto; min-width: 0; flex-direction: row; align-items: center; gap: 6px; font-size: 13px; }
+    .prow .sortl select { flex: 1; min-width: 0; height: 36px; }
+    .prow .sortl:last-child { flex: 0 1 auto; }
   }
   @media (pointer: coarse) { .wins .btn, .legs .btn, .ccard .btn { min-height: 40px; } }
   @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
@@ -441,7 +474,7 @@
 <div class="pop" id="p-date" role="dialog" aria-labelledby="h-date" hidden>
   <div class="pb">
     <h2 id="h-date">Start date</h2>
-    <div class="quick"><button data-quick="0">This week</button><button data-quick="1">Next week</button></div>
+    <div class="quick"><button data-quick="any">Any</button><button data-quick="0">This week</button><button data-quick="1">Next week</button></div>
     <div class="row"><label>Earliest start<input type="date" id="from"></label><label>Latest start<input type="date" id="to"></label></div>
     <div class="lab"><span class="wkh"><label for="week">Week</label><output id="wkout" for="week">All dates</output></span><input type="range" id="week" min="0" max="0" value="0" aria-valuetext="all dates"></div>
   </div>
@@ -472,10 +505,11 @@
 </div>
 <div class="pop" id="p-filt" role="dialog" aria-labelledby="h-filt" hidden>
   <div class="shh"><h2 id="h-filt">Filters</h2><button class="shx" data-done aria-label="Close filters"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
-  <div class="fbody"><section class="fsec" data-pop="p-chain" hidden><h2>Chain options</h2></section><section class="fsec" data-pop="p-date"></section><section class="fsec" data-pop="p-km"></section><section class="fsec" data-pop="p-from"></section><section class="fsec" data-pop="p-to"></section></div>
+  <div class="fbody"><section class="fsec" data-pop="p-chain" hidden><h2>Chain options</h2></section><section class="fsec" data-pop="p-date"></section><section class="fsec" data-pop="p-km"></section><section class="fsec" data-pop="p-from"></section><section class="fsec" data-pop="p-to"></section><p class="fupd" id="fupd"></p></div>
   <div class="pf"><button class="ghost" id="freset">Reset</button><button class="btn" id="fshow" data-done>Show trips</button></div>
 </div>
-<div class="pop" id="p-chain" role="dialog" aria-labelledby="h-chain" hidden>
+<div class="pop" id="p-chain" role="dialog" aria-labelledby="h-chain" aria-describedby="chint" hidden>
+  <p class="chint" id="chint">Chains: 2–3 rallies booked back to back. Set how they may connect, then browse them on the map.</p>
   <div class="shh"><h2 id="h-chain">Chain options</h2><button class="shx" data-done aria-label="Close chain options"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
   <fieldset id="gchain" hidden><legend class="sr">Chain options</legend><div class="copt">
     <div role="group" aria-labelledby="l-legs"><span class="ct" id="l-legs">Legs</span>
@@ -529,7 +563,7 @@ const chainWeight = n => Math.min(1 + n * .3, 4);
 const chainOpacity = n => Math.min(.25 + n * .05, .7);
 const fit = L.control({ position: 'topright' });
 fit.onAdd = () => {
-  const d = L.DomUtil.create('div', 'leaflet-bar');
+  const d = L.DomUtil.create('div', 'leaflet-bar fitbar');
   d.innerHTML = '<button class="fit" title="Fit all routes" aria-label="Fit all routes"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>';
   L.DomEvent.disableClickPropagation(d);
   d.firstChild.onclick = () => fitAll(true);
@@ -744,6 +778,7 @@ const done = SCAN && typeof SCAN.finished_at === 'string' ? Date.parse(SCAN.fini
 if (!isNaN(done)) {
   // the dot is green while the scan is less than two days old
   $('updated').innerHTML = `<span class="fresh${Date.now() - done < 2 * 864e5 ? ' on' : ''}" aria-hidden="true"></span><span class="uw">Updated </span>${esc(dm(iso(done)))}, ${esc(new Date(done).toISOString().slice(11, 16))} UTC`;
+  $('fupd').textContent = `Offers as of the scan of ${dm(iso(done))}, ${new Date(done).toISOString().slice(11, 16)} UTC`;
   $('updated').title = `scan finished ${SCAN.finished_at} \u00b7 ${SCAN.offers} offers \u00b7 ${SCAN.requests} requests, ${SCAN.failed} failed`;
 }
 
@@ -804,6 +839,11 @@ const chainSummary = () => {
     o.dmin && o.dmax < Infinity ? `${o.dmin}\u2013${o.dmax} days` : o.dmin ? `\u2265 ${o.dmin} days` : o.dmax < Infinity && `\u2264 ${o.dmax} days`,
     o.drive < Infinity && `\u2264 ${fmtKm(o.drive)} km driven`, o.round && 'round trip'].filter(Boolean).join(' \u00b7 ');
 };
+// this week: today to Sunday; next week: Monday to Sunday (UTC)
+function quickRange(nx) {
+  const t = Math.floor(Date.now() / 864e5), mon = t - (new Date(t * 864e5).getUTCDay() + 6) % 7;
+  return [dayIso(nx ? mon + 7 : t), dayIso(mon + 6 + 7 * nx)];
+}
 // each chip shows its filter's current value
 function updateChips() {
   const f = $('from').value, t = $('to').value, k = +$('week').value, a = $('kmin').value, b = $('kmax').value;
@@ -814,6 +854,8 @@ function updateChips() {
     gfrom: at(eff.fcc, eff.fst), gto: at(eff.tcc, eff.tst),
   };
   for (const g in v) $(g).querySelector('.v').textContent = v[g];
+  const on = { any: f === RESET.from && t === RESET.to && !k, 0: quickRange(0).join() === f + ',' + t, 1: quickRange(1).join() === f + ',' + t };
+  for (const b of document.querySelectorAll('[data-quick]')) b.setAttribute('aria-pressed', !!on[b.dataset.quick]);
   $('cchip').querySelector('.v').textContent = chainSummary();
 }
 
@@ -937,6 +979,9 @@ const chainTry = () => {
 };
 const emptyMsg = () => !DATA.length ? 'No rally trips are on offer right now.' : chainMode ? `No chains match${chainTry() ? `. Try: ${chainTry()}, or reset the filters.` : ' these filters.'}` : 'No trips match the filters.';
 const noneHtml = () => `<div class="none"><p>${esc(emptyMsg())}</p>${DATA.length ? '<button class="btn2 sm reset-all">Reset filters</button>' : ''}</div>`;
+// Rallies | Chains in the results sheet and the Trips header: on a phone the app bar has no room for it
+const modeSeg = () => `<div class="seg pmode" role="group" aria-label="What to show"><button data-mode="0" aria-pressed="${!chainMode}">Rallies</button><button data-mode="1" aria-pressed="${chainMode}">Chains</button></div>`;
+const TRIP_ORDERS = [['start', 'Earliest start'], ['-start', 'Latest start'], ['end', 'Earliest end'], ['-end', 'Latest end'], ['km', 'Shortest drive'], ['-km', 'Longest drive']];
 const orderSelect = (id, opts, v) => `<label class="sortl">Sort<select id="${id}">${opts.map(([k, t]) => `<option value="${k}"${k === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`;
 // a route's windows in its detail: those the date and distance filters keep, or all of them when they keep none
 // (a route opened from "Continue from" may lie outside the filters)
@@ -1123,7 +1168,7 @@ function routeCards() {
   const st = eff.fst && STATIONS.get(eff.fst);
   const first = shown.map(r => r.start).sort()[0], last = shown.map(r => r.end).sort().pop();
   const sub = st ? `${count(list.length, 'route')} \u00b7 ${count(shown.length, 'trip')}` : `${count(shown.length, 'trip')}${first ? ` \u00b7 ${dm(first)} \u2013 ${dm(last)}` : ''}`;
-  const head = `<div class="shead"><div><h2>${esc(st ? `From ${place(st)}` : count(list.length, 'route'))}</h2><p>${esc(sub)}</p></div>${list.length ? orderSelect('rsort', ROUTE_ORDERS, S.rsort) : ''}</div>`;
+  const head = `<div class="shead"><div><h2>${esc(st ? `From ${place(st)}` : count(list.length, 'route'))}</h2><p>${esc(sub)}</p></div>${list.length ? orderSelect('rsort', ROUTE_ORDERS, S.rsort) : ''}${modeSeg()}</div>`;
   if (!list.length) return head + noneHtml();
   return head + '<ul class="cards">' + list.map(g => {
     const N = g.trips.length;
@@ -1157,7 +1202,7 @@ function chainCards() {
   const n = chains.length, st = eff.fst && STATIONS.get(eff.fst);
   const sub = (n > CHAIN_ROWS ? `The first ${CHAIN_ROWS} \u00b7 ` : '') + (legFilter ? 'Pick one to open it' : 'Rallies you can book back to back');
   const title = legFilter ? `${count(n, 'chain')} ${n === 1 ? 'uses' : 'use'} this ${isHop(legFilter) ? 'hop' : 'leg'}` : st ? `Chains from ${st.name}` : count(n, 'chain');
-  const head = `<div class="shead"><div><h2 id="ch" tabindex="-1">${esc(title)}</h2><p>${esc(st && !legFilter ? `${count(n, 'chain')} \u00b7 ${sub}` : sub)}</p></div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}</div>`;
+  const head = `<div class="shead"><div><h2 id="ch" tabindex="-1">${esc(title)}</h2><p>${esc(st && !legFilter ? `${count(n, 'chain')} \u00b7 ${sub}` : sub)}</p></div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}${modeSeg()}</div>`;
   if (!n) return head + noneHtml();
   return head + '<ul class="cards">' + chains.slice(0, CHAIN_ROWS).map(c => `<li><button class="card ch" data-chain="${esc(c.key)}"><span class="t">${chainTitle(c)}</span>` +
     `<span class="d num">${esc(sd(c.start))} \u2013 ${esc(sd(c.end))}</span>${chainBadges(c)}</button></li>`).join('') + '</ul>' +
@@ -1195,7 +1240,10 @@ function tripsTable() {
   const s = SORT.trips;
   shown.sort(byOrder(s, SORTS[s.key], (x, y) => x.start.localeCompare(y.start) || x.from.name.localeCompare(y.from.name)));
   const first = shown.map(r => r.start).sort()[0], last = shown.map(r => r.end).sort().pop();
-  const head = `<div class="thead"><div><h2>${count(shown.length, 'trip')}</h2><p>${count(routes.size, 'route')}${first ? ` \u00b7 ${dm(first)} \u2013 ${dm(last)}` : ''} \u00b7 Pick up and return any day inside a window, up to ${NIGHTS} nights</p></div>` +
+  const ph = `<div class="phead"><p><strong>${count(shown.length, 'trip')}</strong> <span>on ${count(routes.size, 'route')}</span></p>${modeSeg()}</div>` +
+    `<div class="prow">${orderSelect('tsort', TRIP_ORDERS, sortVal(s))}<label class="sortl">Group<select id="tgroup">` +
+    [['none', 'None'], ['route', 'Route'], ['from', 'Pick-up']].map(([k, t]) => `<option value="${k}"${S.group === k ? ' selected' : ''}>${t}</option>`).join('') + '</select></label></div>';
+  const head = ph + `<div class="thead tq"><div><h2>${count(shown.length, 'trip')}</h2><p>${count(routes.size, 'route')}${first ? ` \u00b7 ${dm(first)} \u2013 ${dm(last)}` : ''} \u00b7 Pick up and return any day inside a window, up to ${NIGHTS} nights</p></div>` +
     `<div class="grp" role="group" aria-label="Group by"><span aria-hidden="true">Group by</span><div class="seg">` +
     [['none', 'None'], ['route', 'Route'], ['from', 'Pick-up']].map(([k, t]) => `<button data-group="${k}" aria-pressed="${S.group === k}">${t}</button>`).join('') + '</div></div></div>';
   if (!shown.length) return head + `<div class="tbox">${noneHtml()}</div>` + foot();
@@ -1218,7 +1266,8 @@ function tripsTable() {
 
 function tripsChains() {
   const n = chains.length;
-  const head = `<div class="thead"><div><h2>${n > CHAIN_ROWS ? `Showing ${CHAIN_ROWS} of ${n.toLocaleString('en-GB')} chains` : count(n, 'chain')}</h2>` +
+  const head = `<div class="phead"><p><strong>${n > CHAIN_ROWS ? `Showing ${CHAIN_ROWS} of ${n.toLocaleString('en-GB')} chains` : count(n, 'chain')}</strong></p>${modeSeg()}</div>` +
+    `<div class="thead"><div><h2>${n > CHAIN_ROWS ? `Showing ${CHAIN_ROWS} of ${n.toLocaleString('en-GB')} chains` : count(n, 'chain')}</h2>` +
     `<p>Rallies you can book back to back. Each leg is booked on its own.</p></div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}</div>`;
   if (!n) return head + `<div class="tbox">${noneHtml()}</div>` + foot();
   return head + '<div class="tbox plain"><ul class="ccards">' + chains.slice(0, CHAIN_ROWS).map(c => `<li class="ccard" data-card="${esc(c.key)}"><div class="sum"><h3>${chainTitle(c)}</h3>` +
@@ -1277,7 +1326,7 @@ function render() {
     const tip = `${esc(name)}, ${esc(g.s.cc)} \u00b7 ` + (chainMode ? `${count(g.dep, 'chain')} starting \u00b7 ${count(g.arr, 'chain')} ending` : `${count(g.dep, 'departure')} \u00b7 ${count(g.arr, 'arrival')}`) +
       // arrival only: the pick-up dropdown has no such option, so the click does nothing
       (click ? ` \u00b7 ${chainMode ? (on ? 'Click to show chains starting anywhere' : 'Click to only show chains starting here') : (on ? 'Click to show trips from every station' : 'Click to only show trips from here')}` : '');
-    L.circleMarker(ll(g.s), { pane: 'stations', radius: on ? 7 : 5.5, weight: 2.5, color: STN, fillColor: on ? STN : '#fff', fillOpacity: 1, className: click ? '' : 'noclick' }).addTo(layer)
+    L.circleMarker(ll(g.s), { pane: 'stations', radius: on ? 7 : 5.5, weight: 2.5, color: STN, fillColor: on ? STN : '#fff', fillOpacity: 1, className: click ? 'stn' : 'stn noclick' }).addTo(layer)
       .bindTooltip(tip, { direction: 'top', offset: [0, -8] })
       .on('click', () => { if (click) toggle(name); });
   }
@@ -1549,12 +1598,12 @@ CHAIN_IDS.filter(id => !['cs', 'cn', 'ck'].includes(id) && !TYPED.includes(id)).
 TYPED.forEach(id => { $(id).oninput = later(250); $(id).onchange = now; });
 $('ck').oninput = later(150);
 $('ck').onchange = now;
-// this week: today to Sunday; next week: Monday to Sunday (UTC)
 document.querySelectorAll('[data-quick]').forEach(b => b.onclick = () => {
-  const t = Math.floor(Date.now() / 864e5), mon = t - (new Date(t * 864e5).getUTCDay() + 6) % 7, nx = +b.dataset.quick;
-  $('from').value = dayIso(nx ? mon + 7 : t);
-  $('to').value = dayIso(mon + 6 + 7 * nx);
-  custom();
+  if (b.dataset.quick === 'any') CLEAR.gdate();
+  else {
+    [$('from').value, $('to').value] = quickRange(+b.dataset.quick);
+    custom();
+  }
   render();
 });
 const CLEAR = {
@@ -1644,7 +1693,7 @@ function closePop(focus, keep) {
     render();
   }
   homeChips();
-  if (focus) focusBack(opener);
+  if (focus) focusBack(opener.offsetParent ? opener : [...document.querySelectorAll('.pmode [aria-pressed="true"]')].find(b => b.offsetParent) || chip);
 }
 document.querySelectorAll('.chip').forEach(c => c.onclick = () => c.getAttribute('aria-expanded') === 'true' ? closePop(true) : openPop(c));
 // the sheets' x closes without applying, Show and Done apply
@@ -1734,6 +1783,10 @@ function pill() {
   const open = S.view === 'map' && (S.route ? ROUTES.get(S.route) : S.chain && chains.find(c => c.key === S.chain));
   $('mpill').hidden = !open;
   $('mapwrap').classList.toggle('pill', !!open);
+  if (document.body.classList.contains('detail') !== !!open) {
+    document.body.classList.toggle('detail', !!open);
+    if (phone()) map.invalidateSize();  // the fit that follows needs the new size now, not after the ResizeObserver
+  }
   if (!open) return;
   $('mptitle').innerHTML = S.route ? `${esc(open.from.name)} ${ARROW} ${esc(open.to.name)}` : chainTitle(open);
   $('mpback').setAttribute('aria-label', S.route ? 'Back to all routes' : 'Back to all chains');
@@ -1745,6 +1798,7 @@ snapTo('peek');
 function onListClick(e) {
   const t = e.target, by = s => t.closest(s);
   let b;
+  if ((b = by('[data-mode]'))) return setMode(b.dataset.mode === '1');
   if ((b = by('[data-route]'))) return openRoute(b.dataset.route);
   if ((b = by('[data-chain]'))) return openChain(b.dataset.chain);
   if ((b = by('[data-act]'))) {
@@ -1772,6 +1826,8 @@ function onListChange(e) {
   const id = e.target.id, v = e.target.value;
   if (id === 'rsort') S.rsort = v;
   else if (id === 'csort') SORT.chains = { key: v.replace('-', ''), dir: v[0] === '-' ? -1 : 1 };
+  else if (id === 'tsort') SORT.trips = { key: v.replace('-', ''), dir: v[0] === '-' ? -1 : 1 };
+  else if (id === 'tgroup') S.group = v;
   else return;
   render();
   $(id).focus();  // the select was redrawn
