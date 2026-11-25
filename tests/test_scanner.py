@@ -579,6 +579,16 @@ class RoadScanTest(unittest.TestCase):
             [(1234, False), (1240, True), (None, None)],
         )
 
+    def test_page_has_chain_options(self):
+        self.main("--from-json", str(FIXTURE), "--map", str(self.dir / "i.html"))
+        html = (self.dir / "i.html").read_text(encoding="utf-8")
+        self.assertIn('<fieldset id="gchain" hidden>', html)
+        for control in ("cn", "cs", "cg", "ck", "cdmin", "cdmax", "cdrive", "cr"):
+            self.assertEqual(html.count(f'id="{control}"'), 1, control)
+        # the option groups count as a filter and Reset restores them
+        self.assertIn("gchain: CHAIN_IDS", html)
+        self.assertIn("setChainOptions({", html)
+
     def scan_get(self, path, alias, params=None):
         if path == "/rally/stations":
             return [

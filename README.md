@@ -154,11 +154,23 @@ another, each as its own trip. The `Chains` button in the page toolbar finds tho
 sequences in the offers already on the page, with no request and no scanner change, and
 shows them on the map and in the list.
 
-- **Settings.** Legs: 2 (default) or 2 or 3. Rest days: none (default), up to 1
-  or up to 2; leg N+1 starts on the day leg N ends or that many days later. Connection:
-  the same station (default), or a station within 50 or 100 km of where leg N ended. The
-  connection is a hop you make yourself, and its distance is the straight line × 1.3, so
-  it carries `~`.
+- **Chain options.** Turning `Chains` on opens them (on a phone the filter panel opens
+  with them). They count in `Filters (n)` when they are not at their default, and
+  `Reset` restores them.
+  - Legs: 2 (default), 3, or 2 or 3.
+  - Change between legs: `Same day` (on by default) and up to 0 (default) to 7 rest days.
+    With `Same day` on, leg N+1 starts on the day leg N ends or up to that many days
+    later (`Same day or up to N rest days`); with it off, 1 to that many days later
+    (`Same day 1 to N rest days`).
+  - Next pick-up within: the same station (default), or a station within about 25, 50,
+    100, 150 or 250 km of where leg N ended. The connection is a hop you make yourself,
+    and its distance is the straight line × 1.3, so it carries `~`.
+  - Trip days: the shortest and the longest, in days from the first pick-up to the last
+    return. Max total km: a limit on the km of the legs. Both are empty (any) by default.
+  - Round trip: the last return is within the next pick-up distance of the first
+    pick-up.
+    The widest settings (2 or 3 legs, 7 rest days, 250 km) match over 200,000 chains on a
+    real scan and take a few hundred milliseconds to search; 4 legs is not offered.
 - **Dates.** An offer is a window: the booking page also accepts a shorter stay or a
   later start inside it. A chain uses the dates that put the most nights on the road,
   then the fewest rest days, then the earliest start, and every `Book` link carries
