@@ -80,6 +80,11 @@
   #bar input[type="checkbox"] { margin: 0; padding: 0; accent-color: var(--accent); }
   @media (hover: hover) { #list tbody tr:hover { background: #eef5ff; } }
   #list tbody tr:focus-within { background: #eef5ff; }
+  #list table.ch tbody tr[data-key] { cursor: pointer; }
+  #list tbody tr.sel { background: #e6f0fa; box-shadow: inset 4px 0 var(--accent); }
+  #list .lf { display: block; margin-bottom: 2px; color: var(--accent); font-weight: 600; }
+  #list button.clear-leg { font: inherit; font-size: 12px; color: inherit; padding: 2px 8px; min-height: 24px; border: 1px solid #767676; border-radius: 4px; background: #fff; cursor: pointer; }
+  #gleg .f { max-width: 22em; }
   #list button.go, #list button.reset-all { font: inherit; font-size: 12px; color: inherit; padding: 2px 8px; min-height: 24px; border: 1px solid #767676; border-radius: 4px; background: #fff; cursor: pointer; }
   @media (hover: hover) { #list button.go:hover, #list button.reset-all:hover { background: #e8e8e8; } }
   #list td a, .pop a { color: var(--link); font-weight: 600; }
@@ -96,6 +101,10 @@
   .pop .leg .dt { grid-area: dt; }
   .pop .leg a { grid-area: bk; align-self: center; }
   .pop .note { margin: 6px 0 0; font-size: 12px; }
+  .pop .pick { margin: 6px 0 0; padding: 0; list-style: none; }
+  .pop .pick button { display: block; width: 100%; margin-top: 4px; padding: 5px 8px; font: inherit; text-align: left; color: inherit; border: 1px solid #767676; border-radius: 4px; background: #fff; cursor: pointer; }
+  .pop button.lnk { padding: 0; font: inherit; font-weight: 600; color: var(--link); text-decoration: underline; border: 0; background: none; cursor: pointer; }
+  @media (hover: hover) { .pop .pick button:hover { background: #e8e8e8; } }
   .legend { background: #fff; padding: 6px 8px; font-size: 12px; }
   .legend summary { cursor: pointer; font-weight: 600; }
   .legend ul { list-style: none; margin: 4px 0 0; padding: 0; }
@@ -105,7 +114,7 @@
   .leaflet-control-attribution a { color: #005f87; }
   .leaflet-container path.leaflet-interactive:focus { outline: none; }
   .leaflet-map-pane:has(.leaflet-popup) .leaflet-tooltip-pane { display: none; }
-  #map.dim path.leaflet-interactive:not(.hl), #map.dim path.cas { opacity: .3; }
+  #map.dim path.leaflet-interactive:not(.hl), #map.dim path.cas, #map.dim path.ov { opacity: .3; }
   .hl { filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff); }
   @media (max-width: 700px) {
     #reset, #filters, #mode, #view { order: 1; }
@@ -175,6 +184,7 @@
   @media (pointer: coarse) {
     #list td a, .pop td a { display: inline-block; padding: 6px 8px; margin: -6px -8px; }
     #list button.go { min-height: 28px; }
+    .pop .pick button, .pop button.lnk { min-height: 44px; }
   }
 </style>
 </head>
@@ -218,6 +228,7 @@
       <select id="tcc" aria-label="Return country"></select>
       <select id="tst" aria-label="Return station"></select>
     </div></fieldset>
+    <fieldset id="gleg" hidden><legend>Chains using</legend><div class="f"><span id="glegt"></span> <button id="glegx">Clear</button></div></fieldset>
   </div>
 </header>
 <main id="main">
@@ -256,7 +267,7 @@ function legendItems() {
   return (chainMode ? `<li>${line(chainWeight(1), chainOpacity(1), COL)} leg of 1 chain</li><li>${line(chainWeight(10), chainOpacity(10), COL)} 10 or more chains</li>`
     : `<li>${line(weight(1), opacity(1), COL)} 1 trip on this route</li><li>${line(weight(5), opacity(5), COL)} 5 or more trips</li>`) +
     (chainMode ? `<li>${line(3, 1, CONN, '1 6')} connection to the next pick-up (train, bus)</li>` : '') +
-    `<li>${line(2.5, 1, HOT)} selected ${chainMode ? 'chain' : 'route'}</li><li>${dot} station: click for ${what}s ${chainMode ? 'starting' : 'from'} here</li>` +
+    `<li>${line(2.5, 1, HOT)} selected ${chainMode ? 'chain' : 'route'}</li><li>${dot} station: click to only show ${what}s ${chainMode ? 'starting' : 'from'} here</li>` +
     // ~ marks a distance that was not routed: straight line x 1.3
     (DATA.some(r => dist(r).est) || (chainMode && +document.getElementById('ck').value > 0) ? '<li><span class="tilde" aria-hidden="true">~</span> estimated distance, not routed</li>' : '');
 }
@@ -454,6 +465,7 @@ const sel = {};  // current selections, '' = any
 const NOUN = { fcc: 'country', fst: 'station', tcc: 'country', tst: 'station' };
 // a filter is active when it differs from its reset value; groups mirror the fieldsets
 const CHAIN_IDS = ['cn', 'cs', 'cg', 'ck', 'cdmin', 'cdmax', 'cdrive', 'cr'];
+let legFilter = null;  // chain mode: only the chains that use this leg or connection, { key, title }
 const GROUPS = { gdate: ['from', 'to'], gkm: ['kmin', 'kmax'], gfrom: ['fcc', 'fst'], gto: ['tcc', 'tst'], gchain: CHAIN_IDS };
 // a checkbox reads '1' when checked and '' when not
 const RESET = { from: min || '', to: max || '', cn: '2', cs: '1', cg: '0', ck: '0', cr: '' };
@@ -472,6 +484,10 @@ function markActive() {
     $(g).classList.toggle('on', on);
     n += on;
   }
+  if (legFilter) n++;
+  $('gleg').hidden = !legFilter;
+  $('gleg').classList.toggle('on', !!legFilter);
+  $('glegt').textContent = legFilter ? legFilter.title : '';
   $('filters').textContent = n ? `Filters (${n})` : 'Filters';
   $('reset').hidden = !n;  // it does nothing in the default state
 }
@@ -494,6 +510,10 @@ const ENDS = {
 // without being forgotten, and trip mode gets it back
 let eff = sel;
 const endsPass = (c, skip) => { for (const k in ENDS) if (k !== skip && eff[k] && ENDS[k](c) !== eff[k]) return false; return true; };
+// a chain uses a leg (route key) or a connection (hop key) when it drives that leg or hands over that way
+const hopKey = (c, i) => 'hop ' + c.legs[i - 1].r.to.name + '>' + c.legs[i].r.from.name;
+const uses = (c, key) => c.legs.some((l, i) => routeKey(l.r) === key || (i && !c.hops[i - 1].same && hopKey(c, i) === key));
+const legPass = c => !legFilter || uses(c, legFilter.key);
 let chainMemo = { key: '', list: [], ms: 0 };  // the chains for the current chain settings, filters and dates
 // the chain options as findChains reads them; an empty or odd number means "no limit" or the default
 const whole = (id, lo, hi) => { const v = Math.floor(+$(id).value); return $(id).value === '' || !isFinite(v) ? NaN : Math.min(hi, Math.max(lo, v)); };
@@ -524,7 +544,7 @@ function fillSelects() {
   eff = chainMode ? { ...sel } : sel;
   for (const k in FILTERS) {
     const counts = new Map();
-    for (const r of rows) if (chainMode ? endsPass(r, k) : passes(r, k)) counts.set(F[k](r), (counts.get(F[k](r)) || 0) + 1);
+    for (const r of rows) if (chainMode ? endsPass(r, k) && legPass(r) : passes(r, k)) counts.set(F[k](r), (counts.get(F[k](r)) || 0) + 1);
     if (eff[k] && !counts.has(eff[k])) eff[k] = '';  // selection became impossible -> clear it
     const el = $(k);
     el.innerHTML = `<option value="">Any ${NOUN[k]}</option>` +
@@ -604,15 +624,16 @@ function renderList() {
   if (chainMode) {
     const rows = chains.slice(0, CHAIN_ROWS).map(c => {
       const legs = c.legs.map((l, i) => legItem(c, l, i)).join('');
-      return `<tr>${chainDate('ds', c.start)}${chainDate('de', c.end)}<td class="dd"><span class="n">${c.days}</span>${c.rest ? `<span class="sub">${c.rest} rest</span>` : ''}</td>` +
+      return `<tr data-key="${esc(c.key)}">${chainDate('ds', c.start)}${chainDate('de', c.end)}<td class="dd"><span class="n">${c.days}</span>${c.rest ? `<span class="sub">${c.rest} rest</span>` : ''}</td>` +
         `<td class="km">${kmHtml(c.drive, chainEst(c))}</td><td class="lg"><ol class="legs">${legs}</ol></td>` +
         `<td class="m"><button class="go" data-key="${esc(c.key)}" aria-label="Show chain ${esc(chainLabel(c))} on the map">Map</button></td></tr>`;
     }).join('');
     const none = DATA.length ? `No chains match${chainTry() ? `. Try: ${chainTry()}.` : ' these filters.'} <button class="reset-all">Reset filters</button>` : 'No rally trips are on offer right now.';
-    $('list').innerHTML = `<table class="ch"><caption>${chainLegs()} rallies back to back. Each leg is booked on its own.</caption><thead><tr>${th('start', 'Start')}${th('end', 'End')}${th('days', 'Days', 'dd')}${th('km', 'km driven', 'km')}` +
+    $('list').innerHTML = `<table class="ch"><caption>${legFilter ? `<span class="lf">Only chains using ${esc(legFilter.title)} <button class="clear-leg">Clear</button></span>` : ''}${chainLegs()} rallies back to back. Each leg is booked on its own.</caption><thead><tr>${th('start', 'Start')}${th('end', 'End')}${th('days', 'Days', 'dd')}${th('km', 'km driven', 'km')}` +
       `<th>Legs</th><th><span class="sr">Map</span></th></tr></thead><tbody>` +
       (rows || `<tr class="none"><td colspan="6">${none}</td></tr>`) + '</tbody></table>' +
       (chains.length > CHAIN_ROWS ? `<p class="note">Showing ${CHAIN_ROWS} of ${chains.length.toLocaleString('en-GB')} chains, on the map too. Sort or filter to see the others.</p>` : '');
+    markRow();
     return;
   }
   shown.sort(byOrder(s, SORTS[s.key], (x, y) => x.start.localeCompare(y.start) || x.from.name.localeCompare(y.from.name)));
@@ -633,14 +654,30 @@ function setView(list) {
   if (!list) map.invalidateSize();
 }
 
-// A hand-over by another station: a dotted line on a white casing, so it reads as "not driven" over the legs
+// A wide transparent line over a thin one, so a finger can hit it. It takes the clicks, so it keeps them from the map.
+const HIT = matchMedia('(pointer: coarse)').matches ? 22 : 12;
+const hitLine = (group, pts) => L.polyline(pts, { color: '#000', weight: HIT, opacity: 0, bubblingMouseEvents: false }).addTo(group);
+
+// A hand-over by another station: a dotted line on a white casing, so it reads as "not driven" over the legs.
+// Returns the line to bind a popup or tooltip to.
 function drawHop(group, a, b, style) {
   const pts = [[a.latitude, a.longitude], [b.latitude, b.longitude]];
   L.polyline(pts, { color: '#fff', weight: 6, opacity: .9, interactive: false, className: 'cas' }).addTo(group);
-  return L.polyline(pts, { ...style, dashArray: '1 6', lineCap: 'round' }).addTo(group);
+  L.polyline(pts, { ...style, dashArray: '1 6', lineCap: 'round', interactive: false }).addTo(group);
+  return hitLine(group, pts);
 }
 
-// Draw one chain from the list over the others and give its first leg a popup with a booking link per leg.
+let pickedKey = null;  // the chain on the map, whose list row is highlighted
+function markRow() {
+  for (const tr of $('list').querySelectorAll('tr[data-key]')) {
+    const on = tr.dataset.key === pickedKey;
+    tr.classList.toggle('sel', on);
+    if (on) tr.setAttribute('aria-current', 'true'); else tr.removeAttribute('aria-current');
+  }
+}
+
+// Draw one chain from the list over the others. Every leg, connection and station of it opens the same popup,
+// with a booking link per leg, so a click on any part keeps the chain.
 function drawChain(key) {
   const c = chains.find(c => c.key === key);
   if (!c) return null;
@@ -652,23 +689,25 @@ function drawChain(key) {
     `\u00b7 ${kmHtml(c.drive, chainEst(c))} km driven</p><ol class="legs">${c.legs.map((l, i) => legItem(c, l, i)).join('')}</ol><p class="note">Each leg is booked on its own.</p></div>`;
   let first;
   const stations = new Map();
+  // fromRow only stays while the popup that showRoute opened does
+  const bind = layer => layer.bindPopup(pop, { maxWidth: Math.min(340, innerWidth - 80), minWidth: Math.min(280, innerWidth - 100) })
+    .on('popupclose popupopen', () => { fromRow = null; });
   c.legs.forEach((l, i) => {
     const a = [l.r.from.latitude, l.r.from.longitude], b = [l.r.to.latitude, l.r.to.longitude], pts = arc(a, b);
-    const line = L.polyline(pts, hot).addTo(picked);
+    L.polyline(pts, { ...hot, interactive: false }).addTo(picked);
+    const line = bind(hitLine(picked, pts));
     if (!i) first = line;
-    if (i && !c.hops[i - 1].same) drawHop(picked, c.legs[i - 1].r.to, l.r.from, { ...hot, weight: 4 });
+    if (i && !c.hops[i - 1].same) bind(drawHop(picked, c.legs[i - 1].r.to, l.r.from, { ...hot, weight: 4 }));
     L.marker(pts[20], { pane: 'stations', interactive: false, keyboard: false, icon: L.divIcon({ className: 'legno', html: String(i + 1), iconSize: [18, 18] }) }).addTo(picked);
     stations.set(l.r.from.name, l.r.from).set(l.r.to.name, l.r.to);
   });
   // the others are dimmed, so the chain's own stations are drawn again on top
-  for (const s of stations.values()) L.circleMarker([s.latitude, s.longitude], { pane: 'stations', radius: 5, weight: 2, color: HOT, fillColor: '#fff', fillOpacity: 1, className: 'hl', interactive: false }).addTo(picked);
+  for (const s of stations.values()) bind(L.circleMarker([s.latitude, s.longitude], { pane: 'stations', radius: 5, weight: 2, color: HOT, fillColor: '#fff', fillOpacity: 1, className: 'hl', bubblingMouseEvents: false }).addTo(picked));
   $('map').classList.add('dim');
-  // no autoPan: showRoute fits the map around the popup instead
-  first.bindPopup(pop, { maxWidth: Math.min(340, innerWidth - 80), minWidth: Math.min(280, innerWidth - 100), autoPan: false })
-    .on('popupclose', () => { fromRow = null; })
-    .on('popupopen', () => { fromRow = null; });
   picked.eachLayer(l => l.getElement().setAttribute('tabindex', '-1'));
   lines.set(key, first);
+  pickedKey = key;
+  markRow();
   return first;
 }
 
@@ -676,11 +715,14 @@ function clearPicked() {
   picked.clearLayers();
   $('map').classList.remove('dim');
   lines.clear();
+  pickedKey = null;
+  markRow();
 }
 
 let fromRow = null;  // the list button that opened the current popup, to go back to it
-function showRoute(btn, keyboard) {
-  const line = lines.get(btn.dataset.key) || (chainMode ? drawChain(btn.dataset.key) : null);
+// btn: the list button to go back to, none when the chain was picked on the map
+function showRoute(key, btn, keyboard) {
+  const line = lines.get(key) || (chainMode ? drawChain(key) : null);
   if (!line) return;
   setView(false);
   if (chainMode) {
@@ -693,7 +735,7 @@ function showRoute(btn, keyboard) {
     map.fitBounds(line.getBounds(), { padding: [40, 40], maxZoom: 8, animate: false });
     line.openPopup();
   }
-  fromRow = { btn, line };
+  fromRow = btn ? { btn, line } : null;
   // the focused button is hidden now: keep keyboard users in the popup
   if (keyboard) line.getPopup().getElement().querySelector('a').focus();
 }
@@ -739,30 +781,51 @@ function drawTrips() {
   return { stations, routes: routes.size, n: shown.length };
 }
 
+// The popup of a leg or a connection: the chains that use it, in list order, each a button that shows that chain.
+// Past USE_ROWS a button opens the list filtered to them.
+const USE_ROWS = 8;
+const usePopup = (key, head, title) => () => {
+  const all = chains.filter(c => uses(c, key));
+  const rows = all.slice(0, USE_ROWS).map(c => `<li><button data-key="${esc(c.key)}">${esc(sd(c.start))} \u2013 ${esc(sd(c.end))} \u00b7 ${count(c.days, 'day')} \u00b7 ${kmHtml(c.drive, chainEst(c))} km</button></li>`).join('');
+  return `<div class="pop use"><h2>In ${count(all.length, 'chain')}</h2><p>${head}</p><ul class="pick">${rows}</ul>` +
+    (all.length > USE_ROWS ? `<p class="note"><button class="lnk" data-use="${esc(key)}" data-title="${esc(title)}">Show all ${all.length.toLocaleString('en-GB')} in the list</button></p>` : '') + '</div>';
+};
+
 // Every leg of the listed chains is drawn once, weighted by how many of them use it; connections are dotted.
+// A leg or connection is counted over every chain, not only the drawn ones, so its count matches its popup and its filter.
 function drawChains() {
-  chains = chainList().filter(c => endsPass(c));
+  chains = chainList().filter(c => endsPass(c) && legPass(c));
   sortChains();
-  const legs = new Map(), hops = new Map(), stations = new Map();
+  const legs = new Map(), hops = new Map(), stations = new Map(), total = new Map();
   const at = s => { if (!stations.has(s.name)) stations.set(s.name, { s, dep: 0, arr: 0 }); return stations.get(s.name); };
   const bump = (m, key, v) => { if (!m.has(key)) m.set(key, { ...v, n: 0 }); m.get(key).n++; };
-  for (const c of chains.slice(0, CHAIN_ROWS)) {
+  const tally = key => total.set(key, (total.get(key) || 0) + 1);
+  chains.forEach((c, ci) => {
+    const drawn = ci < CHAIN_ROWS;
     c.legs.forEach((l, i) => {
+      const hop = i && !c.hops[i - 1].same ? hopKey(c, i) : null;
+      tally(routeKey(l.r));
+      if (hop) tally(hop);
+      if (!drawn) return;
       bump(legs, routeKey(l.r), { r: l.r });
       at(l.r.from); at(l.r.to);
-      if (i && !c.hops[i - 1].same) bump(hops, c.legs[i - 1].r.to.name + '>' + l.r.from.name, { a: c.legs[i - 1].r.to, b: l.r.from, h: c.hops[i - 1] });
+      if (hop) bump(hops, hop, { a: c.legs[i - 1].r.to, b: l.r.from, h: c.hops[i - 1] });
     });
-    at(c.legs[0].r.from).dep++;
-    at(c.legs[c.legs.length - 1].r.to).arr++;
+    if (drawn) {
+      at(c.legs[0].r.from).dep++;
+      at(c.legs[c.legs.length - 1].r.to).arr++;
+    }
+  });
+  const popup = { maxWidth: Math.min(320, innerWidth - 80) };
+  for (const [key, g] of legs) {
+    const d = dist(g.r), pts = arc([g.r.from.latitude, g.r.from.longitude], [g.r.to.latitude, g.r.to.longitude]), head = `${esc(place(g.r.from))} ${ARROW} ${esc(place(g.r.to))}`;
+    L.polyline(pts, { color: COL, weight: chainWeight(g.n), opacity: chainOpacity(g.n), interactive: false, className: 'ov' }).addTo(layer);
+    hitLine(layer, pts).bindPopup(usePopup(key, `${head} \u00b7 ${d.est ? '~' : ''}${d.km} km`, `${place(g.r.from)} to ${place(g.r.to)}`), popup)
+      .bindTooltip(`${head}<br>${d.est ? '~' : ''}${d.km} km${d.est ? ' (estimated)' : ''} \u00b7 in ${count(total.get(key), 'chain')}`, { sticky: true });
   }
-  for (const g of legs.values()) {
-    const d = dist(g.r);
-    L.polyline(arc([g.r.from.latitude, g.r.from.longitude], [g.r.to.latitude, g.r.to.longitude]), { color: COL, weight: chainWeight(g.n), opacity: chainOpacity(g.n) }).addTo(layer)
-      .bindTooltip(`${esc(place(g.r.from))} ${ARROW} ${esc(place(g.r.to))}<br>${d.est ? '~' : ''}${d.km} km${d.est ? ' (estimated)' : ''} \u00b7 in ${count(g.n, 'chain')}`, { sticky: true });
-  }
-  for (const g of hops.values()) {
-    drawHop(layer, g.a, g.b, { color: CONN, weight: 3, opacity: 1 })
-      .bindTooltip(`Connection: ${esc(g.a.name)} ${ARROW} ${esc(g.b.name)}<br>~${g.h.km} km (estimated) \u00b7 in ${count(g.n, 'chain')}`, { sticky: true });
+  for (const [key, g] of hops) {
+    drawHop(layer, g.a, g.b, { color: CONN, weight: 3, opacity: 1, className: 'ov' }).bindPopup(usePopup(key, `Connection ${esc(g.a.name)} ${ARROW} ${esc(g.b.name)} \u00b7 ~${g.h.km} km`, `connection ${g.a.name} to ${g.b.name}`), popup)
+      .bindTooltip(`Connection: ${esc(g.a.name)} ${ARROW} ${esc(g.b.name)}<br>~${g.h.km} km (estimated) \u00b7 in ${count(total.get(key), 'chain')}`, { sticky: true });
   }
   return { stations, routes: legs.size, n: chains.length };
 }
@@ -778,7 +841,7 @@ function render() {
   for (const [name, g] of stations) {
     const on = eff.fst === name;
     // arrival only: the pick-up dropdown has no such option, so the click does nothing
-    const hint = g.dep ? `<br>${on ? 'Click to show all pick-ups' : `Click to show ${chainMode ? 'chains starting' : 'trips from'} here`}` : '';
+    const hint = g.dep ? `<br>${on ? 'Click to show all pick-ups' : `Click to only show ${chainMode ? 'chains starting' : 'trips from'} here`}` : '';
     const tally = chainMode ? `${count(g.dep, 'chain')} starting \u00b7 ${count(g.arr, 'chain')} ending` : `${count(g.dep, 'departure')} \u00b7 ${count(g.arr, 'arrival')}`;
     L.circleMarker([g.s.latitude, g.s.longitude], { pane: 'stations', radius: on ? 6 : 4, weight: 2, color: STN, fillColor: on ? STN : '#fff', fillOpacity: 1 })
       .addTo(layer)
@@ -830,6 +893,7 @@ function setChainOptions(v) {
 }
 $('reset').onclick = () => {
   for (const k in FILTERS) sel[k] = '';
+  legFilter = null;
   $('from').value = min; $('to').value = max; $('week').value = 0; $('kmin').value = $('kmax').value = '';
   $('week').setAttribute('aria-valuetext', 'all dates');
   clearTimeout(typing);
@@ -846,6 +910,7 @@ $('view').onclick = () => setView(!document.body.classList.contains('list'));
 $('mode').onclick = () => {
   chainMode = !chainMode;
   fromRow = null;
+  legFilter = null;
   $('mode').setAttribute('aria-pressed', chainMode);
   $('gchain').hidden = !chainMode;
   if (chainMode && matchMedia('(max-width: 700px)').matches) {  // on a phone the options are hidden with the other filters: open them at once
@@ -878,9 +943,36 @@ $('list').onclick = e => {
     return;
   }
   if (e.target.closest('button.reset-all')) return $('reset').click();
+  if (e.target.closest('button.clear-leg')) {
+    legFilter = null;
+    render();
+    $('list').querySelector('[data-sort]')?.focus();  // the button was redrawn away
+    return;
+  }
   const m = e.target.closest('button[data-key]');
-  if (m) showRoute(m, e.detail === 0);  // detail 0: activated with the keyboard
+  if (m) return showRoute(m.dataset.key, m, e.detail === 0);  // detail 0: activated with the keyboard
+  // a click on the rest of a chain row does what its button does, unless it is a link, another button or a text selection
+  const row = chainMode && e.target.closest('tr[data-key]');
+  if (row && !e.target.closest('a, button') && !getSelection().toString()) showRoute(row.dataset.key, row.querySelector('button.go'), false);
 };
+$('glegx').onclick = () => {
+  legFilter = null;
+  render();
+  $('view').focus();  // the group hides itself: do not leave keyboard focus on it
+};
+// the popups of the legs and connections. Leaflet stops a click inside a popup from bubbling, so listen on the way down.
+$('map').addEventListener('click', e => {
+  const b = e.target.closest('.pop.use button');
+  if (!b) return;
+  if (b.dataset.key) showRoute(b.dataset.key, null, e.detail === 0);
+  else if (b.dataset.use) {
+    legFilter = { key: b.dataset.use, title: b.dataset.title };
+    render();
+    setView(true);
+    $('list').scrollTop = 0;
+    $('list').querySelector('[data-sort]')?.focus();
+  }
+}, true);
 // Leaflet closes popups on Escape only while the map itself has focus.
 // A popup opened from the list goes back to the list: its button is hidden while the map shows.
 const back = () => fromRow && fromRow.line.isPopupOpen() && document.body.contains(fromRow.btn) ? fromRow.btn : null;

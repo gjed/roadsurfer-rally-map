@@ -589,6 +589,20 @@ class RoadScanTest(unittest.TestCase):
         self.assertIn("gchain: CHAIN_IDS", html)
         self.assertIn("setChainOptions({", html)
 
+    def test_page_has_chain_selection(self):
+        self.main("--from-json", str(FIXTURE), "--map", str(self.dir / "i.html"))
+        html = (self.dir / "i.html").read_text(encoding="utf-8")
+        # a leg or connection lists its chains, past 8 it filters the list; Reset clears the filter
+        self.assertIn('<fieldset id="gleg" hidden>', html)
+        self.assertIn("const USE_ROWS = 8;", html)
+        self.assertIn("legFilter = null;", html)
+        # a row is selectable, and the chain on the map marks its row
+        self.assertIn('<tr data-key="${esc(c.key)}">', html)
+        self.assertIn("aria-current", html)
+        # the tooltip and the legend say that a click filters
+        self.assertIn("Click to only show", html)
+        self.assertIn("station: click to only show", html)
+
     def scan_get(self, path, alias, params=None):
         if path == "/rally/stations":
             return [
