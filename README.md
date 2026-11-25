@@ -199,9 +199,9 @@ shows them on the map and in the `Trips` view.
   between. `← All chains`, Escape or Back closes it; a click on the map does not.
 - **Pick from the map.** Click or tap a blue leg or a dotted connection: the list shows
   the chains that use it (`N chains use this leg`), with the leg in orange on the map, and
-  opens the chain at once when only one does. The leg filter shows as `Chain uses` in the
-  filter bar and over the list; `×`, Escape, `Clear all` or switching to single rallies
-  removes it. Clicking a leg or connection of the open chain keeps the chain and marks
+  opens the chain at once when only one does. The leg filter shows once, as a `Chain uses`
+  chip after the other filter chips; its `×`, Escape, `Clear all` or switching to single
+  rallies removes it. Clicking a leg or connection of the open chain keeps the chain and marks
   that leg in the list. A click on a station filters to the chains starting there.
 - **Filters.** The chips read `First pick-up`, `Distance per leg`, `Chain starts at`
   and `Chain ends at`: the start date and the week slider limit the first pick-up day,
