@@ -68,6 +68,7 @@
   /* as tall as a chip: a chip that wraps next to it does not make its row taller, so the map does not move */
   #count { margin-left: auto; min-height: 36px; display: flex; align-items: center; gap: .25em; font-size: 13px; color: var(--muted); white-space: nowrap; }
   #count strong { color: var(--ink); font-weight: 600; }
+  #count.two { flex-direction: column; align-items: flex-end; justify-content: center; gap: 0; line-height: 1.25; }
   .ghost { height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--accent); font-weight: 600; cursor: pointer; }
   @media (hover: hover) { .ghost:hover { background: #F3F5F7; } }
   .btn, .btn2 { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; box-sizing: border-box; padding: 0 14px; border-radius: 8px; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; vertical-align: middle; }
@@ -807,8 +808,10 @@ const GROUPS = { gdate: ['from', 'to'], gkm: ['kmin', 'kmax'], gfrom: ['fcc', 'f
 // a checkbox reads '1' when checked and '' when not
 const RESET = { from: min || '', to: max || '', cn: '2', cs: '1', cg: '0', ck: '0', cr: '' };
 const valueOf = id => $(id).type === 'checkbox' ? ($(id).checked ? '1' : '') : $(id).value;
-// chip names in trip and in chain mode: the filters mean something else for chains
-const NAMES = { gdate: ['Dates', 'First pick-up'], gkm: ['Distance', 'Distance per leg'], gfrom: ['Pick-up', 'Chain starts at'], gto: ['Return', 'Chain ends at'] };
+// chip names in trip and in chain mode. In chain mode the filters mean something else: the chips keep short names so
+// the bar stays on one row, and their accessible names, the panel headings and the x labels say what they filter
+const NAMES = { gdate: ['Dates', 'Dates'], gkm: ['Distance', 'Distance'], gfrom: ['Pick-up', 'Chain starts at'], gto: ['Return', 'Return'] };
+const FULL = { gdate: ['Dates', 'First pick-up date'], gkm: ['Distance', 'Distance per leg'], gfrom: ['Pick-up', 'Chain starts at'], gto: ['Return', 'Chain ends at'] };
 
 function markActive() {
   let n = 0;
@@ -889,7 +892,7 @@ const legTitle = key => key.replace(/^hop /, '').split('>').map(esc).join(` ${AR
 const legKind = key => isHop(key) ? 'Hop' : 'Leg';
 // the leg filter limits the chains like the pick-up and return filters, so their dropdown counts follow it
 const endsPass = (c, skip) => { for (const k in ENDS) if (k !== skip && eff[k] && ENDS[k](c) !== eff[k]) return false; return !legFilter || uses(c, legFilter); };
-let chainMemo = { key: '', list: [], ms: 0 };  // the chains for the current chain settings, filters and dates
+let chainMemo = { key: '', list: [], ms: 0, from: 0 };  // from: the offers the chains are built from  // the chains for the current chain settings, filters and dates
 // the chain options as findChains reads them; an empty or odd number means "no limit" or the default
 const whole = (id, lo, hi) => { const v = Math.floor(+$(id).value); return $(id).value === '' || !isFinite(v) ? NaN : Math.min(hi, Math.max(lo, v)); };
 function chainOptions() {
@@ -909,7 +912,7 @@ function chainList() {
   if (chainMemo.key !== key) {
     const t = performance.now();
     const offers = DATA.filter(r => { const km = dist(r).km; return km >= kmin && (kmax === '' || km <= +kmax); });
-    chainMemo = { key, list: findChains(offers, OPEN, o), ms: performance.now() - t };
+    chainMemo = { key, list: findChains(offers, OPEN, o), ms: performance.now() - t, from: offers.length };
   }
   return chainMemo.list;
 }
@@ -1335,7 +1338,9 @@ function render() {
   dimMap();
   // Chrome puts every clickable SVG path in the tab order; keyboard users reach routes via the sidebar
   layer.eachLayer(l => { const el = l.getElement && l.getElement(); if (el) el.setAttribute('tabindex', '-1'); });
-  $('count').innerHTML = chainMode ? `<strong>${n > CHAIN_ROWS ? `Showing ${CHAIN_ROWS} of ${n.toLocaleString('en-GB')} chains` : count(n, 'chain')}</strong>`
+  // chains: two short lines, so the longer chain-mode filter bar stays one row; the lists say when only 200 are shown
+  $('count').classList.toggle('two', chainMode);
+  $('count').innerHTML = chainMode ? `<strong>${count(n, 'chain')}</strong> <span>from ${count(chainMemo.from, 'trip')}</span>`
     : `<strong>${count(n, 'trip')}</strong> on ${count(nr, 'route')}`;
   $('empty').hidden = n > 0;
   $('empty-msg').textContent = emptyMsg();
@@ -1499,14 +1504,14 @@ function applyMode() {
   $('m-chains').setAttribute('aria-pressed', chainMode);
   $('cchip').hidden = $('csep').hidden = $('gchain').hidden = !chainMode;
   for (const g in NAMES) {
-    const name = NAMES[g][+chainMode];
-    $(g).querySelector('.k').textContent = name;
-    $(g).querySelector('.x').setAttribute('aria-label', `Clear ${name.toLowerCase()} filter`);
+    const name = NAMES[g][+chainMode], full = FULL[g][+chainMode];
+    $(g).querySelector('.k').innerHTML = name === full ? esc(name) : `<span aria-hidden="true">${esc(name)}</span><span class="sr">${esc(full)}</span>`;
+    $(g).querySelector('.x').setAttribute('aria-label', `Clear ${full.toLowerCase()} filter`);
   }
   $('h-date').textContent = chainMode ? 'First pick-up date' : 'Start date';
-  $('h-km').textContent = NAMES.gkm[+chainMode];
-  $('h-from').textContent = NAMES.gfrom[+chainMode];
-  $('h-to').textContent = NAMES.gto[+chainMode];
+  $('h-km').textContent = FULL.gkm[+chainMode];
+  $('h-from').textContent = FULL.gfrom[+chainMode];
+  $('h-to').textContent = FULL.gto[+chainMode];
   if (popOpen && popOpen.pop.id === 'p-chain' && !chainMode) closePop(false);
 }
 function setMode(on) {
