@@ -167,22 +167,26 @@ sequences in the offers already on the page, with no request and no scanner chan
 shows them on the map and in the `Trips` view.
 
 - **Chain options.** In chain mode a `Chain options` chip joins the filter chips and
-  shows the current options; on a phone its panel opens as soon as `Chains` is
-  pressed. The chip turns blue when an option is not at its default, `Reset` in the
-  panel restores them, and `Clear all` restores them with the filters. The widest settings (2 or 3 legs, 7 rest days, 250 km) match
-  over 200,000 chains on a real scan and take a few hundred milliseconds to search, and
-  typed numbers search again after a short pause; 4 legs is not offered.
-  - Legs: 2 (default), 3, or 2 or 3.
-  - Change between legs: `Same day` (on by default) and up to 0 (default) to 7 rest days.
-    With `Same day` on, leg N+1 starts on the day leg N ends or up to that many days
-    later (`Same day or up to N rest days`); with it off, 1 to that many days later
-    (`Same day 1 to N rest days`).
-  - Next pick-up within: the same station (default), or a station within about 25, 50,
-    100, 150 or 250 km of where leg N ended. The connection is a hop you make yourself,
+  shows the current options. On a desktop it opens a panel under it; on a phone the
+  panel is a sheet from the bottom that opens as soon as `Chains` is pressed and closes
+  with `Show N chains`, its `×`, Escape or a tap above it. `Show N chains` counts the
+  chains as you change the options. The chip turns blue when an option is not at its
+  default, `Reset` in the panel restores them, and `Clear all` restores them with the
+  filters. The widest settings (2 or 3 legs, 7 rest days, 250 km) match over 200,000
+  chains on a real scan and take a few hundred milliseconds to search, so typed numbers
+  and the slider search again after a short pause, and the count reads
+  `Finding chains…` meanwhile; 4 legs is not offered.
+  - Legs: `2` (default), `3`, or `2 or 3`.
+  - Between legs: a `Same day` switch (on by default) and a rest days stepper from 0
+    (default) to 7. With `Same day` on, leg N+1 starts on the day leg N ends or up to
+    that many days later (`Rest days, up to N`); with it off, 1 to that many days later
+    (`Rest days, 1 to N`).
+  - Next pick-up within: a slider from the same station (default) to a station within
+    about 250 km of where leg N ended, in steps of 25 km. The connection is a hop you make yourself,
     and its distance is the straight line × 1.3, so it carries `~`.
-  - Trip days: the shortest and the longest, in days from the first pick-up to the last
-    return. Max total km: a limit on the km of the legs. Both are empty (any) by default.
-  - Round trip: the last return is within the next pick-up distance of the first
+  - Whole trip: min and max days, from the first pick-up to the last return, and max
+    km, a limit on the km of the legs. All are empty (any) by default.
+  - Round trip (a switch): the last return is within the next pick-up distance of the first
     pick-up.
 - **Dates.** An offer is a window: the booking page also accepts a shorter stay or a
   later start inside it. A chain uses the dates that put the most nights on the road,
