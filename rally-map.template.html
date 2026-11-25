@@ -832,6 +832,7 @@ $('reset').onclick = () => {
   for (const k in FILTERS) sel[k] = '';
   $('from').value = min; $('to').value = max; $('week').value = 0; $('kmin').value = $('kmax').value = '';
   $('week').setAttribute('aria-valuetext', 'all dates');
+  clearTimeout(typing);
   setChainOptions({ cn: '2', cs: true, cg: '0', ck: '0', cdmin: '', cdmax: '', cdrive: '', cr: false });
   render();
   $('view').focus();  // Reset hides itself: do not leave keyboard focus on it
@@ -858,7 +859,14 @@ $('mode').onclick = () => {
   render();
 };
 $('cs').oninput = () => { setChainOptions({}); render(); };
-CHAIN_IDS.filter(id => id !== 'cs').forEach(id => $(id).oninput = render);
+// typed numbers search again after a pause (or at once on change, when the field is left); the search can take a few hundred ms
+let typing;
+const TYPED = ['cdmin', 'cdmax', 'cdrive'];
+CHAIN_IDS.filter(id => id !== 'cs' && !TYPED.includes(id)).forEach(id => $(id).oninput = render);
+TYPED.forEach(id => {
+  $(id).oninput = () => { clearTimeout(typing); typing = setTimeout(render, 250); };
+  $(id).onchange = () => { clearTimeout(typing); render(); };
+});
 $('list').onclick = e => {
   const b = e.target.closest('button[data-sort]');
   if (b) {
