@@ -7,281 +7,434 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230066cc'/%3E%3Cpath d='M8 24Q9 9 24 8' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='24' r='4' fill='%230066cc' stroke='%23fff' stroke-width='2.5'/%3E%3Ccircle cx='24' cy='8' r='4.5' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <style>
-  :root { --accent: #06c; --link: #067a3f; --muted: #555; --conn: #6a3d9a; --hot: #bf360c; }
-  html, body { height: 100%; margin: 0; font: 13px system-ui, sans-serif; color: #1a1a1a; }
-  body { display: flex; flex-direction: column; }
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :root {
+    --ink: #15181E; --muted: #5B6270; --line: #E3E5E8; --line2: #EEF0F2; --field: #CFD3D9; --s2: #F6F7F8; --seg: #F1F3F5;
+    --accent: #1D5FB8; --accent-h: #174C93; --accent-bg: #E8F0FB; --sel: #C2410C; --hop: #7C3AED;
+    --warn-bg: #FFF7ED; --warn: #7C2D12; --fresh: #16A34A;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: #fff; }
+  button, input, select { font: inherit; color: inherit; }
+  a { color: var(--accent); }
+  @media (hover: hover) { a:hover { color: var(--accent-h); } }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  #bar { box-sizing: border-box; padding: 6px 12px 8px; display: flex; flex-direction: column; gap: 6px; background: #f4f4f4; border-bottom: 1px solid #ccc; }
-  #top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
-  h1 { margin: 0 auto 0 0; font-size: 15px; }
-  #updated { color: var(--muted); white-space: nowrap; }
-  #updated:not(:empty)::after { content: " \00b7"; }
-  #count { font-weight: 600; white-space: nowrap; }
-  #bar input, #bar select, #bar button { font: inherit; color: inherit; padding: 3px 6px; border: 1px solid #767676; border-radius: 4px; background: #fff; }
-  #bar button { cursor: pointer; }
-  @media (hover: hover) { #bar button:hover { background: #e8e8e8; } }
-  #filters[aria-expanded="true"], #mode[aria-pressed="true"] { background: #e6f0fa; border-color: var(--accent); }
-  #filters { display: none; }
-  #filt { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 10px; }
-  #filt fieldset { margin: 0; padding: 0 0 0 5px; border: 0; border-left: 3px solid transparent; }
-  #filt legend { padding: 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
-  #filt fieldset.on { border-left-color: var(--accent); }
-  #filt fieldset.on legend { color: var(--accent); }
-  .f { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
-  .f label { display: flex; gap: 4px; align-items: center; }
-  #filt select { width: 130px; }
-  #from, #to { width: 104px; }
-  #kmin, #kmax { width: 54px; }
-  #bar #week { width: 70px; padding: 0; border: 0; accent-color: var(--accent); }
-  #bar input.on:not([type="checkbox"]), #bar select.on { border-color: var(--accent); background: #e6f0fa; box-shadow: inset 0 0 0 1px var(--accent); }
-  #main { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; }
-  #map { flex: 1; }
-  #empty { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px 12px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0, 0, 0, .3); }
-  #empty[hidden], body.list #empty { display: none; }
-  #empty button { font: inherit; padding: 3px 8px; border: 1px solid #767676; border-radius: 4px; background: #fff; cursor: pointer; }
-  #list { flex: 1; overflow: auto; display: none; }
-  body.list #map { display: none; }
-  body.list #list { display: block; }
-  #list table, .pop table { border-collapse: collapse; }
-  #list table { width: auto; min-width: min(100%, 720px); }
-  .pop table { width: 100%; }
-  #list th, #list td { padding: 5px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid #e4e4e4; }
-  #list th, .pop th { position: sticky; top: 0; background: #fafafa; }
-  #list th, .pop th { box-shadow: inset 0 -1px #ccc; }
-  .short { display: none; }
-  #list th button { font: inherit; font-weight: 600; color: inherit; border: 0; padding: 0; background: none; cursor: pointer; }
-  #list th.km, #list td.km, #list th.dd, #list td.dd { text-align: right; }
-  #list table.ch td { vertical-align: top; }
-  #list table.ch td.lg { white-space: normal; }
-  #list caption { display: table-caption; text-align: left; padding: 6px 10px; color: var(--muted); }
-  #list .note { margin: 0; padding: 8px 10px; color: var(--muted); }
-  /* one leg of a chain: the same markup in the list and in the popup */
-  .legs { margin: 0; padding: 0; list-style: none; }
-  .legs .hop { margin: 2px 0 2px 9px; padding-left: 10px; border-left: 2px solid #ddd; color: var(--muted); font-size: 12px; }
-  .legs .hop.conn { border-left: 2px dotted var(--conn); }
-  .legs .no { font-weight: 600; }
-  .legs .nm { font-weight: 600; }
-  .legs .dt, .legs .nk { color: var(--muted); }
-  .legs .nk::before { content: " \00b7  "; }
-  #list .legs li { padding: 2px 0; }
-  #list .legs .leg { display: grid; grid-template-columns: 20px minmax(12em, 21em) 14em 12.5em 3em; column-gap: 12px; align-items: baseline; }
-  #list .legs .dt { display: contents; }
-  #list .legs .nk::before { content: none; }
-  #list .sub { display: block; color: var(--muted); font-size: 11px; }
-  .legno { background: var(--hot); color: #fff; border-radius: 50%; font: 600 11px/18px system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 2px #fff; }
-  #gchain { flex: 1 1 100%; }
-  #gchain .f { column-gap: 10px; }
-  #gchain select { width: auto; }
-  #gchain .sd, #gchain .pair { display: flex; align-items: center; gap: 4px 6px; }
-  #gchain #cdmin, #gchain #cdmax { width: 54px; }
-  #gchain #cdrive { width: 64px; }
-  #gchain label:has(input[type="checkbox"].on) { color: var(--accent); font-weight: 600; }
-  #bar input[type="checkbox"] { margin: 0; padding: 0; accent-color: var(--accent); }
-  @media (hover: hover) { #list tbody tr:hover { background: #eef5ff; } }
-  #list tbody tr:focus-within { background: #eef5ff; }
-  #list table.ch tbody tr:not(.none) { cursor: pointer; }
-  #list tbody tr:has(button[aria-current="true"]) { background: #fbe9e7; box-shadow: inset 3px 0 var(--hot); }
-  #list .lf { display: block; margin-bottom: 2px; color: var(--accent); font-weight: 600; }
-  #list caption:focus { outline: none; }
-  #gleg .f { max-width: 22em; }
-  #legx { min-width: 24px; }
-  #list button.go, #list button.reset-all, #list button.reset-leg { font: inherit; font-size: 12px; color: inherit; padding: 2px 8px; min-height: 24px; border: 1px solid #767676; border-radius: 4px; background: #fff; cursor: pointer; }
-  @media (hover: hover) { #list button.go:hover, #list button.reset-all:hover, #list button.reset-leg:hover { background: #e8e8e8; } }
-  #list td a, .pop a { color: var(--link); font-weight: 600; }
-  .pop { font-size: 13px; }
-  .pop h2 { margin: 0 0 2px; font-size: 14px; }
-  .pop p { margin: 0 0 6px; color: var(--muted); }
-  .pop .trips { max-height: 220px; overflow: auto; }
-  .pop th, .pop td { padding: 3px 8px 3px 0; text-align: left; white-space: nowrap; border-bottom: 1px solid #eee; }
-  .pop th { font-weight: 600; color: var(--muted); }
-  .pop .legs { margin: 6px 0 0; }
-  .pop .leg { display: grid; grid-template-columns: 20px 1fr auto; grid-template-areas: "no nm bk" "no dt bk"; column-gap: 8px; padding: 4px 0; border-bottom: 1px solid #eee; }
-  .pop .leg .no { grid-area: no; }
-  .pop .leg .nm { grid-area: nm; }
-  .pop .leg .dt { grid-area: dt; }
-  .pop .leg a { grid-area: bk; align-self: center; }
-  .pop .note { margin: 6px 0 0; font-size: 12px; }
-  .pop.pick .opts { list-style: none; margin: 6px 0 0; padding: 0; max-height: min(300px, 45vh); overflow: auto; border-top: 1px solid #eee; }
-  .pop.pick .opts button { display: block; width: 100%; min-height: 44px; text-align: left; font: inherit; color: inherit; background: none; border: 0; border-bottom: 1px solid #eee; padding: 6px 4px; cursor: pointer; }
-  .pop.pick .rt { display: block; font-weight: 600; }
-  .pop.pick .dt { display: block; color: var(--muted); font-size: 12px; }
-  @media (hover: hover) { .pop.pick .opts button:hover { background: #eef5ff; } }
-  .pop.pick .opts button:focus-visible { outline-offset: -2px; }
-  .pop.pick .opts button[aria-current="true"] { background: #fbe9e7; box-shadow: inset 3px 0 var(--hot); }
-  .pop .all { font: inherit; font-weight: 600; color: var(--link); background: none; border: 0; padding: 6px 0 0; text-decoration: underline; cursor: pointer; }
-  .legend { background: #fff; padding: 6px 8px; font-size: 12px; }
-  .legend summary { cursor: pointer; font-weight: 600; }
-  .legend ul { list-style: none; margin: 4px 0 0; padding: 0; }
-  .legend li { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
-  .legend svg { width: 28px; height: 14px; flex: none; }
-  .legend .tilde { width: 28px; flex: none; text-align: center; font-weight: 600; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .num, table, .stats dd, .card .km { font-variant-numeric: tabular-nums; }
+  svg { flex: none; }
+  .grow { flex: 1; }
+
+  /* app bar */
+  #appbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand h1 { margin: 0; font-size: 18px; font-weight: 650; line-height: 1.15; letter-spacing: -.01em; }
+  .brand .tag { display: block; font-size: 12px; color: var(--muted); line-height: 1.2; }
+  .seg { display: flex; gap: 2px; padding: 3px; background: var(--seg); border-radius: 10px; }
+  .seg > a, .seg > button { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border: 0; border-radius: 8px; background: none; color: var(--muted); font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; }
+  .seg > [aria-current="page"], .seg > [aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
+  @media (hover: hover) { .seg > a:hover, .seg > button:hover { color: var(--ink); } }
+  #updated { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  #updated .fresh { width: 8px; height: 8px; border-radius: 50%; background: #9AA1AC; }
+  #updated .fresh.on { background: var(--fresh); }
+
+  /* filter bar */
+  #fbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+  #chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .chipw { display: flex; align-items: center; height: 36px; box-sizing: border-box; border: 1px solid var(--field); border-radius: 18px; background: #fff; transition: background-color .12s; }
+  .chip { display: flex; align-items: center; gap: 6px; height: 100%; padding: 0 12px; border: 0; border-radius: 18px; background: none; white-space: nowrap; cursor: pointer; }
+  .chip .k { color: var(--muted); }
+  .chip .v { font-weight: 600; }
+  .chip svg { color: var(--muted); }
+  .chip .chev { transition: transform .15s; }
+  .chip[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .chipw .x { display: none; align-items: center; justify-content: center; width: 28px; height: 28px; margin-right: 3px; padding: 0; border: 0; border-radius: 14px; background: none; color: var(--accent-h); cursor: pointer; }
+  .chipw.on { border-color: var(--accent); background: var(--accent-bg); color: var(--accent-h); }
+  .chipw.on .k, .chipw.on .chip svg { color: var(--accent-h); }
+  .chipw.on .chip { padding-right: 4px; }
+  .chipw.on .x { display: flex; }
+  /* the leg filter: a chip that only clears */
+  #gleg { display: flex; align-items: center; gap: 6px; height: 36px; box-sizing: border-box; min-width: 0; margin: 0; padding: 0 3px 0 12px; border: 1px solid var(--accent); border-radius: 18px; background: var(--accent-bg); color: var(--accent-h); white-space: nowrap; }
+  #gleg .v { font-weight: 600; }
+  #gleg .x, .legpill .x { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 14px; background: none; color: inherit; cursor: pointer; }
+  @media (hover: hover) { #gleg .x:hover { background: rgba(29, 95, 184, .14); } .legpill .x:hover { background: rgba(194, 65, 12, .14); } }
+  @media (hover: hover) {
+    .chipw:hover { background: #F3F5F7; }
+    .chipw.on:hover { background: #DCE8F8; }
+    .chipw .x:hover { background: rgba(29, 95, 184, .14); }
+  }
+  .sep { width: 1px; height: 24px; margin: 0 4px; background: var(--line); }
+  #count { margin-left: auto; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  #count strong { color: var(--ink); font-weight: 600; }
+  .ghost { height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--accent); font-weight: 600; cursor: pointer; }
+  @media (hover: hover) { .ghost:hover { background: #F3F5F7; } }
+  .btn, .btn2 { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; box-sizing: border-box; padding: 0 14px; border-radius: 8px; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; vertical-align: middle; }
+  .btn { border: 0; background: var(--accent); color: #fff; }
+  a.btn { color: #fff; }
+  .btn2 { border: 1px solid var(--field); background: #fff; color: var(--ink); }
+  @media (hover: hover) { .btn:hover, a.btn:hover { background: var(--accent-h); color: #fff; } .btn2:hover { background: #F3F5F7; } }
+  .sm { height: 34px; padding: 0 12px; }
+
+  /* popovers under the chips */
+  .pop { position: fixed; z-index: 2000; width: min(360px, calc(100vw - 16px)); box-sizing: border-box; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 32px rgba(16, 24, 40, .18); }
+  .pop .pb { display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; }
+  .pop h2 { margin: 0; font-size: 14px; font-weight: 600; }
+  .pop label, .pop .lab { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+  .pop fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+  .pop .chk, .pop .inl { flex-direction: row; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); cursor: pointer; }
+  .pop .chk input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+  .pop .chk:has(input.on) { color: var(--accent-h); font-weight: 600; }
+  .pop .sd { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .pop .inl select { width: auto; }
+  .pop input:not([type="checkbox"]), .pop select { width: 100%; height: 36px; box-sizing: border-box; min-width: 0; padding: 0 8px; border: 1px solid var(--field); border-radius: 8px; background: #fff; font-size: 14px; color: var(--ink); }
+  .pop .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .pop .quick { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pop .quick button { height: 32px; padding: 0 12px; border: 1px solid var(--field); border-radius: 16px; background: #fff; font-size: 13px; cursor: pointer; }
+  @media (hover: hover) { .pop .quick button:hover { background: #F3F5F7; } }
+  .pop .wkh { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+  .pop .wkh output { color: var(--ink); font-weight: 600; }
+  .pop #week { height: auto; padding: 0; border: 0; accent-color: var(--accent); }
+  .pop .on:not([type="checkbox"]) { border-color: var(--accent); background: var(--accent-bg); box-shadow: inset 0 0 0 1px var(--accent); }
+  .pop .pf { display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line2); }
+
+  /* views */
+  #main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #mapview { flex: 1; min-height: 0; display: flex; }
+  #side { position: relative; flex: 0 0 clamp(300px, 28vw, 400px); min-width: 0; overflow-y: auto; border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+  #mapwrap { position: relative; flex: 1; min-width: 0; }
+  #map { position: absolute; inset: 0; background: #DCE4EA; }
+  #empty { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 32px); box-sizing: border-box; background: #fff; padding: 8px 8px 8px 14px; border-radius: 10px; box-shadow: 0 4px 12px rgba(16, 24, 40, .18); }
+
+  /* sidebar */
+  .shead { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-end; gap: 12px; padding: 16px 20px 12px; background: #fff; border-bottom: 1px solid var(--line2); }
+  .shead > div { flex: 1; min-width: 0; }
+  .shead h2 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
+  .shead p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+  .legpill { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 4px 4px 4px 12px; border: 1px solid #FDBA8C; border-radius: 10px; background: #FFF4ED; color: var(--warn); font-size: 13px; }
+  .legpill > span { flex: 1; min-width: 0; }
+  .legpill .k { color: var(--muted); }
+  .sortl { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
+  .sortl select { height: 32px; padding: 0 8px; border: 1px solid var(--field); border-radius: 8px; background: #fff; font-size: 13px; color: var(--ink); }
+  .cards { list-style: none; margin: 0; padding: 0; }
+  .cards > li { border-bottom: 1px solid var(--line2); }
+  .card { width: 100%; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center; padding: 12px 20px; border: 0; background: #fff; text-align: left; cursor: pointer; transition: background-color .12s; }
+  .card .nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .km { font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap; }
+  .card .n { font-size: 12px; color: var(--muted); text-align: right; white-space: nowrap; }
+  .card .when { grid-column: 2 / 4; margin-top: 4px; font-size: 12px; color: var(--muted); }
+  .card.ch { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 14px 20px; }
+  .card.ch .t { font-weight: 600; }
+  .card.ch .d { font-size: 13px; color: var(--muted); }
+  .card.hot, .card:focus-visible { background: #F3F6FA; box-shadow: inset 3px 0 0 var(--sel); }
+  .card:focus-visible { outline-offset: -2px; }
+  @media (hover: hover) { .card:hover { background: #F3F6FA; } }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+  .badges span { padding: 2px 8px; border-radius: 6px; background: var(--seg); font-size: 12px; font-weight: 600; }
+  .badges span.lt { font-weight: 400; }
+  .hopsep { color: var(--hop); font-weight: 700; }
+  .none { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 24px 20px; }
+  .none p { margin: 0; color: var(--muted); }
+  .note { margin: 0; padding: 12px 20px; font-size: 12px; color: var(--muted); }
+
+  /* route and chain detail */
+  .detail { display: flex; flex-direction: column; flex: 1; animation: slide .18s ease-out; }
+  @keyframes slide { from { opacity: 0; transform: translateX(-10px); } }
+  .back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 32px; margin: 12px 0 0 16px; padding: 0 8px 0 4px; border: 0; border-radius: 8px; background: none; color: var(--accent); font-weight: 600; cursor: pointer; }
+  @media (hover: hover) { .back:hover { background: #F3F5F7; } }
+  .dhead { padding: 8px 20px 16px; border-bottom: 1px solid var(--line2); }
+  .dhead h2 { margin: 0; font-size: 22px; font-weight: 650; line-height: 1.25; letter-spacing: -.01em; }
+  .dhead h2:focus { outline: none; }
+  .dhead h2:focus-visible { outline: 2px solid var(--accent); }
+  .rt { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: 12px; align-items: center; }
+  .rt .vl { justify-self: center; width: 2px; height: 18px; background: repeating-linear-gradient(var(--sel) 0 3px, transparent 3px 6px); }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 16px 0 0; }
+  .stats div { padding: 10px 12px; background: var(--s2); border-radius: 10px; }
+  .stats dt { font-size: 12px; color: var(--muted); }
+  .stats dd { margin: 2px 0 0; font-weight: 600; }
+  .sec { padding: 16px 20px; border-bottom: 1px solid var(--line2); }
+  .sec h3 { margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .sec .help { margin: 4px 0 12px; font-size: 13px; color: var(--muted); }
+  .sec .soft { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--s2); font-size: 13px; color: var(--muted); }
+  .wins, .nexts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .wins li { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+  .wins .w { flex: 1; min-width: 0; }
+  .wins .d { font-weight: 600; }
+  .wins .m { margin-top: 2px; font-size: 12px; color: var(--muted); }
+  .nx { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; text-align: left; cursor: pointer; }
+  .nx > span { flex: 1; min-width: 0; }
+  .nx b { display: block; font-weight: 600; }
+  .nx small { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+  .also { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .also button { height: 32px; padding: 0 12px; border: 1px solid var(--field); border-radius: 16px; background: #fff; font-size: 13px; cursor: pointer; }
+  @media (hover: hover) { .nx:hover, .also button:hover { background: #F3F6FA; } }
+  .more { margin-top: auto; padding: 12px 20px 20px; font-size: 13px; font-weight: 600; }
+  .legs { list-style: none; margin: 0; padding: 16px 20px; display: flex; flex-direction: column; }
+  .legs .leg { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+  .legs .r { font-weight: 600; }
+  .legs .m { margin-top: 2px; font-size: 12px; color: var(--muted); }
+  .no { width: 28px; height: 28px; border-radius: 50%; background: var(--sel); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .ho { margin-left: 13px; padding: 10px 0 10px 21px; border-left: 2px solid var(--line); font-size: 13px; color: var(--muted); }
+  .ho.hop { border-left: 2px dotted var(--hop); }
+  /* the leg or connection picked on the map */
+  .legs .leg.on { border: 2px solid var(--sel); padding: 11px; background: #FFF4ED; }
+  .ho.on { color: var(--warn); font-weight: 600; }
+  .warn { margin: 0 20px 20px; padding: 10px 12px; border-radius: 10px; background: var(--warn-bg); color: var(--warn); font-size: 13px; }
+
+  /* trips page */
+  #tripsview { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--s2); }
+  .inner { flex: 1; min-height: 0; width: 100%; max-width: 1320px; box-sizing: border-box; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .thead { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 24px; }
+  .thead > div:first-child { flex: 1; min-width: 240px; }
+  .thead h2 { margin: 0; font-size: 26px; font-weight: 650; letter-spacing: -.01em; }
+  .thead p { margin: 4px 0 0; color: var(--muted); }
+  .grp { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .grp .seg { background: #E9ECEF; }
+  .grp .seg > button { padding: 6px 12px; font-size: 13px; }
+  .inner, .tbox { position: relative; }
+  .tbox { flex: 0 1 auto; min-height: 0; overflow: auto; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+  .tbox.plain { background: none; border: 0; border-radius: 0; }
+  .tt { width: 100%; min-width: 860px; border-collapse: collapse; }
+  .tt thead th { position: sticky; top: 0; z-index: 1; padding: 12px 16px; background: #FAFBFC; box-shadow: inset 0 -1px var(--line); text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+  .tt thead th button { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
+  .tt thead th[aria-sort="ascending"] button, .tt thead th[aria-sort="descending"] button { color: var(--ink); }
+  .tt td { padding: 8px 16px; border-bottom: 1px solid var(--line2); white-space: nowrap; }
+  .tt td.ds { font-weight: 600; }
+  .tt td.nt { color: var(--muted); }
+  .tt .r { text-align: right; }
+  .tt td.act { padding: 6px 16px; text-align: right; }
+  .tt td.act .btn2 { margin-right: 6px; }
+  .tt tbody th { padding: 14px 16px 8px; text-align: left; background: var(--s2); border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+  .tt tbody th span { color: var(--muted); font-weight: 400; }
+  .st { display: inline-flex; align-items: center; gap: 8px; }
+  @media (hover: hover) { .tt tbody tr:hover td { background: #F6F8FB; } }
+  .tt tbody tr:focus-within td { background: #F6F8FB; }
+  .ccards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .ccard { cursor: pointer; display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-start; padding: 16px 18px; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+  .ccard .sum { flex: 1 1 260px; min-width: 0; }
+  .ccard h3 { margin: 0; font-size: 16px; font-weight: 600; }
+  .ccard .sum p { margin: 4px 0 10px; color: var(--muted); }
+  .ccard ol { flex: 2 1 480px; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .ccard ol li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; }
+  .ccard .no { width: 24px; height: 24px; font-size: 12px; }
+  .ccard .dt { color: var(--muted); font-size: 13px; }
+  .ccard .hn { display: block; font-size: 12px; color: var(--muted); }
+  .ccard .hn.hop { color: #6D28D9; }
+  .ccard > .btn2 { align-self: center; }
+  .ccard:has(button[aria-current="true"]) { border-color: var(--sel); box-shadow: inset 3px 0 var(--sel); }
+  .foot { margin: 0; font-size: 12px; color: var(--muted); }
+
+  /* map */
+  .leaflet-container { font: 12px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   .leaflet-control-attribution a { color: #005f87; }
   .leaflet-container path.leaflet-interactive:focus { outline: none; }
-  .leaflet-map-pane:has(.leaflet-popup) .leaflet-tooltip-pane { display: none; }
-  #map.dim path.leaflet-interactive:not(.hl), #map.dim path.cas, #map.dim path.ov:not(.hl) { opacity: .3; }
-  .hl { filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff); }
-  @media (max-width: 700px) {
-    #reset, #filters, #mode, #view { order: 1; }
-    #count { order: 2; flex-basis: 100%; font-size: 12px; }
-    #updated { order: 3; font-size: 11px; }
-    #updated:not(:empty)::after { content: none; }
-    #filters { display: inline-block; }
-    #filt { display: none; max-height: 60vh; overflow: auto; flex-direction: column; align-items: stretch; gap: 8px; padding-top: 2px; }
-    body.filt #filt { display: flex; }
-    #bar input, #bar select, #bar button { font-size: 16px; }
-    #filt select { width: auto; flex: 1 1 100%; min-width: 0; }
-    #bar #week { flex: 1; height: 28px; }
-    #from, #to { flex: 1; min-width: 0; }
-    .f label { flex-basis: 100%; }
-    #list table { font-size: 12px; }
-    .brand { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-    .iso { display: none; }
-    .short { display: inline; }
-    #list table, #list tbody { display: block; width: auto; min-width: 0; }
-    #list thead { display: block; position: sticky; top: 0; z-index: 1; background: #fafafa; box-shadow: inset 0 -1px #ccc; }
-    #list thead tr { display: flex; gap: 12px; padding: 4px 10px; }
-    #list thead th:not([aria-sort]) { display: none; }
-    #list th { position: static; padding: 0; border: 0; box-shadow: none; }
-    #list tbody tr { display: grid; grid-template-columns: auto auto 1fr auto auto; grid-template-areas: "s e k m b" "f f f m b" "t t t m b"; column-gap: 8px; padding: 6px 10px; border-bottom: 1px solid #e4e4e4; }
-    #list table.hp tbody tr { grid-template-columns: auto auto 1fr auto auto auto; grid-template-areas: "s e k p m b" "f f f f m b" "t t t t m b"; }
-    #list tbody td { padding: 0; border: 0; white-space: normal; }
-    #list td.ds { grid-area: s; }
-    #list td.de { grid-area: e; }
-    #list td.km { grid-area: k; }
-    #list td.pr { grid-area: p; }
-    #list td.from { grid-area: f; }
-    #list td.to { grid-area: t; }
-    #list td.m { grid-area: m; align-self: center; }
-    #list td.bk { grid-area: b; align-self: center; }
-    #list table.ch tbody tr { grid-template-columns: auto auto auto 1fr auto; grid-template-areas: "s e d k m" "l l l l l"; }
-    #list table.ch td.dd { grid-area: d; text-align: left; }
-    #list table.ch td.dd .n::after { content: " days"; }
-    #list .sub { display: inline; }
-    #list .sub::before { content: " ("; }
-    #list .sub::after { content: ")"; }
-    #list caption { display: block; }
-    #list table.ch td.km { text-align: left; }
-    #list table.ch td.lg { grid-area: l; margin-top: 4px; }
-    #list table.ch td.m { align-self: start; }
-    #list .legs li { padding: 2px 0 4px; }
-    #list .legs .leg { grid-template-columns: 20px 1fr auto; grid-template-areas: "no nm bk" "no dt bk"; column-gap: 8px; }
-    #list .legs .no { grid-area: no; }
-    #list .legs .nm { grid-area: nm; }
-    #list .legs .dt { display: block; grid-area: dt; }
-    #list .legs .leg a { grid-area: bk; align-self: center; }
-    #list .legs .nk::before { content: " \00b7  "; }
-    #gchain .f { display: grid; grid-template-columns: max-content 1fr; gap: 6px 8px; align-items: center; }
-    #gchain .f > label { display: contents; }
-    #gchain .sd, #gchain .f > label.chk { grid-column: 1 / -1; }
-    #gchain .sd { flex-wrap: wrap; }
-    #gchain .sd label, #gchain .sd select { flex: 0 0 auto; }
-    #gchain .pair > input { flex: 1; min-width: 0; width: auto; }
-    #gchain #cdrive { width: auto; }
-    #gchain select, #gchain input:not([type="checkbox"]) { min-height: 44px; box-sizing: border-box; }
-    #gchain label.chk, #gchain .sd label { display: flex; align-items: center; min-height: 44px; }
-    #list td.de::before { content: "\2013  "; content: "\2013  " / ""; }
-    #list td.to::before { content: "\2192  "; content: "\2192  " / ""; color: var(--muted); }
-    #list td.km::after { content: " km"; }
-    #list tbody tr.none { display: block; padding: 10px; }
+  .leaflet-touch .leaflet-bar, .leaflet-bar { border: 0; border-radius: 10px; box-shadow: 0 1px 3px rgba(16, 24, 40, .2); overflow: hidden; }
+  .leaflet-bar a, .leaflet-touch .leaflet-bar a { width: 36px; height: 36px; line-height: 36px; color: var(--ink); }
+  .leaflet-bar button.fit { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; background: #fff; color: var(--ink); cursor: pointer; }
+  @media (hover: hover) { .leaflet-bar button.fit:hover { background: #F3F5F7; } }
+  #map.dim path.base { stroke-opacity: .18; }
+  #map path.noclick { cursor: grab; }
+  .legend { background: #fff; padding: 8px 12px; font-size: 12px; }
+  .legend summary { cursor: pointer; font-weight: 600; }
+  .legend ul { list-style: none; margin: 6px 0 0; padding: 0; }
+  .legend li { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .legend svg { width: 28px; height: 14px; }
+  .legend .tilde { width: 28px; flex: none; text-align: center; font-weight: 600; }
+  .legno { background: var(--sel); color: #fff; border-radius: 50%; font: 700 12px/24px system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(0, 0, 0, .25); }
+  .leaflet-tooltip.rpill { padding: 6px 10px; border: 1.5px solid var(--sel); border-radius: 8px; font-weight: 600; font-size: 12px; box-shadow: 0 4px 12px rgba(16, 24, 40, .18); }
+  .leaflet-tooltip-top.rpill::before { border-top-color: var(--sel); }
+
+  /* between phone and desktop the map stays beside the list */
+  @media (max-width: 699px) {
+    #appbar { gap: 8px 12px; padding: 8px 12px; }
+    .brand .tag { display: none; }
+    .brand svg { width: 26px; height: 26px; }
+    .seg > a, .seg > button { padding: 6px 10px; }
+    #updated { margin-left: 0; font-size: 12px; }
+    #updated .uw { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    #fbar { gap: 6px 8px; padding: 8px 12px; }
+    #chips { flex-wrap: nowrap; width: calc(100% + 24px); margin: 0 -12px; padding: 0 12px; box-sizing: border-box; overflow-x: auto; scrollbar-width: none; }
+    #chips > * { flex: none; }
+    #count { margin-left: 0; }
+    .pop input, .pop select { font-size: 16px; }
+    .sortl select { font-size: 16px; }
+    #mapview { flex-direction: column; }
+    #mapwrap { flex: 1 1 55%; min-height: 200px; }
+    #side { order: 2; flex: 0 0 45%; border-right: 0; border-top: 1px solid var(--line); }
+    .shead { padding: 12px 16px 10px; }
+    .card, .card.ch { padding: 12px 16px; }
+    #tripsview { overflow-y: auto; }
+    .inner { flex: none; padding: 16px 12px; }
+    .thead h2 { font-size: 22px; }
+    .tbox { overflow: visible; }
+    .tt { display: block; min-width: 0; }
+    .tt thead { display: block; position: sticky; top: 0; z-index: 1; background: #FAFBFC; box-shadow: inset 0 -1px var(--line); border-radius: 14px 14px 0 0; }
+    .tt thead tr { display: flex; gap: 16px; padding: 10px 12px; }
+    .tt thead th { position: static; padding: 0; background: none; box-shadow: none; }
+    .tt thead th:not([aria-sort]) { display: none; }
+    .tt tbody { display: block; }
+    .tt tbody tr { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: "s e k p" "f f f f" "t t t t" "a a a a"; gap: 2px 6px; padding: 12px; border-bottom: 1px solid var(--line2); }
+    .tt tbody tr.gh { display: block; padding: 0; }
+    .tt tbody th { display: block; }
+    .tt td { padding: 0; border: 0; white-space: normal; }
+    .tt td.ds { grid-area: s; }
+    .tt td.de { grid-area: e; }
+    .tt td.de::before { content: "\2013  "; content: "\2013  " / ""; }
+    .tt td.km { grid-area: k; }
+    .tt td.pr { grid-area: p; }
+    .tt td.nt { display: none; }
+    .tt td.from { grid-area: f; margin-top: 4px; }
+    .tt td.to { grid-area: t; }
+    .tt td.act { grid-area: a; display: flex; gap: 8px; margin-top: 8px; padding: 0; text-align: left; }
+    .tt td.act > * { flex: 1; height: 40px; }
+    .tt td.act .btn2 { margin-right: 0; }
   }
-  /* grow the tap area, not the rows */
-  @media (pointer: coarse) {
-    #list td a, .pop td a { display: inline-block; padding: 6px 8px; margin: -6px -8px; }
-    #list button.go, #list button.reset-leg { min-height: 28px; }
-    .pop .all { min-height: 44px; }
-  }
+  @media (pointer: coarse) { .wins .btn, .legs .btn, .ccard .btn { min-height: 40px; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<header id="bar">
-  <div id="top">
-    <h1><span class="brand">roadsurfer </span>Rally map</h1>
-    <span id="updated"></span>
-    <span id="count" aria-live="polite" aria-atomic="true"></span>
-    <button id="reset" hidden>Reset</button>
-    <button id="filters" aria-expanded="false" aria-controls="filt">Filters</button>
-    <button id="mode" aria-pressed="false" title="Longer trips: 2–3 rallies back to back">Chains</button>
-    <button id="view">List</button>
+<header id="appbar">
+  <div class="brand">
+    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" fill="#15181E"/><path d="M8 22Q9 9 22 8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="8" cy="22" r="3.5" fill="#15181E" stroke="#fff" stroke-width="2"/><circle cx="22" cy="8" r="3.5" fill="#F97316"/></svg>
+    <div><h1><span class="sr">roadsurfer </span>Rally map</h1><span class="tag">One-way campervan relocations · unofficial</span></div>
   </div>
-  <div id="filt">
-    <fieldset id="gchain" hidden><legend>Chain options</legend><div class="f">
-      <label>Legs <select id="cn"><option value="2">2</option><option value="3">3</option><option value="2-3">2 or 3</option></select></label>
-      <div class="sd">
-        <label class="chk"><input type="checkbox" id="cs" checked> Same day</label>
-        <label><span id="cgc">or up to</span> <select id="cg" aria-label="Most rest days between legs"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select> rest days</label>
-      </div>
-      <label>Next pick-up within <select id="ck"><option value="0">same station</option><option value="25">~25 km</option><option value="50">~50 km</option><option value="100">~100 km</option><option value="150">~150 km</option><option value="250">~250 km</option></select></label>
-      <label>Trip days <span class="pair"><input type="number" id="cdmin" min="1" step="1" inputmode="numeric" placeholder="any" aria-label="Shortest trip in days"> &ndash; <input type="number" id="cdmax" min="1" step="1" inputmode="numeric" placeholder="any" aria-label="Longest trip in days"></span></label>
-      <label>Max total km <input type="number" id="cdrive" min="0" step="50" placeholder="any"></label>
-      <label class="chk" title="Ends within the next pick-up distance of the first pick-up"><input type="checkbox" id="cr"> Round trip</label>
-    </div></fieldset>
-    <fieldset id="gdate"><legend>Start date</legend><div class="f">
-      <input type="date" id="from" aria-label="Earliest start date"> &ndash;
-      <input type="date" id="to" aria-label="Latest start date">
-      <label>Week <input type="range" id="week" min="0" max="0" value="0" aria-valuetext="all dates"></label>
-    </div></fieldset>
-    <fieldset id="gkm"><legend>Distance</legend><div class="f">
-      <input type="number" id="kmin" min="0" step="50" aria-label="Minimum distance in km"> &ndash;
-      <input type="number" id="kmax" min="0" step="50" aria-label="Maximum distance in km"> km
-    </div></fieldset>
-    <fieldset id="gfrom"><legend>Pick-up</legend><div class="f">
-      <select id="fcc" aria-label="Pick-up country"></select>
-      <select id="fst" aria-label="Pick-up station"></select>
-    </div></fieldset>
-    <fieldset id="gto"><legend>Return</legend><div class="f">
-      <select id="tcc" aria-label="Return country"></select>
-      <select id="tst" aria-label="Return station"></select>
-    </div></fieldset>
-    <fieldset id="gleg" class="on" hidden><legend>Chain uses</legend><div class="f"><span id="legname"></span> <button id="legx" aria-label="Remove the leg filter">×</button></div></fieldset>
+  <nav class="seg" aria-label="Views">
+    <a id="v-map" href="#map"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 3.5l4-1.5 5 2 4-1.5v10l-4 1.5-5-2-4 1.5z"/><path d="M5.5 2v10M10.5 4v10"/></svg>Map</a>
+    <a id="v-trips" href="#trips"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 4h9M5 8h9M5 12h9"/><circle cx="2" cy="4" r=".6"/><circle cx="2" cy="8" r=".6"/><circle cx="2" cy="12" r=".6"/></svg>Trips</a>
+  </nav>
+  <div class="seg" role="group" aria-label="What to show">
+    <button id="m-trips" aria-pressed="true">Single rallies</button>
+    <button id="m-chains" aria-pressed="false" title="Longer trips: 2–3 rallies back to back">Chains</button>
   </div>
+  <span id="updated"></span>
 </header>
+<div id="fbar" role="group" aria-label="Filters">
+  <div id="chips">
+    <span class="chipw" id="gdate"><button class="chip" id="c-date" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-date"><svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="1.5" y="2.5" width="12" height="11" rx="2"/><path d="M1.5 6h12M5 1v3M10 1v3"/></svg><span class="k">Dates</span><span class="v">Any</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button><button class="x" data-clear="gdate" aria-label="Clear dates filter"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></span>
+    <span class="chipw" id="gkm"><button class="chip" id="c-km" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-km"><svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.5 7.5h12M4 4.5l-2.5 3 2.5 3M11 4.5l2.5 3-2.5 3"/></svg><span class="k">Distance</span><span class="v">Any</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button><button class="x" data-clear="gkm" aria-label="Clear distance filter"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></span>
+    <span class="chipw" id="gfrom"><button class="chip" id="c-from" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-from"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="4.5"/></svg><span class="k">Pick-up</span><span class="v">Anywhere</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button><button class="x" data-clear="gfrom" aria-label="Clear pick-up filter"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></span>
+    <span class="chipw" id="gto"><button class="chip" id="c-to" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-to"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="currentColor"/></svg><span class="k">Return</span><span class="v">Anywhere</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button><button class="x" data-clear="gto" aria-label="Clear return filter"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></span>
+    <span class="sep" id="csep" aria-hidden="true" hidden></span>
+    <span class="chipw" id="cchip" hidden><button class="chip" id="c-chain" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-chain"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 4h7M12 4h2M2 12h2M7 12h7M9 2.5v3M5 10.5v3"/></svg><span class="k">Chain options</span><span class="v"></span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button></span>
+    <fieldset id="gleg" class="on" hidden><legend class="sr">Chain uses</legend><span class="k" aria-hidden="true">Chain uses</span><span class="v" id="legname"></span><button class="x" id="legx" aria-label="Remove the leg filter"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></fieldset>
+  </div>
+  <span id="count" aria-live="polite" aria-atomic="true"></span>
+  <button id="reset" class="ghost" hidden>Clear all</button>
+</div>
 <main id="main">
-  <div id="map" role="region" aria-label="Route map"></div>
-  <div id="empty" role="status" hidden><span id="empty-msg"></span><button id="empty-reset">Reset filters</button></div>
-  <div id="list" role="region" aria-label="Trip list"></div>
+  <div id="mapview">
+    <aside id="side" aria-label="Routes"></aside>
+    <div id="mapwrap">
+      <div id="map" role="region" aria-label="Route map"></div>
+      <div id="empty" role="status" hidden><span id="empty-msg"></span><button id="empty-reset" class="btn2 sm">Reset filters</button></div>
+    </div>
+  </div>
+  <div id="tripsview" hidden><div class="inner" id="tlist" role="region" aria-label="Trip list"></div></div>
 </main>
+
+<div class="pop" id="p-date" role="dialog" aria-labelledby="h-date" hidden>
+  <div class="pb">
+    <h2 id="h-date">Start date</h2>
+    <div class="quick"><button data-quick="0">This week</button><button data-quick="1">Next week</button></div>
+    <div class="row"><label>Earliest start<input type="date" id="from"></label><label>Latest start<input type="date" id="to"></label></div>
+    <div class="lab"><span class="wkh"><label for="week">Week</label><output id="wkout" for="week">All dates</output></span><input type="range" id="week" min="0" max="0" value="0" aria-valuetext="all dates"></div>
+  </div>
+  <div class="pf"><button class="ghost" data-clear="gdate">Clear</button><span class="grow"></span><button class="btn" data-done>Done</button></div>
+</div>
+<div class="pop" id="p-km" role="dialog" aria-labelledby="h-km" hidden>
+  <div class="pb">
+    <h2 id="h-km">Distance</h2>
+    <div class="row"><label>Min km<input type="number" id="kmin" min="0" step="50" inputmode="numeric"></label><label>Max km<input type="number" id="kmax" min="0" step="50" inputmode="numeric"></label></div>
+  </div>
+  <div class="pf"><button class="ghost" data-clear="gkm">Clear</button><span class="grow"></span><button class="btn" data-done>Done</button></div>
+</div>
+<div class="pop" id="p-from" role="dialog" aria-labelledby="h-from" hidden>
+  <div class="pb">
+    <h2 id="h-from">Pick-up</h2>
+    <label>Country<select id="fcc"></select></label>
+    <label>Station<select id="fst"></select></label>
+  </div>
+  <div class="pf"><button class="ghost" data-clear="gfrom">Clear</button><span class="grow"></span><button class="btn" data-done>Done</button></div>
+</div>
+<div class="pop" id="p-to" role="dialog" aria-labelledby="h-to" hidden>
+  <div class="pb">
+    <h2 id="h-to">Return</h2>
+    <label>Country<select id="tcc"></select></label>
+    <label>Station<select id="tst"></select></label>
+  </div>
+  <div class="pf"><button class="ghost" data-clear="gto">Clear</button><span class="grow"></span><button class="btn" data-done>Done</button></div>
+</div>
+<div class="pop" id="p-chain" role="dialog" aria-labelledby="h-chain" hidden>
+  <fieldset id="gchain" hidden><div class="pb">
+    <h2 id="h-chain">Chain options</h2>
+    <label>Legs<select id="cn"><option value="2">2</option><option value="3">3</option><option value="2-3">2 or 3</option></select></label>
+    <div class="sd">
+      <label class="chk"><input type="checkbox" id="cs" checked> Same day</label>
+      <label class="inl"><span id="cgc">or up to</span> <select id="cg" aria-label="Most rest days between legs"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select> rest days</label>
+    </div>
+    <label>Next pick-up within<select id="ck"><option value="0">same station</option><option value="25">~25 km</option><option value="50">~50 km</option><option value="100">~100 km</option><option value="150">~150 km</option><option value="250">~250 km</option></select></label>
+    <div class="row"><label>Trip days, min<input type="number" id="cdmin" min="1" step="1" inputmode="numeric" placeholder="any" aria-label="Shortest trip in days"></label><label>Trip days, max<input type="number" id="cdmax" min="1" step="1" inputmode="numeric" placeholder="any" aria-label="Longest trip in days"></label></div>
+    <label>Max total km<input type="number" id="cdrive" min="0" step="50" inputmode="numeric" placeholder="any"></label>
+    <label class="chk" title="Ends within the next pick-up distance of the first pick-up"><input type="checkbox" id="cr"> Round trip</label>
+  </div></fieldset>
+  <div class="pf"><button class="ghost" data-clear="gchain">Reset</button><span class="grow"></span><button class="btn" data-done>Done</button></div>
+</div>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script>
 const DATA = /*DATA*/[];
 const SCAN = /*SCAN*/null;
 const RELEASE = /*RELEASE*/null;
-const COL = '#06c', HOT = '#bf360c', STN = '#003d7a', CONN = '#6a3d9a';
+const COL = '#2F6DB8', HOT = '#C2410C', STN = '#0E2A47', CONN = '#7C3AED';
 let chainMode = false;  // chain mode shows chains of rallies instead of single trips
-const map = L.map('map', { maxZoom: 16 });
-// the toolbar changes height (selects fill, the slider moves): keep Leaflet's cached size current
+// the rest of what the URL keeps: the view, the opened route or chain, the route order and the grouping
+const S = { view: 'map', route: null, chain: null, rsort: 'start', group: 'none' };
+const still = matchMedia('(prefers-reduced-motion: reduce)');
+const map = L.map('map', { maxZoom: 16, zoomControl: false });
+L.control.zoom({ position: 'topright' }).addTo(map);
+// the bars wrap and the views swap: keep Leaflet's cached size current
 new ResizeObserver(() => map.invalidateSize()).observe(document.getElementById('map'));
+map.createPane('hot').style.zIndex = 410;  // the opened or hovered route, above the others and below the city names
 map.createPane('labels').style.cssText = 'z-index: 420; pointer-events: none';  // city names above the routes
 map.createPane('stations').style.zIndex = 450;  // above the route lines, so a raised line never covers a station
 // grey base: the street map's blue sea and yellow motorways are the routes' own colours
 const esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
 L.tileLayer(esri + 'World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: 'Tiles © Esri — Esri, HERE, Garmin' }).addTo(map);
 L.tileLayer(esri + 'World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, pane: 'labels' }).addTo(map);
-const layer = L.featureGroup().addTo(map);
-const weight = n => Math.min(1.5 + n * .7, 5);
-const opacity = n => Math.min(.35 + n * .1, .8);
+const layer = L.featureGroup().addTo(map);   // the routes (or legs) and stations under the filters
+const picked = L.featureGroup().addTo(map);  // the opened route or chain
+const hover = L.featureGroup().addTo(map);   // the route or chain under the pointer in the sidebar
+const weight = n => Math.min(1.5 + n * .8, 5);
+const opacity = n => Math.min(.4 + n * .1, .85);
 // chain mode draws up to 200 chains: thinner and fainter, so the overview stays readable
 const chainWeight = n => Math.min(1 + n * .3, 4);
 const chainOpacity = n => Math.min(.25 + n * .05, .7);
-const legend = L.control({ position: 'bottomleft' });
+const fit = L.control({ position: 'topright' });
+fit.onAdd = () => {
+  const d = L.DomUtil.create('div', 'leaflet-bar');
+  d.innerHTML = '<button class="fit" title="Fit all routes" aria-label="Fit all routes"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>';
+  L.DomEvent.disableClickPropagation(d);
+  d.firstChild.onclick = () => fitAll(true);
+  return d;
+};
+fit.addTo(map);
+// on a phone the attribution wraps over the bottom corners: the legend goes to the top
+const legend = L.control({ position: matchMedia('(max-width: 699px)').matches ? 'topleft' : 'bottomleft' });
 let legendList;
 function legendItems() {
   const line = (w, op, col, dash) => `<svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7H26" stroke="${col}" stroke-width="${w}" stroke-opacity="${op}"${dash ? ` stroke-dasharray="${dash}" stroke-linecap="round"` : ''}/></svg>`;
-  const dot = `<svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4" stroke="${STN}" stroke-width="2" fill="#fff"/></svg>`;
+  const dot = `<svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4.5" stroke="${STN}" stroke-width="2.5" fill="#fff"/></svg>`;
   const what = chainMode ? 'chain' : 'trip';
   return (chainMode ? `<li>${line(chainWeight(1), chainOpacity(1), COL)} leg of 1 chain</li><li>${line(chainWeight(10), chainOpacity(10), COL)} 10 or more chains</li>`
     : `<li>${line(weight(1), opacity(1), COL)} 1 trip on this route</li><li>${line(weight(5), opacity(5), COL)} 5 or more trips</li>`) +
     (chainMode ? `<li>${line(3, 1, CONN, '1 6')} connection to the next pick-up (train, bus)</li>` : '') +
-    `<li>${line(2.5, 1, HOT)} selected ${chainMode ? 'chain' : 'route'}</li><li>${dot} station: click to only show ${what}s ${chainMode ? 'starting' : 'from'} here</li>` +
+    `<li>${line(4, 1, HOT)} selected ${chainMode ? 'chain' : 'route'}</li><li>${dot} station: click to only show ${what}s ${chainMode ? 'starting' : 'from'} here</li>` +
     // ~ marks a distance that was not routed: straight line x 1.3
-    (DATA.some(r => dist(r).est) || (chainMode && +document.getElementById('ck').value > 0) ? '<li><span class="tilde" aria-hidden="true">~</span> estimated distance, not routed</li>' : '') +
+    (DATA.some(r => dist(r).est) || (chainMode && +$('ck').value > 0) ? '<li><span class="tilde" aria-hidden="true">~</span> estimated distance, not routed</li>' : '') +
     (chainMode ? '<li><span class="tilde" aria-hidden="true"></span> click a line to pick a chain</li>' : '');
 }
 legend.onAdd = () => {
   const d = L.DomUtil.create('details', 'legend leaflet-bar');
   d.innerHTML = '<summary>Legend</summary><ul></ul>';
   legendList = d.lastChild;
-  legendList.innerHTML = legendItems();
   d.open = matchMedia('(min-width: 701px)').matches;
   L.DomEvent.disableClickPropagation(d);
   L.DomEvent.disableScrollPropagation(d);
@@ -299,6 +452,7 @@ function arc(a, b, n = 40) {
   }
   return pts;
 }
+const ll = s => [s.latitude, s.longitude];
 
 // fallback for records without a routed km: great-circle distance x 1.3
 function roadKm(a, b) {
@@ -315,12 +469,18 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
 const day = s => Date.parse(s + 'T00:00:00Z');
 const iso = ms => new Date(ms).toISOString().slice(0, 10);
-const shorts = new Map();  // formatting a date is slow, and a list shows the same few hundred
-const short = s => { if (!shorts.has(s)) shorts.set(s, new Date(day(s)).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })); return shorts.get(s); };
+const short = s => new Date(day(s)).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).replace(',', '');
+const dm = s => s ? new Date(day(s)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : '\u2026';
 const place = s => `${s.name}, ${s.cc}`;
+const fmtKm = n => Number(n).toLocaleString('en-GB');
 // the arrow is read as "rightwards arrow" otherwise
 const ARROW = '<span aria-hidden="true">\u2192</span><span class="sr"> to </span>';
-
+const EXT = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4.5 2.5h5v5M9.5 2.5l-7 7"/></svg>';
+const MAPI = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M1 3l4-1.5 4 2 4-1.5v9l-4 1.5-4-2-4 1.5z"/></svg>';
+const BACK = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg>';
+const CHEVR = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="#5B6270" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>';
+const RING = (c = '#15181E', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="${r}" fill="#fff" stroke="${c}" stroke-width="2"/></svg>`;
+const DOT = (c = '#15181E', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="${r}" fill="${c}"/></svg>`;
 // ---- chains: pure computation, no DOM and no request --------------------------------------------
 // A record is a WINDOW (start..end): the booking page accepts any pick-up and return inside it, up to
 // 7 nights, and prices it flat. A leg is therefore a pick-up day p and a return day q with start <= p < q <= end,
@@ -444,10 +604,26 @@ if (kms.length) { $('kmin').placeholder = Math.min(...kms); $('kmax').placeholde
 const lastStart = DATA.map(r => r.start).sort().pop();
 $('week').max = min ? Math.floor((day(lastStart) - day(min)) / 864e5 / 7) + 1 : 0;
 
+// every route of the scan, whatever the filters: the route detail and "Continue from" read it
+const routeKey = r => r.from.name + '>' + r.to.name;
+const ROUTES = new Map(), STATIONS = new Map();
+for (const r of DATA) {
+  const k = routeKey(r);
+  if (!ROUTES.has(k)) ROUTES.set(k, { key: k, from: r.from, to: r.to, trips: [], ...dist(r) });
+  ROUTES.get(k).trips.push(r);
+  STATIONS.set(r.from.name, r.from).set(r.to.name, r.to);
+}
+for (const g of ROUTES.values()) {
+  g.trips.sort((x, y) => x.start.localeCompare(y.start));
+  g.first = g.trips[0].start;
+  g.last = g.trips.map(r => r.end).sort().pop();
+}
+
 // scan metadata is absent in pages rendered from older data files: show nothing
 const done = SCAN && typeof SCAN.finished_at === 'string' ? Date.parse(SCAN.finished_at) : NaN;
 if (!isNaN(done)) {
-  $('updated').textContent = 'updated ' + new Date(done).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+  // the dot is green while the scan is less than two days old
+  $('updated').innerHTML = `<span class="fresh${Date.now() - done < 2 * 864e5 ? ' on' : ''}" aria-hidden="true"></span><span class="uw">Updated </span>${esc(dm(iso(done)))}, ${esc(new Date(done).toISOString().slice(11, 16))} UTC`;
   $('updated').title = `scan finished ${SCAN.finished_at} \u00b7 ${SCAN.offers} offers \u00b7 ${SCAN.requests} requests, ${SCAN.failed} failed`;
 }
 
@@ -469,13 +645,14 @@ const FILTERS = {
 };
 const sel = {};  // current selections, '' = any
 const NOUN = { fcc: 'country', fst: 'station', tcc: 'country', tst: 'station' };
-// a filter is active when it differs from its reset value; groups mirror the fieldsets
+// a filter is active when it differs from its reset value; the groups are the filter chips
 const CHAIN_IDS = ['cn', 'cs', 'cg', 'ck', 'cdmin', 'cdmax', 'cdrive', 'cr'];
-let legFilter = null;  // chain mode: only the chains that use this leg or connection, { key, title }
 const GROUPS = { gdate: ['from', 'to'], gkm: ['kmin', 'kmax'], gfrom: ['fcc', 'fst'], gto: ['tcc', 'tst'], gchain: CHAIN_IDS };
 // a checkbox reads '1' when checked and '' when not
 const RESET = { from: min || '', to: max || '', cn: '2', cs: '1', cg: '0', ck: '0', cr: '' };
 const valueOf = id => $(id).type === 'checkbox' ? ($(id).checked ? '1' : '') : $(id).value;
+// chip names in trip and in chain mode: the filters mean something else for chains
+const NAMES = { gdate: ['Dates', 'First pick-up'], gkm: ['Distance', 'Distance per leg'], gfrom: ['Pick-up', 'Chain starts at'], gto: ['Return', 'Chain ends at'] };
 
 function markActive() {
   let n = 0;
@@ -488,20 +665,42 @@ function markActive() {
       on = on || a;
     }
     $(g).classList.toggle('on', on);
+    if (g === 'gchain') $('cchip').classList.toggle('on', on);  // the options' chip
     n += on;
   }
-  if (legFilter) n++;
-  $('gleg').hidden = !legFilter;
-  $('legname').innerHTML = legFilter ? legFilter.title : '';
-  $('filters').textContent = n ? `Filters (${n})` : 'Filters';
+  const leg = chainMode && legFilter;
+  if (leg) n++;
+  $('gleg').hidden = !leg;
+  $('legname').innerHTML = leg ? `${legKind(leg)} ${legTitle(leg)}` : '';
   $('reset').hidden = !n;  // it does nothing in the default state
 }
 
+// the chain options chip: legs, rest days and next pick-up, then the trip limits that are set
+const chainSummary = () => {
+  const o = chainOptions();
+  return [`${chainLegs()} legs`, o.gmax ? `${o.gmin ? '1\u2013' : '\u2264 '}${o.gmax} rest` : 'same day', o.conn ? `\u2264 ${o.conn} km` : 'same station',
+    o.dmin && o.dmax < Infinity ? `${o.dmin}\u2013${o.dmax} days` : o.dmin ? `\u2265 ${o.dmin} days` : o.dmax < Infinity && `\u2264 ${o.dmax} days`,
+    o.drive < Infinity && `\u2264 ${fmtKm(o.drive)} km driven`, o.round && 'round trip'].filter(Boolean).join(' \u00b7 ');
+};
+// each chip shows its filter's current value
+function updateChips() {
+  const f = $('from').value, t = $('to').value, k = +$('week').value, a = $('kmin').value, b = $('kmax').value;
+  const at = (cc, st) => st ? place(STATIONS.get(st)) : cc || 'Anywhere';
+  const v = {
+    gdate: k ? 'Week of ' + short(f) : f === RESET.from && t === RESET.to ? 'Any' : f === t ? dm(f) : `${dm(f)} \u2013 ${dm(t)}`,
+    gkm: a && b ? `${fmtKm(a)}\u2013${fmtKm(b)} km` : a ? `\u2265 ${fmtKm(a)} km` : b ? `\u2264 ${fmtKm(b)} km` : 'Any',
+    gfrom: at(eff.fcc, eff.fst), gto: at(eff.tcc, eff.tst),
+  };
+  for (const g in v) $(g).querySelector('.v').textContent = v[g];
+  $('cchip').querySelector('.v').textContent = chainSummary();
+}
+
+// skip: a station filter to ignore, '*' for all of them
 function passes(r, skip) {
   if (day(r.start) < day($('from').value) || day(r.start) > day($('to').value)) return false;
   const km = dist(r).km;
   if (km < +$('kmin').value || ($('kmax').value !== '' && km > +$('kmax').value)) return false;
-  for (const k in FILTERS) if (k !== skip && sel[k] && FILTERS[k](r) !== sel[k]) return false;
+  for (const k in FILTERS) if (skip !== '*' && k !== skip && sel[k] && FILTERS[k](r) !== sel[k]) return false;
   return true;
 }
 
@@ -514,11 +713,17 @@ const ENDS = {
 // the selections a mode applies: chain mode works on a copy, so a station no chain satisfies is dropped there
 // without being forgotten, and trip mode gets it back
 let eff = sel;
-// a chain uses a leg (route key) or a connection (hop key) when it drives that leg or hands over that way
+// chain mode: only the chains that use this leg (route key) or connection (hop key); set by a click on the map
+let legFilter = null;
+let focusKey = null;  // the leg or connection of the open chain picked on the map
+// a chain uses a leg when it drives it, and a connection when it hands over that way to another station
 const hopKey = (c, i) => 'hop ' + c.legs[i - 1].r.to.name + '>' + c.legs[i].r.from.name;
 const uses = (c, key) => c.legs.some((l, i) => routeKey(l.r) === key || (i && !c.hops[i - 1].same && hopKey(c, i) === key));
+const isHop = key => key.startsWith('hop ');
+const legTitle = key => key.replace(/^hop /, '').split('>').map(esc).join(` ${ARROW} `);
+const legKind = key => isHop(key) ? 'Hop' : 'Leg';
 // the leg filter limits the chains like the pick-up and return filters, so their dropdown counts follow it
-const endsPass = (c, skip) => { for (const k in ENDS) if (k !== skip && eff[k] && ENDS[k](c) !== eff[k]) return false; return !legFilter || uses(c, legFilter.key); };
+const endsPass = (c, skip) => { for (const k in ENDS) if (k !== skip && eff[k] && ENDS[k](c) !== eff[k]) return false; return !legFilter || uses(c, legFilter); };
 let chainMemo = { key: '', list: [], ms: 0 };  // the chains for the current chain settings, filters and dates
 // the chain options as findChains reads them; an empty or odd number means "no limit" or the default
 const whole = (id, lo, hi) => { const v = Math.floor(+$(id).value); return $(id).value === '' || !isFinite(v) ? NaN : Math.min(hi, Math.max(lo, v)); };
@@ -558,26 +763,25 @@ function fillSelects() {
   }
 }
 
-// the list shows the same trips as the map: render() hands it what passes()
+// ---- formatting ---------------------------------------------------------------------------------
 const hasPrice = DATA.some(r => r.price);
 const SORTS = { start: r => r.start, end: r => r.end, km: r => dist(r).km };
 const CHAIN_SORTS = { start: c => c.start, end: c => c.end, days: c => c.days, km: c => c.drive };
-const SORT = { trips: { key: 'start', dir: 1 }, chains: { key: 'days', dir: -1 } };  // each mode keeps its own order
-const sorting = () => SORT[chainMode ? 'chains' : 'trips'];
-const CHAIN_ROWS = 200;  // the list and the map show this many chains, in list order; the count covers all of them
-let shown = [], chains = [];
-const lines = new Map();  // route key (chain key in chain mode) -> line, to open a route or chain from the list
-const picked = L.featureGroup().addTo(map);  // the chain opened from the list, above the others
+const SORT = { trips: { key: 'start', dir: 1 }, chains: { key: 'days', dir: -1 } };  // the Trips table and the chains
+const ROUTE_ORDERS = [['start', 'Earliest start'], ['km', 'Shortest drive'], ['-km', 'Longest drive'], ['n', 'Most trips']];
+const CHAIN_ORDERS = [['-days', 'Most days'], ['start', 'Earliest start'], ['end', 'Earliest end'], ['km', 'Shortest drive'], ['-km', 'Longest drive']];
+const CHAIN_ROWS = 200;  // the lists and the map show this many chains, in list order; the count covers all of them
+let shown = [], chains = [], routes = new Map();  // what passes the filters: trips, chains, and the trips by route
 let fitted = false;
-const routeKey = r => r.from.name + '>' + r.to.name;
 
-const kmHtml = (km, est) => est ? `<span title="estimated: straight line \u00d7 1.3, not routed">~${km}</span>` : km;
+const kmHtml = (km, est) => est ? `<span title="estimated: straight line \u00d7 1.3, not routed">~${fmtKm(km)}</span>` : fmtKm(km);
 const kmCell = r => { const d = dist(r); return kmHtml(d.km, d.est); };
-const count = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const kmText = d => `${d.est ? '~' : ''}${fmtKm(d.km)} km${d.est ? ' (estimated)' : ''}`;
+const count = (n, w) => `${n.toLocaleString('en-GB')} ${w}${n === 1 ? '' : 's'}`;
 const dayIso = n => iso(n * 864e5);
 const sd = n => short(dayIso(n));
-// phones show the short form; the other is not rendered there, so assistive technology reads one
-const dateCell = (cls, s) => `<td class="${cls}" title="${esc(s)}"><span class="iso">${esc(s)}</span><span class="short">${esc(short(s))}</span></td>`;
+const nightsOf = r => Math.min(NIGHTS, dn(r.end) - dn(r.start));
+const sortVal = s => (s.dir < 0 ? '-' : '') + s.key;
 
 // The booking link for the dates chosen inside the record's window: the record's own link with its two dates replaced
 const legLink = l => {
@@ -588,234 +792,109 @@ const legLink = l => {
     return u.href;
   } catch (e) { return l.r.link; }
 };
-// the hand-over before leg i (i >= 1): rest days, and where the next pick-up is
+// the hand-over before leg i (i >= 1): where, how far, and after how many rest days
 const handOver = (c, i) => {
   const a = c.legs[i - 1].r.to, b = c.legs[i].r.from, h = c.hops[i - 1], gap = c.legs[i].p - c.legs[i - 1].q;
-  if (h.same) return gap ? `${count(gap, 'rest day')} in ${esc(a.name)}` : `Same-day hand-over in ${esc(a.name)}`;
-  return `${gap ? count(gap, 'rest day') : 'Same day'} \u00b7 ${kmHtml(h.km, true)} km from ${esc(a.name)} to ${esc(b.name)}`;
+  const when = gap ? count(gap, 'rest day') : 'same day';
+  return h.same ? `Hand-over in ${esc(a.name)} \u00b7 ${when}` : `Hop ${kmHtml(h.km, true)} km ${esc(a.name)} ${ARROW} ${esc(b.name)} on your own \u00b7 ${when}`;
 };
 const chainLabel = c => c.legs.map(l => `${place(l.r.from)} to ${place(l.r.to)}`).join(', then ');
-const legName = l => `${esc(place(l.r.from))} ${ARROW} ${esc(place(l.r.to))}`;
-const legDates = l => `${esc(sd(l.p))} \u2013 ${esc(sd(l.q))}`;
-// one leg of a chain with the hand-over before it: the same markup in the list and in the map popup
-const legItem = (c, l, i) => {
-  const label = `Book leg ${i + 1} of ${c.legs.length}: ${place(l.r.from)} to ${place(l.r.to)}, ${sd(l.p)} to ${sd(l.q)}`;
-  return `<li>${i ? `<div class="hop${c.hops[i - 1].same ? '' : ' conn'}">${handOver(c, i)}</div>` : ''}` +
-    `<div class="leg"><span class="no">${i + 1}</span><span class="nm">${legName(l)}</span>` +
-    `<span class="dt"><span class="d">${legDates(l)}</span><span class="nk">${count(l.q - l.p, 'night')} \u00b7 ${kmCell(l.r)} km</span></span>` +
-    `<a href="${esc(legLink(l))}" target="_blank" rel="noopener" aria-label="${esc(label)}">Book</a></div></li>`;
-};
-const chainLegs = () => { const o = chainOptions(); return o.lmin === o.lmax ? o.lmin : `${o.lmin}\u2013${o.lmax}`; };
+// Berlin -> Barcelona -> Lisbon; a hop to another station is a dashed arrow
+const chainTitle = c => c.legs.map((l, i) => (!i ? esc(l.r.from.name) : c.hops[i - 1].same ? ''
+  : ` <span class="hopsep" aria-hidden="true">\u21e2</span><span class="sr">, then on your own to</span> ${esc(l.r.from.name)}`) + ` ${ARROW} ${esc(l.r.to.name)}`).join('');
 const chainEst = c => c.legs.some(l => dist(l.r).est);
+const chainBadges = c => `<span class="badges"><span>${count(c.days, 'day')}</span><span>${kmHtml(c.drive, chainEst(c))} km driven</span><span class="lt">${c.rest ? count(c.rest, 'rest day') : 'No rest days'}</span></span>`;
+const bookLeg = (c, l, i) => `Book leg ${i + 1} of ${c.legs.length}: ${place(l.r.from)} to ${place(l.r.to)}, ${sd(l.p)} to ${sd(l.q)}`;
+// what to relax when no chain is left: only the settings that are not at their maximum
+const chainLegs = () => { const o = chainOptions(); return o.lmin === o.lmax ? o.lmin : `${o.lmin}\u2013${o.lmax}`; };
 // what to relax when no chain is left: the first two settings that are not at their widest
 const chainTry = () => {
   const o = chainOptions();
   return [legFilter && 'remove the leg filter', !$('cs').checked && 'allow same-day changes', o.gmax < 7 && 'allow more rest days', o.conn < 250 && 'allow a farther next pick-up', o.lmax === 2 && 'allow 3 legs',
     (o.dmin || o.dmax < Infinity || o.drive < Infinity || o.round) && 'remove the trip length, km or round-trip limit'].filter(Boolean).slice(0, 2).join(', ');
 };
-// a chain's start and end in the short form, the ISO date in the title
-const chainDate = (cls, n) => `<td class="${cls}" title="${dayIso(n)}">${esc(sd(n))}</td>`;
+const emptyMsg = () => !DATA.length ? 'No rally trips are on offer right now.' : chainMode ? `No chains match${chainTry() ? `. Try: ${chainTry()}, or reset the filters.` : ' these filters.'}` : 'No trips match the filters.';
+const noneHtml = () => `<div class="none"><p>${esc(emptyMsg())}</p>${DATA.length ? '<button class="btn2 sm reset-all">Reset filters</button>' : ''}</div>`;
+const orderSelect = (id, opts, v) => `<label class="sortl">Sort<select id="${id}">${opts.map(([k, t]) => `<option value="${k}"${k === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`;
+// a route's windows in its detail: those the date and distance filters keep, or all of them when they keep none
+// (a route opened from "Continue from" may lie outside the filters)
+const routeWins = g => { const w = g.trips.filter(r => passes(r, '*')); return w.length ? w : g.trips; };
 
-// the chains in list order; the list and the map both show the first CHAIN_ROWS of them
 const byOrder = (s, f, tie) => (x, y) => {
   const a = f(x), b = f(y);
   return (a < b ? -1 : a > b ? 1 : 0) * s.dir || tie(x, y);
 };
-const sortChains = () => { const s = sorting(); chains.sort(byOrder(s, CHAIN_SORTS[s.key], (x, y) => x.drive - y.drive || x.start - y.start || x.key.localeCompare(y.key))); };
+const sortChains = () => { const s = SORT.chains; chains.sort(byOrder(s, CHAIN_SORTS[s.key], (x, y) => x.drive - y.drive || x.start - y.start || x.key.localeCompare(y.key))); };
 
-function renderList() {
-  const s = sorting();
-  const th = (k, t, cls) => `<th${cls ? ` class="${cls}"` : ''} aria-sort="${k === s.key ? (s.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button data-sort="${k}">${t}${k === s.key ? (s.dir > 0 ? ' \u25b2' : ' \u25bc') : ''}</button></th>`;
-  if (chainMode) {
-    const rows = chains.slice(0, CHAIN_ROWS).map(c => {
-      const legs = c.legs.map((l, i) => legItem(c, l, i)).join('');
-      return `<tr>${chainDate('ds', c.start)}${chainDate('de', c.end)}<td class="dd"><span class="n">${c.days}</span>${c.rest ? `<span class="sub">${c.rest} rest</span>` : ''}</td>` +
-        `<td class="km">${kmHtml(c.drive, chainEst(c))}</td><td class="lg"><ol class="legs">${legs}</ol></td>` +
-        `<td class="m"><button class="go" data-key="${esc(c.key)}" aria-label="Show chain ${esc(chainLabel(c))} on the map">Map</button></td></tr>`;
-    }).join('');
-    const none = DATA.length ? `No chains match${chainTry() ? `. Try: ${chainTry()}.` : ' these filters.'} <button class="reset-all">Reset filters</button>` : 'No rally trips are on offer right now.';
-    $('list').innerHTML = `<table class="ch"><caption tabindex="-1">${legFilter ? `<span class="lf">Only chains using ${legFilter.title}. <button class="reset-leg">Show all chains</button></span>` : ''}${chainLegs()} rallies back to back. Each leg is booked on its own.</caption><thead><tr>${th('start', 'Start')}${th('end', 'End')}${th('days', 'Days', 'dd')}${th('km', 'km driven', 'km')}` +
-      `<th>Legs</th><th><span class="sr">Map</span></th></tr></thead><tbody>` +
-      (rows || `<tr class="none"><td colspan="6">${none}</td></tr>`) + '</tbody></table>' +
-      (chains.length > CHAIN_ROWS ? `<p class="note">Showing ${CHAIN_ROWS} of ${chains.length.toLocaleString('en-GB')} chains, on the map too. Sort or filter to see the others.</p>` : '');
-    markRow();
-    return;
-  }
-  shown.sort(byOrder(s, SORTS[s.key], (x, y) => x.start.localeCompare(y.start) || x.from.name.localeCompare(y.from.name)));
-  const rows = shown.map(r => `<tr>${dateCell('ds', r.start)}${dateCell('de', r.end)}` +
-    `<td class="from">${esc(place(r.from))}</td><td class="to">${esc(place(r.to))}</td>` +
-    `<td class="km">${kmCell(r)}</td>${hasPrice ? `<td class="pr">${r.price ? esc(r.price) : ''}</td>` : ''}` +
-    `<td class="m"><button class="go" data-key="${esc(routeKey(r))}" aria-label="Show ${esc(place(r.from))} to ${esc(place(r.to))} on the map">Map</button></td>` +
-    `<td class="bk"><a href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="Book ${esc(place(r.from))} to ${esc(place(r.to))}, ${esc(short(r.start))}">Book</a></td></tr>`).join('');
-  const none = DATA.length ? 'No trips match the filters. <button class="reset-all">Reset filters</button>' : 'No rally trips are on offer right now.';
-  $('list').innerHTML = `<table${hasPrice ? ' class="hp"' : ''}><thead><tr>${th('start', 'Start')}${th('end', 'End')}<th>From</th><th>To</th>${th('km', 'km', 'km')}` +
-    `${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Map</span></th><th><span class="sr">Booking</span></th></tr></thead><tbody>` +
-    (rows || `<tr class="none"><td colspan="${hasPrice ? 8 : 7}">${none}</td></tr>`) + '</tbody></table>';
+// ---- map drawing --------------------------------------------------------------------------------
+// a selected route: deep orange on a white halo, in the pane above the other routes
+function drawHot(group, a, b, w = 4.5) {
+  const pts = arc(ll(a), ll(b));
+  L.polyline(pts, { pane: 'hot', color: '#fff', weight: w + 4, opacity: 1, interactive: false }).addTo(group);
+  L.polyline(pts, { pane: 'hot', color: HOT, weight: w, opacity: 1, interactive: false }).addTo(group);
+  return pts;
 }
-
-function setView(list) {
-  document.body.classList.toggle('list', list);
-  $('view').textContent = list ? 'Map' : 'List';
-  if (!list) map.invalidateSize();
-  else $('list').querySelector('button[aria-current="true"]')?.closest('tr').scrollIntoView({ block: 'nearest' });
-}
-
-// A wide transparent line over a thin one, so a finger can hit it. It takes the clicks, so it keeps them from the map.
+// A wide transparent line over a thin one, so a finger can hit it. It takes the clicks, so they never reach the map
+// or a station below.
 const HIT = matchMedia('(pointer: coarse)').matches ? 22 : 16;
-const hitLine = (group, pts) => L.polyline(pts, { color: '#000', weight: HIT, opacity: 0, bubblingMouseEvents: false }).addTo(group);
-// while its popup is open the line is raised, so it is clear which one the popup is about
-const raise = (hit, line, base) => hit
-  .on('popupopen', () => { line.setStyle({ weight: base.weight + 2, opacity: 1 }); line.getElement().classList.add('hl'); })
-  .on('popupclose', () => { line.setStyle(base); line.getElement().classList.remove('hl'); });
-
+const hitLine = (group, pts, pane) => L.polyline(pts, { pane: pane || 'overlayPane', color: '#000', weight: HIT, opacity: 0, bubblingMouseEvents: false }).addTo(group);
 // A hand-over by another station: a dotted line on a white casing, so it reads as "not driven" over the legs.
-// Returns [the line to bind a popup or tooltip to, the dotted line].
+// Returns its hit line, none when the style says it is not interactive.
 function drawHop(group, a, b, style) {
-  const pts = [[a.latitude, a.longitude], [b.latitude, b.longitude]];
-  L.polyline(pts, { color: '#fff', weight: 6, opacity: .9, interactive: false, className: 'cas' }).addTo(group);
-  const line = L.polyline(pts, { ...style, dashArray: '1 6', lineCap: 'round', interactive: false }).addTo(group);
-  return [hitLine(group, pts), line];
+  const pts = [ll(a), ll(b)];
+  L.polyline(pts, { pane: style.pane || 'overlayPane', color: '#fff', weight: 6, opacity: .9, interactive: false, className: style.className || '' }).addTo(group);
+  L.polyline(pts, { ...style, dashArray: '1 6', lineCap: 'round', interactive: false }).addTo(group);
+  return style.interactive === false ? null : hitLine(group, pts, style.pane);
 }
-
-let pickedKey = null;  // the chain on the map, whose list row is highlighted
-function markRow() {
-  for (const b of $('list').querySelectorAll('button.go[data-key]')) {
-    if (b.dataset.key === pickedKey) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
-  }
-}
-
-// Draw one chain over the others. Every leg, connection and station of it opens the same popup, with a booking link
-// per leg, so a click on any part keeps the chain.
-function drawChain(key) {
-  const c = chains.find(c => c.key === key);
-  if (!c) return null;
-  picked.clearLayers();
-  lines.clear();
-  const hot = { color: HOT, weight: 4, opacity: 1, className: 'hl' };
-  const nights = c.days - c.rest;
-  const pop = `<div class="pop chain"><h2>Chain of ${c.legs.length} legs</h2><p>${c.rest ? `${count(c.days, 'day')}: ${count(nights, 'night')} in the van, ${count(c.rest, 'rest day')}` : count(c.days, 'day')} ` +
-    `\u00b7 ${kmHtml(c.drive, chainEst(c))} km driven</p><ol class="legs">${c.legs.map((l, i) => legItem(c, l, i)).join('')}</ol><p class="note">Each leg is booked on its own.</p></div>`;
-  let first;
-  const stations = new Map();
-  const tip = (layer, head) => layer.bindTooltip(`${head}<br>Click for this chain's booking links`, { sticky: true });
-  // fromRow only stays while the popup that showRoute opened does
-  const bind = layer => layer.bindPopup(pop, { maxWidth: Math.min(340, innerWidth - 80), minWidth: Math.min(280, innerWidth - 100) })
-    .on('popupclose popupopen', () => { fromRow = null; });
+const ring = (group, s, filled) => L.circleMarker(ll(s), { pane: 'stations', radius: 6, weight: 2.5, color: HOT, fillColor: filled ? HOT : '#fff', fillOpacity: 1, interactive: false }).addTo(group);
+// open: the open chain, numbered, whose legs, connections and stations take a click (so it never falls through to the
+// overview or a station filter below); a click on a leg or connection picks it in the sidebar
+function drawChainOn(group, c, open) {
+  const st = new Map(), w = key => focusKey && focusKey !== key ? 3 : 4.5;
   c.legs.forEach((l, i) => {
-    const a = [l.r.from.latitude, l.r.from.longitude], b = [l.r.to.latitude, l.r.to.longitude], pts = arc(a, b);
-    L.polyline(pts, { ...hot, interactive: false }).addTo(picked);
-    const line = tip(bind(hitLine(picked, pts)), `Leg ${i + 1}: ${esc(place(l.r.from))} ${ARROW} ${esc(place(l.r.to))}`);
-    if (!i) first = line;
-    if (i && !c.hops[i - 1].same) tip(bind(drawHop(picked, c.legs[i - 1].r.to, l.r.from, hot)[0]), `Connection: ${esc(c.legs[i - 1].r.to.name)} ${ARROW} ${esc(l.r.from.name)}`);
-    L.marker(pts[20], { pane: 'stations', interactive: false, keyboard: false, icon: L.divIcon({ className: 'legno', html: String(i + 1), iconSize: [18, 18] }) }).addTo(picked);
-    stations.set(l.r.from.name, l.r.from).set(l.r.to.name, l.r.to);
+    const key = routeKey(l.r), pts = drawHot(group, l.r.from, l.r.to, open ? w(key) : 4);
+    if (open) hitLine(group, pts, 'hot').bindTooltip(`Leg ${i + 1}: ${esc(place(l.r.from))} ${ARROW} ${esc(place(l.r.to))} \u00b7 click to show it in the list`, { sticky: true }).on('click', () => pickLeg(key));
+    if (i && !c.hops[i - 1].same) {
+      const hk = hopKey(c, i), hit = drawHop(group, c.legs[i - 1].r.to, l.r.from, { pane: 'hot', color: CONN, weight: 4, opacity: 1, interactive: open });
+      if (hit) hit.bindTooltip(`Hop ${esc(c.legs[i - 1].r.to.name)} ${ARROW} ${esc(l.r.from.name)} \u00b7 click to show it in the list`, { sticky: true }).on('click', () => pickLeg(hk));
+    }
+    if (open) L.marker(pts[20], { pane: 'stations', interactive: false, keyboard: false, icon: L.divIcon({ className: 'legno', html: String(i + 1), iconSize: [24, 24] }) }).addTo(group);
+    st.set(l.r.from.name, l.r.from).set(l.r.to.name, l.r.to);
   });
-  // the others are dimmed, so the chain's own stations are drawn again on top; a click on one opens the chain, it does not filter
-  for (const s of stations.values()) {
-    bind(L.circleMarker([s.latitude, s.longitude], { pane: 'stations', radius: 5, weight: 2, color: HOT, fillColor: '#fff', fillOpacity: 1, className: 'hl', bubblingMouseEvents: false }).addTo(picked))
-      .bindTooltip(`${esc(place(s))}<br>On the selected chain \u00b7 click for its booking links`);
+  for (const s of st.values()) {
+    if (!open) { ring(group, s, false); continue; }
+    L.circleMarker(ll(s), { pane: 'stations', radius: 6, weight: 2.5, color: HOT, fillColor: '#fff', fillOpacity: 1, bubblingMouseEvents: false }).addTo(group)
+      .bindTooltip(`${esc(place(s))} \u00b7 on the open chain`, { direction: 'top', offset: [0, -8] });
   }
-  $('map').classList.add('dim');
-  picked.eachLayer(l => l.getElement().setAttribute('tabindex', '-1'));
-  lines.set(key, first);
-  pickedKey = key;
-  markRow();
-  return first;
 }
 
-function clearPicked() {
-  picked.clearLayers();
-  $('map').classList.remove('dim');
-  lines.clear();
-  pickedKey = null;
-  markRow();
-}
-
-let fromRow = null;  // the list button that opened the current popup, to go back to it
-// btn: the list button to go back to, none when the chain was picked on the map
-function showRoute(key, btn, keyboard) {
-  const line = lines.get(key) || (chainMode ? drawChain(key) : null);
-  if (!line) return;
-  setView(false);
-  if (chainMode) {
-    // the popup sits on the chain's northern edge and the chain is fitted below it
-    // no autoPan here: the fit below sets the view; a click on another part of the chain keeps the pan on
-    const b = picked.getBounds(), pop = line.getPopup();
-    pop.options.autoPan = false;
-    line.openPopup(L.latLng(b.getNorth(), b.getCenter().lng));
-    map.fitBounds(b, { paddingTopLeft: [40, pop.getElement().offsetHeight + 70], paddingBottomRight: [40, 30], maxZoom: 8, animate: false });
-    pop.update();
-    pop.options.autoPan = true;
-  } else {
-    map.fitBounds(line.getBounds(), { padding: [40, 40], maxZoom: 8, animate: false });
-    line.openPopup();
-  }
-  fromRow = btn ? { btn, line } : null;
-  // the focused button is hidden now: keep keyboard users in the popup
-  if (keyboard) line.getPopup().getElement().querySelector('a').focus();
-}
-
-// One arc per route (from -> to); all matching dates are listed in its popup. Returns what the common tail needs.
+// One arc per route (from -> to), weighted by its trips under the filters
 function drawTrips() {
-  const routes = new Map(), stations = new Map();
+  const stations = new Map();
+  routes = new Map();
   for (const r of DATA) {
     if (!passes(r)) continue;
     shown.push(r);
     const key = routeKey(r);
-    if (!routes.has(key)) routes.set(key, { from: r.from, to: r.to, trips: [] });
+    if (!routes.has(key)) routes.set(key, { key, from: r.from, to: r.to, trips: [], ...dist(r) });
     routes.get(key).trips.push(r);
   }
-  for (const [key, g] of routes) {
-    g.trips.sort((x, y) => x.start.localeCompare(y.start));
-    const a = [g.from.latitude, g.from.longitude], b = [g.to.latitude, g.to.longitude];
-    const t = g.trips, N = t.length, d = dist(t[0]);
-    const head = `${esc(place(g.from))} ${ARROW} ${esc(place(g.to))}`;
-    const rows = t.map(r => `<tr><td>${esc(r.start)}</td><td>${esc(r.end)}</td>${hasPrice ? `<td>${r.price ? esc(r.price) : ''}</td>` : ''}` +
-      `<td><a href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="Book ${esc(short(r.start))}">Book</a></td></tr>`).join('');
-    const pop = `<div class="pop"><h2>${head}</h2><p>${d.est ? `~${d.km} km (estimated)` : `${d.km} km by road`} \u00b7 ${N} trip${N > 1 ? 's' : ''}</p>` +
-      `<div class="trips"><table><thead><tr><th>Start</th><th>End</th>${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Booking</span></th></tr></thead>` +
-      `<tbody>${rows}</tbody></table></div></div>`;
-    const tip = `${head}<br>${d.est ? '~' : ''}${d.km} km${d.est ? ' (estimated)' : ''} \u00b7 ${N} trip${N > 1 ? 's' : ''}: ${esc(t[0].start)}${N > 1 ? ' \u2026 ' + esc(t[N - 1].start) : ''}`;
-    const base = { color: COL, weight: weight(N), opacity: opacity(N) };
-    const hot = { color: HOT, weight: base.weight + 2, opacity: 1 };
-    const line = L.polyline(arc(a, b), base).addTo(layer).bindPopup(pop).bindTooltip(tip, { sticky: true });
-    lines.set(key, line);
-    const style = (s, on) => { line.setStyle(s); line.getElement().classList.toggle('hl', on); };
-    // hot while hovered or while its popup is open. A tap fires mouseover but no mouseout, and Leaflet fires
-    // popupclose while isPopupOpen() is still true, so popupclose resets unconditionally.
-    line.on('mouseover popupopen', () => { style(hot, true); line.bringToFront(); })
-      .on('mouseout', () => { if (!line.isPopupOpen()) style(base, false); })
-      .on('popupclose', () => { style(base, false); fromRow = null; })
-      // any popup opened here is from the map; showRoute sets fromRow once openPopup returns
-      .on('popupopen', () => { fromRow = null; });
+  for (const g of routes.values()) {
+    const t = g.trips, N = t.length;
+    t.sort((x, y) => x.start.localeCompare(y.start));
+    g.first = t[0].start;
+    g.last = t.map(r => r.end).sort().pop();
+    L.polyline(arc(ll(g.from), ll(g.to)), { color: COL, weight: weight(N), opacity: opacity(N), className: 'base' }).addTo(layer)
+      .bindTooltip(`${esc(place(g.from))} ${ARROW} ${esc(place(g.to))} \u00b7 ${kmText(g)} \u00b7 ${count(N, 'trip')}`, { sticky: true })
+      .on('mouseover', () => hoverRoute(g.key, true))
+      .on('mouseout', () => hoverRoute(null, true))
+      .on('click', () => openRoute(g.key));
     for (const [s, k] of [[g.from, 'dep'], [g.to, 'arr']]) {
       if (!stations.has(s.name)) stations.set(s.name, { s, dep: 0, arr: 0 });
       stations.get(s.name)[k] += N;
     }
   }
   return { stations, routes: routes.size, n: shown.length };
-}
-
-// The popup of a leg or a connection: the chains drawn on the map that use it, in list order, each a button that shows that
-// chain. A button opens the list filtered to every chain that uses it when more do than the popup lists.
-const USE_ROWS = 8;
-const useTitle = new Map();  // leg or connection key -> its name as HTML, for the filter
-const stops = c => { const n = []; for (const l of c.legs) for (const s of [l.r.from, l.r.to]) if (n[n.length - 1] !== s.name) n.push(s.name); return n.map(esc).join(` ${ARROW} `); };
-const onMap = () => chains.length > CHAIN_ROWS ? ' on the map' : '';  // the count reads "Showing 200 of ..."
-const usePopup = (key, sub) => () => {
-  const drawn = chains.slice(0, CHAIN_ROWS).filter(c => uses(c, key)), rows = drawn.slice(0, USE_ROWS);
-  const total = chains.length > CHAIN_ROWS ? chains.filter(c => uses(c, key)).length : drawn.length;
-  const items = rows.map(c => `<li><button data-key="${esc(c.key)}"${c.key === pickedKey ? ' aria-current="true"' : ''}><span class="rt">${stops(c)}</span>` +
-    `<span class="dt">${esc(sd(c.start))} \u2013 ${esc(sd(c.end))} \u00b7 ${count(c.days, 'day')}${c.rest ? ` (${c.rest} rest)` : ''} \u00b7 ${kmHtml(c.drive, chainEst(c))} km</span></button></li>`).join('');
-  return `<div class="pop pick"><h2>In ${count(drawn.length, 'chain')}${onMap()}</h2><p>${sub}</p><ul class="opts">${items}</ul>` +
-    (total > rows.length ? `<button class="all" data-use="${esc(key)}">Show all ${total.toLocaleString('en-GB')} in the list</button>` : '') + '</div>';
-};
-// on a phone the chain options fill the screen and leave the map a few lines tall: close the panel before a popup opens
-function closePanel() {
-  if (!document.body.classList.contains('filt') || !matchMedia('(max-width: 700px)').matches) return;
-  document.body.classList.remove('filt');
-  $('filters').setAttribute('aria-expanded', false);
-  map.invalidateSize({ animate: false });
 }
 
 // Every leg of the listed chains is drawn once, weighted by how many of them use it; connections are dotted.
@@ -834,79 +913,473 @@ function drawChains() {
     at(c.legs[0].r.from).dep++;
     at(c.legs[c.legs.length - 1].r.to).arr++;
   }
-  const popup = { className: 'pick', maxWidth: Math.min(340, innerWidth - 80), minWidth: Math.min(280, innerWidth - 100) };
-  // the busy legs go on top: they are the most visible, and their popup is the one worth reaching
+  // N counts the chains on the map (the first 200); the busy legs go on top, where legs cross
+  const onMap = chains.length > CHAIN_ROWS ? ' on the map' : '';
   for (const [key, g] of [...legs].sort((x, y) => x[1].n - y[1].n)) {
-    const d = dist(g.r), pts = arc([g.r.from.latitude, g.r.from.longitude], [g.r.to.latitude, g.r.to.longitude]);
-    const head = `${esc(place(g.r.from))} ${ARROW} ${esc(place(g.r.to))}`, base = { weight: chainWeight(g.n), opacity: chainOpacity(g.n) };
-    useTitle.set(key, `${esc(g.r.from.name)} ${ARROW} ${esc(g.r.to.name)}`);
-    const line = L.polyline(pts, { color: COL, ...base, interactive: false, className: 'ov' }).addTo(layer);
-    // the panel closes before the popup opens: its listener has to be added first
-    raise(hitLine(layer, pts).on('click', closePanel).bindPopup(usePopup(key, `${head} \u00b7 ${d.est ? '~' : ''}${d.km} km`), popup)
-      .bindTooltip(`${head}<br>${d.est ? '~' : ''}${d.km} km${d.est ? ' (estimated)' : ''} \u00b7 in ${count(g.n, 'chain')}${onMap()}`, { sticky: true }), line, base);
+    const pts = arc(ll(g.r.from), ll(g.r.to));
+    L.polyline(pts, { color: COL, weight: chainWeight(g.n), opacity: chainOpacity(g.n), interactive: false, className: 'base' }).addTo(layer);
+    hitLine(layer, pts).on('click', () => pickLeg(key))
+      .bindTooltip(`Leg ${esc(place(g.r.from))} ${ARROW} ${esc(place(g.r.to))} \u00b7 ${kmText(dist(g.r))} \u00b7 in ${count(g.n, 'chain')}${onMap} \u00b7 click to list them`, { sticky: true });
   }
   for (const [key, g] of hops) {
-    const [hit, line] = drawHop(layer, g.a, g.b, { color: CONN, weight: 3, opacity: 1, className: 'ov' });
-    useTitle.set(key, `connection ${esc(g.a.name)} ${ARROW} ${esc(g.b.name)}`);
-    raise(hit.on('click', closePanel).bindPopup(usePopup(key, `Connection: ${esc(g.a.name)} ${ARROW} ${esc(g.b.name)} \u00b7 ~${g.h.km} km (estimated)`), popup)
-      .bindTooltip(`Connection: ${esc(g.a.name)} ${ARROW} ${esc(g.b.name)}<br>~${g.h.km} km (estimated) \u00b7 in ${count(g.n, 'chain')}${onMap()}`, { sticky: true }), line, { weight: 3, opacity: 1 });
+    drawHop(layer, g.a, g.b, { color: CONN, weight: 3, opacity: 1, className: 'base' }).on('click', () => pickLeg(key))
+      .bindTooltip(`Hop ${esc(g.a.name)} ${ARROW} ${esc(g.b.name)} \u00b7 ~${fmtKm(g.h.km)} km (estimated) \u00b7 in ${count(g.n, 'chain')}${onMap} \u00b7 click to list them`, { sticky: true });
   }
   return { stations, routes: legs.size, n: chains.length };
+}
+
+// the opened route (with its label) or chain (with numbered legs)
+function drawSelection() {
+  picked.clearLayers();
+  if (!chainMode && S.route) {
+    const g = ROUTES.get(S.route), pts = drawHot(picked, g.from, g.to);
+    ring(picked, g.from, false);
+    ring(picked, g.to, true);
+    L.tooltip({ permanent: true, direction: 'top', className: 'rpill', offset: [0, -6] }).setLatLng(pts[20])
+      .setContent(`${esc(g.from.name)} ${ARROW} ${esc(g.to.name)} \u00b7 ${count(routeWins(g).length, 'trip')}`).addTo(picked);
+  }
+  const c = chainMode && S.chain && chains.find(x => x.key === S.chain);
+  if (c) drawChainOn(picked, c, true);
+  // the leg or connection whose chains are listed
+  const ends = chainMode && !c && legFilter && legFilter.replace(/^hop /, '').split('>').map(n => STATIONS.get(n));
+  if (ends && ends[0] && ends[1]) {
+    if (isHop(legFilter)) drawHop(picked, ends[0], ends[1], { pane: 'hot', color: CONN, weight: 4, opacity: 1, interactive: false });
+    else drawHot(picked, ends[0], ends[1]);
+  }
+  picked.eachLayer(l => { const el = l.getElement && l.getElement(); if (el) el.setAttribute('tabindex', '-1'); });
+}
+const dimMap = () => $('map').classList.toggle('dim', picked.getLayers().length + hover.getLayers().length > 0);
+
+let hot;  // the route or chain key drawn in the hover layer
+function hoverRoute(key, fromMap) {
+  if (key === hot) return;
+  hot = key;
+  hover.clearLayers();
+  const g = key && key !== S.route && ROUTES.get(key);
+  if (g) drawHot(hover, g.from, g.to);
+  dimMap();
+  if (!fromMap) return;
+  // an arc under the pointer marks its card
+  const was = $('side').querySelector('.card.hot');
+  if (was) was.classList.remove('hot');
+  const card = key && $('side').querySelector(`.card[data-route="${CSS.escape(key)}"]`);
+  if (card) { card.classList.add('hot'); card.scrollIntoView({ block: 'nearest' }); }
+}
+function hoverChain(key) {
+  if (key === hot) return;
+  hot = key;
+  hover.clearLayers();
+  const c = key && key !== S.chain && chains.find(x => x.key === key);
+  if (c) drawChainOn(hover, c, false);
+  dimMap();
+}
+
+// whole-number zoom: fractional zoom leaves seams and shrinks labels on raster tiles
+function fitAll(user) {
+  if (!$('map').clientWidth) return;  // the Trips page is shown: fit when the map is
+  fitted = true;
+  const b = layer.getBounds();
+  if (b.isValid()) map.fitBounds(b, { padding: [16, 16], animate: user && !still.matches });
+  else map.setView([50, 9], 5);
+}
+function fitPicked() {
+  const b = picked.getBounds();
+  if (!$('map').clientWidth || !b.isValid()) return;
+  fitted = true;
+  map.fitBounds(b, { paddingTopLeft: [48, 72], paddingBottomRight: [48, 32], maxZoom: 8, animate: !still.matches });
+}
+
+// ---- sidebar ------------------------------------------------------------------------------------
+function routeCards() {
+  const list = [...routes.values()];
+  const ord = {
+    start: (a, b) => a.first.localeCompare(b.first) || a.km - b.km, km: (a, b) => a.km - b.km, '-km': (a, b) => b.km - a.km,
+    n: (a, b) => b.trips.length - a.trips.length || a.first.localeCompare(b.first),
+  };
+  list.sort((a, b) => ord[S.rsort](a, b) || a.key.localeCompare(b.key));
+  const st = eff.fst && STATIONS.get(eff.fst);
+  const first = shown.map(r => r.start).sort()[0], last = shown.map(r => r.end).sort().pop();
+  const sub = st ? `${count(list.length, 'route')} \u00b7 ${count(shown.length, 'trip')}` : `${count(shown.length, 'trip')}${first ? ` \u00b7 ${dm(first)} \u2013 ${dm(last)}` : ''}`;
+  const head = `<div class="shead"><div><h2>${esc(st ? `From ${place(st)}` : count(list.length, 'route'))}</h2><p>${esc(sub)}</p></div>${list.length ? orderSelect('rsort', ROUTE_ORDERS, S.rsort) : ''}</div>`;
+  if (!list.length) return head + noneHtml();
+  return head + '<ul class="cards">' + list.map(g => {
+    const N = g.trips.length;
+    return `<li><button class="card" data-route="${esc(g.key)}" aria-label="${esc(`${place(g.from)} to ${place(g.to)}, ${kmText(g)}, ${count(N, 'trip')}, next ${short(g.first)}`)}">` +
+      `${RING()}<span class="nm">${esc(place(g.from))}</span><span class="km">${kmHtml(g.km, g.est)} km</span>` +
+      `${DOT()}<span class="nm">${esc(place(g.to))}</span><span class="n">${count(N, 'trip')}</span>` +
+      `<span class="when">Next ${esc(short(g.first))} \u00b7 windows until ${esc(dm(g.last))}</span></button></li>`;
+  }).join('') + '</ul>';
+}
+
+function routeDetail(g) {
+  const wins = routeWins(g), longest = Math.max(...wins.map(nightsOf));
+  const next = [...ROUTES.values()].filter(x => x.from.name === g.to.name && x.last >= g.first).sort((a, b) => a.first.localeCompare(b.first) || a.km - b.km);
+  const also = [...ROUTES.values()].filter(x => x.from.name === g.from.name && x.key !== g.key).sort((a, b) => a.to.name.localeCompare(b.to.name));
+  return `<div class="detail"><button class="back" data-act="back">${BACK}${esc(eff.fst ? `Routes from ${eff.fst}` : 'All routes')}</button>` +
+    `<div class="dhead"><h2 class="rt" id="dh" tabindex="-1">${RING(HOT, 5)}<span>${esc(place(g.from))}</span><span class="vl" aria-hidden="true"></span><span><span class="sr"> to </span></span>${DOT(HOT, 5.5)}<span>${esc(place(g.to))}</span></h2>` +
+    `<dl class="stats"><div><dt>By road</dt><dd>${kmHtml(g.km, g.est)} km</dd></div><div><dt>Windows</dt><dd>${wins.length}</dd></div><div><dt>Longest stay</dt><dd>${count(longest, 'night')}</dd></div></dl></div>` +
+    `<section class="sec" aria-labelledby="h-win"><h3 id="h-win">Trip windows</h3><p class="help">Pick up and return on any days inside a window, up to ${NIGHTS} nights.</p><ul class="wins">` +
+    wins.map(r => `<li><div class="w"><div class="d num">${esc(short(r.start))} ${ARROW} ${esc(short(r.end))}</div><div class="m">Up to ${count(nightsOf(r), 'night')}${r.price ? ` \u00b7 ${esc(r.price)}` : ''}</div></div>` +
+      `<a class="btn" href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="${esc(`Book ${place(g.from)} to ${place(g.to)}, ${short(r.start)}`)}">Book${EXT}</a></li>`).join('') + '</ul></section>' +
+    `<section class="sec" aria-labelledby="h-next"><h3 id="h-next">Continue from ${esc(g.to.name)}</h3>` +
+    (next.length ? `<p class="help">Rallies leaving where this one ends: book them back to back for a longer trip.</p><ul class="nexts">` +
+      next.map(x => `<li><button class="nx" data-route="${esc(x.key)}"><span><b>${esc(x.from.name)} ${ARROW} ${esc(place(x.to))}</b><small>${count(x.trips.length, 'trip')} \u00b7 next ${esc(short(x.first))} \u00b7 ${kmHtml(x.km, x.est)} km</small></span>${CHEVR}</button></li>`).join('') + '</ul>'
+      : `<p class="soft">No rally leaves ${esc(g.to.name)} in this scan.</p>`) + '</section>' +
+    (also.length ? `<section class="sec" aria-labelledby="h-also"><h3 id="h-also">Also from ${esc(g.from.name)}</h3><div class="also">` +
+      also.map(x => `<button data-route="${esc(x.key)}" aria-label="${esc(`${g.from.name} to ${place(x.to)}`)}"><span aria-hidden="true">\u2192</span> ${esc(x.to.name)}</button>`).join('') + '</div></section>' : '') +
+    `<a class="more" href="#trips" data-act="list">Show these trips in the list <span aria-hidden="true">\u2192</span></a></div>`;
+}
+
+// the leg filter over a chain list, with a button that removes it
+const legPill = () => legFilter ? `<div class="legpill"><span><span class="k">Only chains using</span> <b>${legKind(legFilter)} ${legTitle(legFilter)}</b></span>` +
+  `<button class="x" data-act="noleg" aria-label="Show all chains"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>` : '';
+function chainCards() {
+  const n = chains.length, st = eff.fst && STATIONS.get(eff.fst);
+  const sub = (n > CHAIN_ROWS ? `The first ${CHAIN_ROWS} \u00b7 ` : '') + (legFilter ? 'Pick one to open it' : 'Rallies you can book back to back');
+  const title = legFilter ? `${count(n, 'chain')} ${n === 1 ? 'uses' : 'use'} this ${isHop(legFilter) ? 'hop' : 'leg'}` : st ? `Chains from ${st.name}` : count(n, 'chain');
+  const head = `<div class="shead"><div><h2 id="ch" tabindex="-1">${esc(title)}</h2><p>${esc(st && !legFilter ? `${count(n, 'chain')} \u00b7 ${sub}` : sub)}</p>${legPill()}</div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}</div>`;
+  if (!n) return head + noneHtml();
+  return head + '<ul class="cards">' + chains.slice(0, CHAIN_ROWS).map(c => `<li><button class="card ch" data-chain="${esc(c.key)}"><span class="t">${chainTitle(c)}</span>` +
+    `<span class="d num">${esc(sd(c.start))} \u2013 ${esc(sd(c.end))}</span>${chainBadges(c)}</button></li>`).join('') + '</ul>' +
+    (n > CHAIN_ROWS ? `<p class="note">The first ${CHAIN_ROWS} of ${n.toLocaleString('en-GB')} chains, on the map too. Sort or filter to see the others.</p>` : '');
+}
+
+function chainDetail(c) {
+  return `<div class="detail"><button class="back" data-act="back">${BACK}${legFilter ? `Chains using ${legTitle(legFilter)}` : 'All chains'}</button>` +
+    `<div class="dhead"><h2 id="dh" tabindex="-1">${chainTitle(c)}</h2><dl class="stats"><div><dt>On the road</dt><dd>${count(c.days, 'day')}</dd></div>` +
+    `<div><dt>Driven</dt><dd>${kmHtml(c.drive, chainEst(c))} km</dd></div><div><dt>Rest days</dt><dd>${c.rest}</dd></div></dl></div>` +
+    `<ol class="legs">${c.legs.map((l, i) => `<li>${i ? (c.hops[i - 1].same ? `<div class="ho">${handOver(c, i)}</div>`
+      : `<div class="ho hop${focusKey === hopKey(c, i) ? ' on' : ''}" data-use="${esc(hopKey(c, i))}">${handOver(c, i)}</div>`) : ''}` +
+      `<div class="leg${focusKey === routeKey(l.r) ? ' on' : ''}" data-use="${esc(routeKey(l.r))}"><span class="no" aria-hidden="true">${i + 1}</span><div><div class="r"><span class="sr">Leg ${i + 1}: </span>${esc(place(l.r.from))} ${ARROW} ${esc(place(l.r.to))}</div>` +
+      `<div class="m num">${esc(sd(l.p))} ${ARROW} ${esc(sd(l.q))} \u00b7 ${count(l.q - l.p, 'night')} \u00b7 ${kmCell(l.r)} km</div></div>` +
+      `<a class="btn" href="${esc(legLink(l))}" target="_blank" rel="noopener" aria-label="${esc(bookLeg(c, l, i))}">Book${EXT}</a></div></li>`).join('')}</ol>` +
+    '<p class="warn">Dates are inferred from the offers. Book each leg separately \u2014 the booking page has the last word.</p></div>';
+}
+
+function renderSide() {
+  const side = $('side');
+  side.setAttribute('aria-label', chainMode ? 'Chains' : 'Routes');
+  side.innerHTML = !DATA.length ? noneHtml() : chainMode ? (S.chain ? chainDetail(chains.find(c => c.key === S.chain)) : chainCards())
+    : S.route ? routeDetail(ROUTES.get(S.route)) : routeCards();
+}
+
+// ---- Trips page ---------------------------------------------------------------------------------
+const foot = () => `<p class="foot">${DATA.some(r => !dist(r).est) ? 'Distances are road distances from OSRM; a leading ~ marks an estimate.' : 'Distances with a leading ~ are estimates: the straight line \u00d7 1.3.'} Offers as of the last scan \u2014 the booking page has the last word.</p>`;
+const tripRow = r => `<tr><td class="ds" title="${esc(r.start)}">${esc(short(r.start))}</td><td class="de" title="${esc(r.end)}">${esc(short(r.end))}</td><td class="nt">${count(nightsOf(r), 'night')}</td>` +
+  `<td class="from"><span class="st">${RING('#15181E', 4)}${esc(place(r.from))}</span></td><td class="to"><span class="st">${DOT('#15181E', 4)}${esc(place(r.to))}</span></td>` +
+  `<td class="km r">${kmCell(r)} km</td>${hasPrice ? `<td class="pr">${r.price ? esc(r.price) : ''}</td>` : ''}` +
+  `<td class="act"><button class="btn2 sm" data-route="${esc(routeKey(r))}" aria-label="${esc(`Show ${place(r.from)} to ${place(r.to)} on the map`)}">${MAPI}Map</button>` +
+  `<a class="btn sm" href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="${esc(`Book ${place(r.from)} to ${place(r.to)}, ${short(r.start)}`)}">Book${EXT}</a></td></tr>`;
+
+function tripsTable() {
+  const s = SORT.trips;
+  shown.sort(byOrder(s, SORTS[s.key], (x, y) => x.start.localeCompare(y.start) || x.from.name.localeCompare(y.from.name)));
+  const first = shown.map(r => r.start).sort()[0], last = shown.map(r => r.end).sort().pop();
+  const head = `<div class="thead"><div><h2>${count(shown.length, 'trip')}</h2><p>${count(routes.size, 'route')}${first ? ` \u00b7 ${dm(first)} \u2013 ${dm(last)}` : ''} \u00b7 Pick up and return any day inside a window, up to ${NIGHTS} nights</p></div>` +
+    `<div class="grp" role="group" aria-label="Group by"><span aria-hidden="true">Group by</span><div class="seg">` +
+    [['none', 'None'], ['route', 'Route'], ['from', 'Pick-up']].map(([k, t]) => `<button data-group="${k}" aria-pressed="${S.group === k}">${t}</button>`).join('') + '</div></div></div>';
+  if (!shown.length) return head + `<div class="tbox">${noneHtml()}</div>` + foot();
+  const th = (k, t, cls) => `<th${cls ? ` class="${cls}"` : ''} aria-sort="${k === s.key ? (s.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button data-sort="${k}">${t}${k === s.key ? `<span aria-hidden="true"> ${s.dir > 0 ? '\u2191' : '\u2193'}</span>` : ''}</button></th>`;
+  let body;
+  if (S.group === 'none') body = `<tbody>${shown.map(tripRow).join('')}</tbody>`;
+  else {
+    // one tbody per group, in the order of the sorted rows, under a rowgroup header with its count
+    const key = S.group === 'route' ? routeKey : r => r.from.name, groups = new Map();
+    for (const r of shown) { if (!groups.has(key(r))) groups.set(key(r), []); groups.get(key(r)).push(r); }
+    body = [...groups.values()].map(t => {
+      const r = t[0], h = S.group === 'route' ? `${esc(place(r.from))} ${ARROW} ${esc(place(r.to))} <span>\u00b7 ${kmCell(r)} km \u00b7 ${count(t.length, 'trip')}</span>`
+        : `From ${esc(place(r.from))} <span>\u00b7 ${count(t.length, 'trip')}</span>`;
+      return `<tbody><tr class="gh"><th colspan="${hasPrice ? 8 : 7}" scope="rowgroup">${h}</th></tr>${t.map(tripRow).join('')}</tbody>`;
+    }).join('');
+  }
+  return head + `<div class="tbox"><table class="tt"><thead><tr>${th('start', 'Start')}${th('end', 'End')}<th>Nights</th><th>Pick-up</th><th>Return</th>${th('km', 'Distance', 'r')}` +
+    `${hasPrice ? '<th>Price</th>' : ''}<th><span class="sr">Actions</span></th></tr></thead>${body}</table></div>` + foot();
+}
+
+function tripsChains() {
+  const n = chains.length;
+  const head = `<div class="thead"><div><h2>${n > CHAIN_ROWS ? `Showing ${CHAIN_ROWS} of ${n.toLocaleString('en-GB')} chains` : count(n, 'chain')}</h2>` +
+    `<p>Rallies you can book back to back. Each leg is booked on its own.</p>${legPill()}</div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}</div>`;
+  if (!n) return head + `<div class="tbox">${noneHtml()}</div>` + foot();
+  return head + '<div class="tbox plain"><ul class="ccards">' + chains.slice(0, CHAIN_ROWS).map(c => `<li class="ccard" data-card="${esc(c.key)}"><div class="sum"><h3>${chainTitle(c)}</h3>` +
+    `<p class="num">${esc(sd(c.start))} \u2013 ${esc(sd(c.end))}</p>${chainBadges(c)}</div><ol>` +
+    c.legs.map((l, i) => `<li><span class="no" aria-hidden="true">${i + 1}</span><span><b>${esc(l.r.from.name)} ${ARROW} ${esc(l.r.to.name)}</b> ` +
+      `<span class="dt num">\u00b7 ${esc(sd(l.p))} ${ARROW} ${esc(sd(l.q))} \u00b7 ${kmCell(l.r)} km</span>${i ? `<span class="hn${c.hops[i - 1].same ? '' : ' hop'}">${handOver(c, i)}</span>` : ''}</span>` +
+      `<a class="btn sm" href="${esc(legLink(l))}" target="_blank" rel="noopener" aria-label="${esc(bookLeg(c, l, i))}">Book leg ${i + 1}</a></li>`).join('') +
+    `</ol><button class="btn2 sm" data-chain="${esc(c.key)}"${c.key === S.chain ? ' aria-current="true"' : ''} aria-label="${esc(`Show chain ${chainLabel(c)} on the map`)}">${MAPI}Map</button></li>`).join('') + '</ul>' +
+    (n > CHAIN_ROWS ? `<p class="note">The first ${CHAIN_ROWS} of ${n.toLocaleString('en-GB')} chains. Sort or filter to see the others.</p>` : '') + '</div>' + foot();
+}
+
+function renderTrips() {
+  $('tlist').setAttribute('aria-label', chainMode ? 'Chain list' : 'Trip list');
+  $('tlist').innerHTML = chainMode ? tripsChains() : tripsTable();
+}
+
+// ---- one render for the whole page --------------------------------------------------------------
+function applyView() {
+  const m = S.view === 'map';
+  $('mapview').hidden = !m;
+  $('tripsview').hidden = m;
+  $(m ? 'v-map' : 'v-trips').setAttribute('aria-current', 'page');
+  $(m ? 'v-trips' : 'v-map').removeAttribute('aria-current');
+  if (m) { map.invalidateSize(); if (!fitted) fitAll(false); }
 }
 
 function render() {
   fillSelects();
   layer.clearLayers();
-  clearPicked();
+  hover.clearLayers();
+  hot = undefined;
   legendList.innerHTML = legendItems();
   shown = [];
-  const { stations, routes, n } = chainMode ? drawChains() : drawTrips();
-  // one marker per station: a stack of per-route markers would open an arbitrary route on click
+  const { stations, routes: nr, n } = chainMode ? drawChains() : drawTrips();
+  if (S.chain && !chains.some(c => c.key === S.chain)) S.chain = null;  // filtered out, or never there
+  // one marker per station. Under the markers a transparent 32 px circle per station widens the click target;
+  // where those overlap, a click goes to the nearest station that has departures
+  const toggle = name => {
+    sel.fst = eff.fst === name ? '' : name;
+    S.route = S.chain = null;
+    render();
+  };
+  const deps = [...stations.values()].filter(g => g.dep > 0);
+  const nearest = e => deps.reduce((m, g) => {
+    const d = map.latLngToContainerPoint(ll(g.s)).distanceTo(e.containerPoint);
+    return d < m.d ? { g, d } : m;
+  }, { g: null, d: 17 }).g;
+  for (const g of deps) {
+    L.circleMarker(ll(g.s), { pane: 'stations', radius: 16, stroke: false, fillOpacity: 0 }).addTo(layer)
+      .on('click', e => { const n = nearest(e); if (n) toggle(n.s.name); });
+  }
   for (const [name, g] of stations) {
-    const on = eff.fst === name;
-    // arrival only: the pick-up dropdown has no such option, so the click does nothing
-    const hint = g.dep ? `<br>${chainMode ? (on ? 'Click to show chains starting anywhere' : 'Click to only show chains starting here') : (on ? 'Click to show trips from every station' : 'Click to only show trips from here')}` : '';
-    const tally = chainMode ? `${count(g.dep, 'chain')} starting \u00b7 ${count(g.arr, 'chain')} ending` : `${count(g.dep, 'departure')} \u00b7 ${count(g.arr, 'arrival')}`;
-    L.circleMarker([g.s.latitude, g.s.longitude], { pane: 'stations', radius: on ? 6 : 4, weight: 2, color: STN, fillColor: on ? STN : '#fff', fillOpacity: 1 })
-      .addTo(layer)
-      .bindTooltip(`${esc(name)}, ${esc(g.s.cc)}<br>${tally}${hint}`)
-      .on('click', () => {
-        if (!g.dep) return;
-        sel.fst = on ? '' : name;
-        render();
-      });
+    const on = eff.fst === name, click = g.dep > 0;
+    const tip = `${esc(name)}, ${esc(g.s.cc)} \u00b7 ` + (chainMode ? `${count(g.dep, 'chain')} starting \u00b7 ${count(g.arr, 'chain')} ending` : `${count(g.dep, 'departure')} \u00b7 ${count(g.arr, 'arrival')}`) +
+      // arrival only: the pick-up dropdown has no such option, so the click does nothing
+      (click ? ` \u00b7 ${chainMode ? (on ? 'Click to show chains starting anywhere' : 'Click to only show chains starting here') : (on ? 'Click to show trips from every station' : 'Click to only show trips from here')}` : '');
+    L.circleMarker(ll(g.s), { pane: 'stations', radius: on ? 7 : 5.5, weight: 2.5, color: STN, fillColor: on ? STN : '#fff', fillOpacity: 1, className: click ? '' : 'noclick' }).addTo(layer)
+      .bindTooltip(tip, { direction: 'top', offset: [0, -8] })
+      .on('click', () => { if (click) toggle(name); });
   }
-  // whole-number zoom: fractional zoom leaves seams and shrinks labels on raster tiles
-  if (!fitted) {
-    fitted = true;
-    if (stations.size) map.fitBounds(L.latLngBounds([...stations.values()].map(g => [g.s.latitude, g.s.longitude])), { padding: [16, 16], animate: false });
-    else map.setView([50, 9], 5);
-  }
-  // Chrome puts every clickable SVG path in the tab order; keyboard users reach routes via the list
-  layer.eachLayer(l => l.getElement().setAttribute('tabindex', '-1'));
-  $('count').textContent = chainMode ? (n > CHAIN_ROWS ? `Showing ${CHAIN_ROWS} of ${n.toLocaleString('en-GB')} chains` : count(n, 'chain')) : routes + ' routes \u00b7 ' + n + ' of ' + DATA.length + ' trips';
+  drawSelection();
+  dimMap();
+  // Chrome puts every clickable SVG path in the tab order; keyboard users reach routes via the sidebar
+  layer.eachLayer(l => { const el = l.getElement && l.getElement(); if (el) el.setAttribute('tabindex', '-1'); });
+  $('count').innerHTML = chainMode ? `<strong>${n > CHAIN_ROWS ? `Showing ${CHAIN_ROWS} of ${n.toLocaleString('en-GB')} chains` : count(n, 'chain')}</strong>`
+    : `<strong>${count(n, 'trip')}</strong> on ${count(nr, 'route')}`;
   $('empty').hidden = n > 0;
-  $('empty-msg').textContent = !DATA.length ? 'No rally trips are on offer right now.' : chainMode ? `No chains match${chainTry() ? `. Try: ${chainTry()}, or reset the filters.` : ' these filters.'}` : 'No trips match the filters.';
+  $('empty-msg').textContent = emptyMsg();
   $('empty-reset').hidden = !DATA.length;
-  renderList();
+  applyView();
+  if (S.view === 'map') renderSide(); else renderTrips();
   markActive();
+  updateChips();
+  placePop();
+  commit(false);
 }
 
-$('week').oninput = () => {
+// ---- URL: #map?... or #trips?... ----------------------------------------------------------------
+const PARAMS = [['fcc', 'fcc'], ['fst', 'from'], ['tcc', 'tcc'], ['tst', 'to']];
+const CHAIN_PARAMS = [['cn', 'legs'], ['cs', 'same'], ['cg', 'rest'], ['ck', 'hop'], ['cdmin', 'dmin'], ['cdmax', 'dmax'], ['cdrive', 'drive'], ['cr', 'round']];
+function hashOf(view) {
+  const p = new URLSearchParams();
+  if (chainMode) p.set('mode', 'chains');
+  const k = +$('week').value;
+  if (k) p.set('week', k);
+  else {
+    if ($('from').value !== RESET.from) p.set('start', $('from').value);
+    if ($('to').value !== RESET.to) p.set('end', $('to').value);
+  }
+  if ($('kmin').value) p.set('kmin', $('kmin').value);
+  if ($('kmax').value) p.set('kmax', $('kmax').value);
+  for (const [id, name] of PARAMS) if (sel[id]) p.set(name, sel[id]);
+  // the chain options: legs, same day, rest days, next pick-up (hop), trip days, total km (drive), round trip
+  for (const [id, name] of CHAIN_PARAMS) if (valueOf(id) !== (RESET[id] || '')) p.set(name, $(id).type === 'checkbox' ? +$(id).checked : $(id).value);
+  if (!chainMode && S.route) p.set('route', S.route);
+  if (chainMode && legFilter) p.set('leg', legFilter);
+  if (chainMode && S.chain) p.set('chain', S.chain);
+  if (S.rsort !== 'start') p.set('rsort', S.rsort);
+  if (sortVal(SORT.trips) !== 'start') p.set('sort', sortVal(SORT.trips));
+  if (sortVal(SORT.chains) !== '-days') p.set('csort', sortVal(SORT.chains));
+  if (S.group !== 'none') p.set('group', S.group);
+  const q = p.toString();
+  return '#' + view + (q ? '?' + q : '');
+}
+// filters replace the history entry; a view change and opening a route or chain push one
+function commit(push) {
+  const h = hashOf(S.view);
+  $('v-map').href = hashOf('map');
+  $('v-trips').href = hashOf('trips');
+  if (h === location.hash || (!location.hash && h === '#map')) return;
+  history[push ? 'pushState' : 'replaceState'](null, '', h);
+}
+// unknown or invalid parameters are ignored
+function readHash() {
+  const m = /^#(map|trips)(?:\?(.*))?$/.exec(location.hash);
+  const p = new URLSearchParams(m && m[2] || ''), get = k => p.get(k) || '';
+  const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(day(v));
+  const pick = (v, ok, dflt) => ok.includes(v) ? v : dflt;
+  S.view = m ? m[1] : 'map';
+  chainMode = get('mode') === 'chains';
+  const wk = +get('week');
+  $('week').value = Number.isInteger(wk) && wk >= 1 && wk <= +$('week').max ? wk : 0;
+  if (+$('week').value) applyWeek();
+  else {
+    $('from').value = isDate(get('start')) ? get('start') : RESET.from;
+    $('to').value = isDate(get('end')) ? get('end') : RESET.to;
+    weekText(get('start') || get('end') ? 'custom dates' : 'all dates');
+  }
+  for (const id of ['kmin', 'kmax']) $(id).value = /^\d{1,5}$/.test(get(id)) ? get(id) : '';
+  for (const [id, name] of PARAMS) sel[id] = get(name);
+  const num = (v, hi) => /^\d{1,6}$/.test(v) && +v <= hi ? v : '';
+  clearTimeout(typing);
+  setChainOptions({
+    cn: pick(get('legs'), ['2', '3', '2-3'], '2'), cs: get('same') !== '0', cg: pick(get('rest'), ['0', '1', '2', '3', '4', '5', '6', '7'], '0'),
+    ck: pick(get('hop'), ['0', '25', '50', '100', '150', '250'], '0'), cdmin: num(get('dmin'), 1e4), cdmax: num(get('dmax'), 1e4),
+    cdrive: num(get('drive'), 1e6), cr: get('round') === '1',
+  });
+  S.route = !chainMode && ROUTES.has(get('route')) ? get('route') : null;
+  S.chain = chainMode && get('chain') || null;
+  legFilter = chainMode && /^(hop )?[^>]+>[^>]+$/.test(get('leg')) ? get('leg') : null;
+  S.rsort = pick(get('rsort'), ROUTE_ORDERS.map(o => o[0]), 'start');
+  const ts = pick(get('sort'), ['start', '-start', 'end', '-end', 'km', '-km'], 'start');
+  SORT.trips = { key: ts.replace('-', ''), dir: ts[0] === '-' ? -1 : 1 };
+  const cs = pick(get('csort'), CHAIN_ORDERS.map(o => o[0]), '-days');
+  SORT.chains = { key: cs.replace('-', ''), dir: cs[0] === '-' ? -1 : 1 };
+  S.group = pick(get('group'), ['none', 'route', 'from'], 'none');
+  applyMode();
+}
+
+// ---- actions ------------------------------------------------------------------------------------
+let opener = null;   // the key of the card or row that opened the detail, to give it focus back
+let pushed = false;  // the detail was opened on the map with a history entry: closing it goes Back
+function openDetail(set) {
+  const was = S.route || S.chain, onMap = S.view === 'map';
+  set();
+  if (!was) opener = S.route || S.chain;
+  S.view = 'map';
+  // from one detail to the next replaces the entry, so Back still goes to the list
+  if (!was) { commit(true); pushed = onMap; }
+  render();
+  $('side').scrollTop = 0;
+  fitPicked();
+  $('dh').focus({ preventScroll: true });
+}
+const openRoute = key => { if (ROUTES.has(key)) openDetail(() => { S.route = key; }); };
+const openChain = (key, leg) => openDetail(() => { S.chain = key; focusKey = leg || null; });
+// A leg or connection clicked on the map. Of the open chain: keep it and show that leg in the sidebar. Otherwise list the
+// chains that use it (the leg filter), and open the chain at once when only one does.
+function pickLeg(key) {
+  const open = S.chain && chains.find(c => c.key === S.chain);
+  if (open && uses(open, key)) {
+    focusKey = key;
+    drawSelection();
+    for (const el of $('side').querySelectorAll('[data-use]')) el.classList.toggle('on', el.dataset.use === key);
+    const el = $('side').querySelector('[data-use].on');
+    if (el) el.scrollIntoView({ block: 'nearest', behavior: still.matches ? 'auto' : 'smooth' });
+    return;
+  }
+  legFilter = key;
+  S.chain = focusKey = null;
+  render();
+  if (chains.length === 1) return openChain(chains[0].key, key);
+  $('side').scrollTop = 0;
+  $('ch').focus({ preventScroll: true });
+}
+function clearLeg(focus) {
+  legFilter = null;
+  render();
+  if (focus) focus.focus();
+}
+function closeDetail() {
+  focusKey = null;
+  if (pushed) { pushed = false; history.back(); return; }  // popstate renders and gives focus back
+  S.route = S.chain = null;
+  render();
+  refocus();
+}
+function refocus() {
+  const side = $('side'), k = opener && CSS.escape(opener);
+  const b = (k && side.querySelector(`.card[data-route="${k}"], .card[data-chain="${k}"]`)) || side.querySelector('.card');
+  if (b) b.focus();
+  opener = null;
+}
+function showInList() {
+  const g = ROUTES.get(S.route);
+  sel.fcc = sel.tcc = '';
+  sel.fst = g.from.name;
+  sel.tst = g.to.name;
+  S.route = null;
+  S.view = 'trips';
+  pushed = false;
+  commit(true);
+  render();
+}
+function applyMode() {
+  $('m-trips').setAttribute('aria-pressed', !chainMode);
+  $('m-chains').setAttribute('aria-pressed', chainMode);
+  $('cchip').hidden = $('csep').hidden = $('gchain').hidden = !chainMode;
+  for (const g in NAMES) {
+    const name = NAMES[g][+chainMode];
+    $(g).querySelector('.k').textContent = name;
+    $(g).querySelector('.x').setAttribute('aria-label', `Clear ${name.toLowerCase()} filter`);
+  }
+  $('h-date').textContent = chainMode ? 'First pick-up date' : 'Start date';
+  $('h-km').textContent = NAMES.gkm[+chainMode];
+  $('h-from').textContent = NAMES.gfrom[+chainMode];
+  $('h-to').textContent = NAMES.gto[+chainMode];
+  if (popOpen && popOpen.pop.id === 'p-chain' && !chainMode) closePop(false);
+}
+function setMode(on) {
+  if (chainMode === on) return;
+  chainMode = on;
+  S.route = S.chain = null;
+  legFilter = focusKey = null;
+  opener = null;
+  pushed = false;
+  applyMode();
+  render();
+  // on a phone the options sit behind their chip: open them at once
+  if (on && matchMedia('(max-width: 700px)').matches) openPop($('c-chain'));
+}
+$('m-trips').onclick = () => setMode(false);
+$('m-chains').onclick = () => setMode(true);
+for (const v of ['map', 'trips']) {
+  $('v-' + v).onclick = e => {
+    if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;  // a new tab: the href carries the state
+    e.preventDefault();
+    if (S.view === v) return;
+    S.view = v;
+    pushed = false;
+    commit(true);
+    render();
+    if (v === 'map') fitPicked();
+  };
+}
+addEventListener('popstate', () => {
+  const had = S.route || S.chain;
+  readHash();
+  pushed = false;
+  render();
+  if (had && !S.route && !S.chain && S.view === 'map') refocus();
+  else if (S.route || S.chain) fitPicked();
+});
+
+// ---- filters ------------------------------------------------------------------------------------
+const weekText = t => {
+  $('week').setAttribute('aria-valuetext', t);
+  $('wkout').textContent = t[0].toUpperCase() + t.slice(1);
+};
+function applyWeek() {
   const k = +$('week').value, s = day(min) + (k - 1) * 7 * 864e5;
   $('from').value = k ? iso(s) : min;
   $('to').value = k ? iso(Math.min(s + 6 * 864e5, day(max))) : max;
-  $('week').setAttribute('aria-valuetext', k ? 'week of ' + short($('from').value) : 'all dates');
-  render();
-};
+  weekText(k ? 'week of ' + short($('from').value) : 'all dates');
+}
+$('week').oninput = () => { applyWeek(); render(); };
 for (const k in FILTERS) $(k).onchange = () => { sel[k] = $(k).value; render(); };
 ['kmin', 'kmax'].forEach(id => $(id).oninput = render);
 // typed dates no longer match the week slider
-['from', 'to'].forEach(id => $(id).oninput = () => {
-  $('week').value = 0;
-  $('week').setAttribute('aria-valuetext', 'custom dates');
-  render();
-});
+const custom = () => { $('week').value = 0; weekText('custom dates'); };
+['from', 'to'].forEach(id => $(id).oninput = () => { custom(); render(); });
 function setChainOptions(v) {
   for (const id in v) $(id)[$(id).type === 'checkbox' ? 'checked' : 'value'] = v[id];
   // Same day off means a break of 1 to N days: 0 rest days can no longer be picked
@@ -915,38 +1388,6 @@ function setChainOptions(v) {
   if (!same && +$('cg').value < 1) $('cg').value = '1';
   $('cgc').textContent = same ? 'or up to' : '1 to';
 }
-$('reset').onclick = () => {
-  for (const k in FILTERS) sel[k] = '';
-  legFilter = null;
-  $('from').value = min; $('to').value = max; $('week').value = 0; $('kmin').value = $('kmax').value = '';
-  $('week').setAttribute('aria-valuetext', 'all dates');
-  clearTimeout(typing);
-  setChainOptions({ cn: '2', cs: true, cg: '0', ck: '0', cdmin: '', cdmax: '', cdrive: '', cr: false });
-  render();
-  $('view').focus();  // Reset hides itself: do not leave keyboard focus on it
-};
-$('empty-reset').onclick = () => $('reset').click();
-$('filters').onclick = () => {
-  const open = document.body.classList.toggle('filt');
-  $('filters').setAttribute('aria-expanded', open);
-};
-$('view').onclick = () => setView(!document.body.classList.contains('list'));
-$('mode').onclick = () => {
-  chainMode = !chainMode;
-  fromRow = null;
-  legFilter = null;
-  $('mode').setAttribute('aria-pressed', chainMode);
-  $('gchain').hidden = !chainMode;
-  if (chainMode && matchMedia('(max-width: 700px)').matches) {  // on a phone the options are hidden with the other filters: open them at once
-    document.body.classList.add('filt');
-    $('filters').setAttribute('aria-expanded', true);
-    $('filt').scrollTop = 0;
-  }
-  // the filters mean something else for chains
-  for (const [id, trips, chain] of [['gkm', 'Distance', 'Distance per leg'], ['gfrom', 'Pick-up', 'Chain starts at'], ['gto', 'Return', 'Chain ends at']]) $(id).querySelector('legend').textContent = chainMode ? chain : trips;
-  $('list').setAttribute('aria-label', chainMode ? 'Chain list' : 'Trip list');
-  render();
-};
 $('cs').oninput = () => { setChainOptions({}); render(); };
 // typed numbers search again after a pause (or at once on change, when the field is left); the search can take a few hundred ms
 let typing;
@@ -956,69 +1397,137 @@ TYPED.forEach(id => {
   $(id).oninput = () => { clearTimeout(typing); typing = setTimeout(render, 250); };
   $(id).onchange = () => { clearTimeout(typing); render(); };
 });
-$('list').onclick = e => {
-  const b = e.target.closest('button[data-sort]');
-  if (b) {
-    const s = sorting();
-    s.dir = b.dataset.sort === s.key ? -s.dir : 1;
-    s.key = b.dataset.sort;
-    chainMode ? render() : renderList();  // the order decides which chains the map draws
-    $('list').querySelector(`[data-sort="${s.key}"]`).focus();  // the header was redrawn
-    return;
-  }
-  if (e.target.closest('button.reset-all')) return $('reset').click();
-  if (e.target.closest('button.reset-leg')) {
-    legFilter = null;
-    render();
-    $('list').querySelector('[data-sort]')?.focus();  // the button was redrawn away
-    return;
-  }
-  const m = e.target.closest('button[data-key]');
-  if (m) return showRoute(m.dataset.key, m, e.detail === 0);  // detail 0: activated with the keyboard
-  // a click on the rest of a chain row does what its button does, unless it is a link, another button or a text selection
-  const row = chainMode && e.target.closest('tr');
-  const btn = row && !row.classList.contains('none') && !e.target.closest('a, button') && !getSelection().toString() && row.querySelector('button[data-key]');
-  if (btn) showRoute(btn.dataset.key, btn, false);
+// this week: today to Sunday; next week: Monday to Sunday (UTC)
+document.querySelectorAll('[data-quick]').forEach(b => b.onclick = () => {
+  const t = Math.floor(Date.now() / 864e5), mon = t - (new Date(t * 864e5).getUTCDay() + 6) % 7, nx = +b.dataset.quick;
+  $('from').value = dayIso(nx ? mon + 7 : t);
+  $('to').value = dayIso(mon + 6 + 7 * nx);
+  custom();
+  render();
+});
+const CLEAR = {
+  gdate: () => { $('from').value = RESET.from; $('to').value = RESET.to; $('week').value = 0; weekText('all dates'); },
+  gkm: () => { $('kmin').value = $('kmax').value = ''; },
+  gfrom: () => { sel.fcc = sel.fst = ''; },
+  gto: () => { sel.tcc = sel.tst = ''; },
+  gchain: () => { clearTimeout(typing); setChainOptions({ cn: '2', cs: true, cg: '0', ck: '0', cdmin: '', cdmax: '', cdrive: '', cr: false }); },
 };
-$('legx').onclick = () => {
+document.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => {
+  CLEAR[b.dataset.clear]();
+  render();
+  // the x hides itself: keep keyboard focus on its chip
+  if (b.classList.contains('x')) $(b.dataset.clear).querySelector('.chip').focus();
+});
+$('reset').onclick = () => {
+  for (const g in CLEAR) CLEAR[g]();
   legFilter = null;
   render();
-  $('view').focus();  // the group hides itself: do not leave keyboard focus on it
+  $('c-date').focus();  // Clear all hides itself: do not leave keyboard focus on it
 };
-// the popups of the legs and connections. Leaflet stops a click inside a popup from bubbling, so listen on the way down.
-$('map').addEventListener('click', e => {
-  const b = e.target.closest('.pop.pick button');
-  if (!b) return;
-  if (b.dataset.key) {
-    showRoute(b.dataset.key, null, e.detail === 0);
-    if (e.detail !== 0) map.getContainer().focus({ preventScroll: true });  // so Escape works, the button is gone
-  } else if (b.dataset.use) {
-    legFilter = { key: b.dataset.use, title: useTitle.get(b.dataset.use) };
-    render();
-    setView(true);
-    $('list').scrollTop = 0;
-    $('list').querySelector('caption').focus();
+$('empty-reset').onclick = () => $('reset').click();
+$('legx').onclick = () => clearLeg($('c-date'));  // the chip hides itself: do not leave keyboard focus on it
+
+// ---- popovers: one open at a time, under its chip ------------------------------------------------
+let popOpen = null;
+function placePop() {
+  if (!popOpen) return;
+  const r = popOpen.chip.parentNode.getBoundingClientRect(), p = popOpen.pop;
+  p.style.top = r.bottom + 6 + 'px';
+  p.style.left = Math.max(8, Math.min(r.left, innerWidth - p.offsetWidth - 8)) + 'px';
+}
+function openPop(chip) {
+  closePop(false);
+  const pop = $(chip.getAttribute('aria-controls'));
+  pop.hidden = false;
+  chip.setAttribute('aria-expanded', 'true');
+  popOpen = { chip, pop };
+  placePop();
+  pop.querySelector('button, input, select').focus();
+}
+function closePop(focus) {
+  if (!popOpen) return;
+  const { chip, pop } = popOpen;
+  pop.hidden = true;
+  chip.setAttribute('aria-expanded', 'false');
+  popOpen = null;
+  if (focus) chip.focus();
+}
+document.querySelectorAll('.chip').forEach(c => c.onclick = () => c.getAttribute('aria-expanded') === 'true' ? closePop(true) : openPop(c));
+document.querySelectorAll('[data-done]').forEach(b => b.onclick = () => closePop(true));
+document.addEventListener('pointerdown', e => {
+  if (popOpen && !popOpen.pop.contains(e.target) && !popOpen.chip.parentNode.contains(e.target)) closePop(false);
+});
+document.querySelectorAll('.pop').forEach(pop => pop.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { e.stopPropagation(); closePop(true); return; }
+  if (e.key !== 'Tab') return;
+  // Tab stays inside the open popover
+  const f = [...pop.querySelectorAll('button, input, select')].filter(x => !x.disabled && x.offsetParent);
+  const a = f[0], z = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
+  else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
+}));
+addEventListener('resize', placePop);
+$('chips').addEventListener('scroll', placePop);
+
+// ---- sidebar and Trips page events --------------------------------------------------------------
+function onListClick(e) {
+  const t = e.target, by = s => t.closest(s);
+  let b;
+  if ((b = by('[data-route]'))) return openRoute(b.dataset.route);
+  if ((b = by('[data-chain]'))) return openChain(b.dataset.chain);
+  if ((b = by('[data-act]'))) {
+    e.preventDefault();
+    const act = b.dataset.act;
+    if (act === 'noleg') return clearLeg(document.querySelector('#side .card, #tlist .ccard button, #csort'));
+    return act === 'back' ? closeDetail() : showInList();
   }
-}, true);
-// Leaflet closes popups on Escape only while the map itself has focus.
-// A popup opened from the list goes back to the list: its button is hidden while the map shows.
-const back = () => fromRow && fromRow.line.isPopupOpen() && document.body.contains(fromRow.btn) ? fromRow.btn : null;
-$('map').addEventListener('keydown', e => {
-  if (e.key !== 'Escape' || !e.target.closest('.leaflet-popup')) return;
-  const btn = back(), use = e.target.closest('.leaflet-popup.pick');
-  map.closePopup();
-  if (chainMode && !use) clearPicked();  // the first Escape closes the "In N chains" popup, the second clears the chain
-  if (btn) { setView(true); btn.focus(); } else $('map').focus();
-});
-// Escape also clears the chain after its popup was closed with the x button, but not while a leg popup is still closing it
+  // a click on the rest of a Trips chain card opens it, unless it is a link, another button or a text selection
+  if ((b = by('[data-card]')) && !by('a, button') && !getSelection().toString()) return openChain(b.dataset.card);
+  if (by('.reset-all')) return $('reset').click();
+  if ((b = by('[data-sort]'))) {
+    const o = SORT.trips;
+    o.dir = b.dataset.sort === o.key ? -o.dir : 1;
+    o.key = b.dataset.sort;
+    render();
+    $('tlist').querySelector(`[data-sort="${o.key}"]`).focus();  // the header was redrawn
+    return;
+  }
+  if ((b = by('[data-group]'))) {
+    S.group = b.dataset.group;
+    render();
+    $('tlist').querySelector(`[data-group="${S.group}"]`).focus();
+  }
+}
+function onListChange(e) {
+  const id = e.target.id, v = e.target.value;
+  if (id === 'rsort') S.rsort = v;
+  else if (id === 'csort') SORT.chains = { key: v.replace('-', ''), dir: v[0] === '-' ? -1 : 1 };
+  else return;
+  render();
+  $(id).focus();  // the select was redrawn
+}
+for (const el of [$('side'), $('tlist')]) { el.onclick = onListClick; el.onchange = onListChange; }
+// a card under the pointer or keyboard focus highlights its route or chain on the map
+const hoverAt = el => {
+  const b = el && el.closest && el.closest('.card, .nx, .also button');
+  const k = b ? b.dataset.route || b.dataset.chain : null;
+  if (chainMode) hoverChain(k); else hoverRoute(k, false);
+};
+$('side').addEventListener('mouseover', e => hoverAt(e.target));
+$('side').addEventListener('focusin', e => hoverAt(e.target));
+$('side').addEventListener('mouseleave', () => hoverAt(null));
+$('side').addEventListener('focusout', e => { if (!$('side').contains(e.relatedTarget)) hoverAt(null); });
+// Escape, or the browser's Back, closes the opened route or chain
 document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape' || !chainMode) return;
-  if (document.querySelector('.leaflet-popup.pick')) return map.closePopup();  // the first Escape closes it, the second clears the chain
-  if (picked.getLayers().length && !document.body.classList.contains('list')) clearPicked();
+  if (e.key !== 'Escape' || popOpen || S.view !== 'map') return;
+  if (e.target.closest && e.target.closest('input, select')) return;
+  if (S.route || S.chain) closeDetail();
+  else if (chainMode && legFilter) clearLeg($('side').querySelector('.card'));  // the second Escape shows every chain again
 });
-// the chain opened from the list stays until Escape, a click on the map or another change
-map.on('click', () => { if (chainMode) clearPicked(); });
+
+readHash();
 render();
+if (S.route || S.chain) fitPicked();
 </script>
 </body>
 </html>
