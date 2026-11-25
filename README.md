@@ -30,33 +30,45 @@ by relative path, so write the `--map` file in the repo root, next to `vendor/`.
 map tiles still come from Esri, so viewing the page needs an internet connection. A
 full scan makes about 850 sequential requests and takes several minutes.
 
-The toolbar shows when the data was scanned, in UTC, before the route and trip
-counts, for example `updated 2026-11-18 03:12 UTC · 12 routes · 724 of 724 trips`.
-Hovering it shows the offer, request and failed-request counts of that scan. A page
-rendered from a data file without scan metadata shows no timestamp.
+The page has two views, `Map` and `Trips`, and shows either `Single rallies` or
+`Chains` (see "Chains"); both switches are in the bar at the top, next to
+`Updated 18 Nov, 03:12 UTC`, the time the data was scanned. Hovering that time shows
+the offer, request and failed-request counts of that scan. A page rendered from a data
+file without scan metadata shows no time.
 
-Below the counts, the filters are grouped by start date, distance, pick-up and
-return. Each dropdown only offers stations and countries that still have trips under
-the other filters. Active filters are highlighted, and `Reset`, next to the counts,
-clears them all; it only shows while a filter is active. On a phone the filters fold
-behind a `Filters` button, which shows how many groups are active.
+Below it, one chip per filter shows its value: `Dates`, `Distance`, `Pick-up` and
+`Return`. A chip opens a small panel with the filter's controls: the start date range,
+the `This week` and `Next week` shortcuts and a week slider; the minimum and maximum
+km; a country and a station for the pick-up and for the return. Each dropdown only
+offers stations and countries that still have trips under the other filters. An active
+chip turns blue and gets an `×` that clears it, and `Clear all`, next to the trip and
+route counts, clears every filter; it only shows while a filter is active.
 
-The map opens fitted to the stations, on a light grey Esri basemap. Each station is
-one marker: click it to filter the pick-ups to that station (click it again to clear
-the filter), or hover it for its departures and arrivals. Lines get thicker and more
-opaque with the number of trips, and a route is highlighted in deep orange while
-hovered or while its popup is open. The legend in the corner of the map explains the
-line weights, the highlighted route, the station marker and, when the page has an
-estimate, the `~`. When no trip matches the filters the map says so and offers
-`Reset filters`.
+The map view opens fitted to the stations, on a light grey Esri basemap, with the
+routes listed beside it, one card per route with its distance, its trips and the next
+start. Sort the cards by earliest start, shortest or longest drive or most trips.
+Pointing at a card highlights its route on the map, and pointing at a route highlights
+its card. Lines get thicker and more opaque with the number of trips. Click a card or a
+route to open it: the route turns deep orange, the map zooms to it, and the list
+shows its trip windows, each with a `Book` link, the rallies that leave from where it
+ends (`Continue from`, a first step towards a chain) and the other routes from the
+same pick-up. `← All routes`, Escape or the browser's Back goes back to the list.
+Each station is one marker: click it to filter the pick-ups to that station (click it
+again to clear the filter), or hover it for its departures and arrivals. The legend in
+the corner of the map explains the line weights, the highlighted route, the station
+marker and, when the page has an estimate, the `~`. When no trip matches the filters
+the page says so and offers `Reset filters`.
 
-The `List` button swaps the map for a table of the trips that pass the current
-filters, one row per trip with its dates, stations, road distance, price when
-scanned with `--prices`, and booking link. The filters and the counts stay as they
-are when you switch. Rows are sorted by start date; click the start, end or `km`
-header to re-sort, and press the `Map` button of a row to see that route on the map
-with its popup open. Escape closes the popup and goes back to that button. On a phone
-each trip is a two-line card.
+The `Trips` view lists the trips that pass the current filters, one row per trip with
+its dates, nights, stations, road distance, price when scanned with `--prices`, and
+booking link. Rows are sorted by start date; click the `Start` or `Distance` header to
+re-sort, and group the rows by route or by pick-up. `Map` on a row opens that route in
+the map view. On a phone each trip is a card.
+
+The address bar keeps the view, the filters, the open route or chain and the sort
+order (for example `#trips?from=Munich&sort=km`), so a reload or a shared link shows
+the same page. Opening a route or switching views adds a history entry; changing a
+filter does not.
 
 Distances are road distances in km. A distance that could not be routed is an
 estimate, shown with a leading `~` that the legend explains; see "Road distances".
@@ -111,7 +123,7 @@ python3 roadsurfer-rally.py --from-json offers.json --map index.html  # render o
 `--from-json` needs `--map` and does not accept `--list`, `--json-out`, `--from`,
 `--to` or `--prices`. `--map` without `--from-json` scans and renders in one run.
 `--from-json` embeds the file's `scan` object as is; a file without one, written
-before the metadata existed, still renders, with no timestamp in the toolbar.
+before the metadata existed, still renders, with no scan time on the page.
 `--release TAG` (with `--map`) shows the tag in the map's attribution, linked to its
 GitHub release; without it, or with an empty tag, the page shows no release.
 
@@ -119,8 +131,8 @@ GitHub release; without it, or with an empty tag, the page shows no release.
 
 A scan looks up the driving distance of every pick-up and return pair once and
 stores it in each offer record as `km`, with `km_estimated` set to `false`. The
-page's distance filter, the `km` column and sort, and the popups and tooltips all use
-that value.
+page's distance filter, the distance column and sort, the route details and the
+tooltips all use that value.
 
 - **Service.** The public [OSRM](https://project-osrm.org/) demo server
   (`router.project-osrm.org`, `--routing-url` points to another OSRM server). Its
@@ -150,13 +162,14 @@ that value.
 ### Chains
 
 A rally lasts at most 7 days, so a longer trip means booking rallies one after
-another, each as its own trip. The `Chains` button in the page toolbar finds those
+another, each as its own trip. The `Chains` switch in the top bar finds those
 sequences in the offers already on the page, with no request and no scanner change, and
-shows them on the map and in the list.
+shows them on the map and in the `Trips` view.
 
-- **Chain options.** Turning `Chains` on opens them (on a phone the filter panel opens
-  with them). They count in `Filters (n)` when they are not at their default, and
-  `Reset` restores them. The widest settings (2 or 3 legs, 7 rest days, 250 km) match
+- **Chain options.** In chain mode a `Chain options` chip joins the filter chips and
+  shows the current options; on a phone its panel opens as soon as `Chains` is
+  pressed. The chip turns blue when an option is not at its default, `Reset` in the
+  panel restores them, and `Clear all` restores them with the filters. The widest settings (2 or 3 legs, 7 rest days, 250 km) match
   over 200,000 chains on a real scan and take a few hundred milliseconds to search, and
   typed numbers search again after a short pause; 4 legs is not offered.
   - Legs: 2 (default), 3, or 2 or 3.
@@ -176,25 +189,27 @@ shows them on the map and in the list.
   then the fewest rest days, then the earliest start, and every `Book` link carries
   those dates. Only days on which some offer starts or ends are used, which skips
   Sundays and holidays.
-- **List and map.** One row per sequence of routes, with a `Book` link per leg, the rest
-  days and the connection distance of each hand-over, and the total days and the km
-  driven (the legs, not the connections), with the rest days under the total. The list sorts by start, end, days and km
-  driven, most days first by default. The map draws the legs solid and the connections
-  dotted. Click or tap a row (outside its links) or its `Map` button to highlight that
-  chain, number its legs and open a popup with a `Book` link per leg; the row of the chain
-  on the map is highlighted in the list. Every part of the selected chain opens that
-  popup, and only Escape, a click on empty map or a filter change clears it.
-- **Pick from the map.** Click or tap a blue leg or a dotted connection: the popup
-  `In N chains` lists up to 8 chains on the map that use it, in list order, and choosing
-  one shows it. When more chains use it, `Show all N in the list` filters the list to
-  them (`Chain uses`, counted in `Filters (n)`, removed by `Reset`). A click on a station
-  filters to the chains starting there.
-- **Filters.** The start date and the week slider limit the first pick-up day, the
-  distance filter limits every leg, the pick-up filters apply to where the chain starts
-  and the return filters to where it ends.
+- **List and map.** One card per sequence of routes, with its dates, total days, km
+  driven (the legs, not the connections) and rest days, in the map view's list and in
+  the `Trips` view, where each card also has a `Book` link per leg and the hand-overs.
+  Both sort by most days (the default), start, end or km driven. The map draws the legs
+  solid and the connections dotted. Click a card, a `Trips` card outside its links, or
+  `Map` on a `Trips` card to open the chain: its legs turn orange and are numbered on the
+  map, and the list shows each leg with its dates and `Book` link and each hand-over in
+  between. `← All chains`, Escape or Back closes it; a click on the map does not.
+- **Pick from the map.** Click or tap a blue leg or a dotted connection: the list shows
+  the chains that use it (`N chains use this leg`), with the leg in orange on the map, and
+  opens the chain at once when only one does. The leg filter shows as `Chain uses` in the
+  filter bar and over the list; `×`, Escape, `Clear all` or switching to single rallies
+  removes it. Clicking a leg or connection of the open chain keeps the chain and marks
+  that leg in the list. A click on a station filters to the chains starting there.
+- **Filters.** The chips read `First pick-up`, `Distance per leg`, `Chain starts at`
+  and `Chain ends at`: the start date and the week slider limit the first pick-up day,
+  the distance filter limits every leg, the pick-up filters apply to where the chain
+  starts and the return filters to where it ends.
 
 Limits: the list and the map show the first 200 chains of the current sort order, and
-the toolbar counts all of them (`Showing 200 of N chains`). A chain shows only the best dates for its sequence of
+the filter bar counts all of them (`Showing 200 of N chains`). A chain shows only the best dates for its sequence of
 routes; narrow the dates to see others. The dates are inferred from the offers, so the
 booking page can still refuse a leg, for example on a day a station is closed, and the
 page proposes chains from the offers as of the last scan; the booking pages have the
@@ -302,7 +317,7 @@ aws s3api get-object --bucket "$BUCKET" --key road-distances.json \
 aws s3 cp road-distances.json "s3://$BUCKET/road-distances.json"
 ```
 
-The workflow scans without `--prices`, so the published popups show dates and the
+The workflow scans without `--prices`, so the published page shows dates and the
 booking link but no models or prices. `--prices` would add one request per offer on
 top of the scan, and every rally costs the same flat price anyway (see Known
 behaviour).
