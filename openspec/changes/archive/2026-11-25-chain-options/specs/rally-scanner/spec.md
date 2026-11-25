@@ -4,17 +4,11 @@
 
 ### Requirement: Chain settings
 
-In chain mode the page SHALL show a `Chain options` group of controls, hidden in trip
-mode, in this order: legs (`2`, `3`, `2 or 3`; default `2`), a `Same day` checkbox
-(default on) followed by a select of 0 to 7 rest days (default 0), the next pick-up
-within (same station, `~25 km`, `~50 km`, `~100 km`, `~150 km`, `~250 km`; default same
-station), trip days with a shortest and a longest (default empty, meaning any), max
-total km (default empty) and a `Round trip` checkbox (default off). The checkbox and the
-rest days SHALL read as one sentence: `Same day or up to N rest days` when checked,
-`Same day 1 to N rest days` when not. Every control SHALL update the count, the list and
-the map at once. The group SHALL be the first group of the filter bar, in the DOM and so
-in the tab order, and on one row on a desktop. A control that is not at its default
-SHALL be marked; the group itself SHALL NOT be marked while everything is at its default.
+In chain mode the page SHALL show a `Chain options` group, hidden in trip mode: legs
+(`2`, `3`, `2 or 3`; default `2`), `Same day` (on) with 0 to 7 rest days (0), the next
+pick-up within (same station, `~25`, `~50`, `~100`, `~150`, `~250 km`; same station),
+the shortest and longest trip days and the max total km (empty, meaning any) and
+`Round trip` (off). Every control SHALL update the count, the list and the map at once.
 
 #### Scenario: Defaults
 
@@ -31,6 +25,23 @@ SHALL be marked; the group itself SHALL NOT be marked while everything is at its
 
 - **WHEN** the user selects `3`
 - **THEN** every chain listed has 3 legs
+
+### Requirement: Chain options layout
+
+The `Same day` checkbox and the rest days SHALL read as one sentence: `Same day or up to N rest days` when checked, `Same day 1 to N rest days` when not. The group SHALL be the
+first group of the filter bar, in the DOM and so in the tab order, and on one row on a
+desktop. A control that is not at its default SHALL be marked; the group itself SHALL NOT
+be marked while everything is at its default.
+
+#### Scenario: Unchecked
+
+- **WHEN** the user unchecks `Same day` and selects 3 rest days
+- **THEN** the options read `Same day 1 to 3 rest days`
+
+#### Scenario: Tab order
+
+- **WHEN** a keyboard user tabs into the filter bar in chain mode
+- **THEN** the first control reached is `Legs`
 
 ### Requirement: Chain rest days
 
@@ -135,7 +146,7 @@ its default. In trip mode the options SHALL NOT count.
 - **WHEN** the user changes the legs to `3`
 - **THEN** the toolbar reads `Filters (1)` and `Reset` shows
 
-#### Scenario: Reset
+#### Scenario: Reset restores chain options
 
 - **WHEN** the user presses `Reset` after changing several chain options
 - **THEN** every chain option is back to its default and `Reset` hides itself
