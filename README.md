@@ -38,8 +38,8 @@ file without scan metadata shows no time.
 
 Below it, one chip per filter shows its value: `Dates`, `Distance`, `Pick-up` and
 `Return`. A chip opens a small panel with the filter's controls: the start date range,
-the `This week` and `Next week` shortcuts and a week slider; the minimum and maximum
-km; a country and a station for the pick-up and for the return. Each dropdown only
+the `Any`, `This week` and `Next week` shortcuts and a week slider; the minimum and maximum
+km by road; a country and a station for the pick-up and for the return. Each dropdown only
 offers stations and countries that still have trips under the other filters. An active
 chip turns blue and gets an `×` that clears it, and `Clear all`, next to the trip and
 route counts, clears every filter; it only shows while a filter is active.
@@ -65,13 +65,16 @@ booking link. Rows are sorted by start date; click the `Start` or `Distance` hea
 re-sort, and group the rows by route or by pick-up. `Map` on a row opens that route in
 the map view. On a phone each trip is a card with its `Map` and `Book` buttons.
 
-On a phone the map fills the screen and the routes or chains are in a sheet over it.
-Drag its grip, or tap it, to move the sheet between a peek at the first cards, half the
-screen and the full screen; opening a route or a chain puts the sheet at half, with a
-back button and the title floating over the map. The chip row starts with
-`Filters · n`, which opens every filter (and the chain options in chain mode) on one
-sheet: changes apply with `Show N trips`, closing it otherwise leaves the filters as
-they were, and `Reset (n)` clears them all.
+On a phone the top bar holds only the logo, the title and `Map | Trips`; the map fills
+the screen and the routes or chains are in a sheet over it, whose header has the count
+and the `Rallies | Chains` switch. Drag its grip, or tap it, to move the sheet between a
+peek at the first cards, half the screen and the full screen. Opening a route or a chain
+puts the sheet at half and gives the map the rest of the screen, with a back button and
+the title floating over it. The map keeps only its `Fit` button; pinch to zoom. The chip
+row starts with `Filters · n`, which opens every filter (and the chain options in chain
+mode) on one sheet: changes apply with `Show N trips`, closing it otherwise leaves the
+filters as they were, `Reset (n)` clears them all, and the sheet ends with the time of
+the scan. The `Trips` view starts with the count, the switch, and `Sort` and `Group`.
 
 The address bar keeps the view, the filters, the open route or chain and the sort
 order (for example `#trips?from=Munich&sort=km`), so a reload or a shared link shows
@@ -176,7 +179,7 @@ shows them on the map and in the `Trips` view.
 
 - **Chain options.** In chain mode a `Chain options` chip joins the filter chips and
   shows the current options. On a desktop it opens a panel under it; on a phone the
-  panel is a sheet from the bottom that opens as soon as `Chains` is pressed; it keeps
+  panel is a sheet from the bottom, over the darkened page, that opens as soon as `Chains` is pressed; it keeps
   its changes with `Show N chains` and drops them when closed with its `×`, Escape or a
   tap above it. `Show N chains` counts the
   chains as you change the options. The chip turns blue when an option is not at its
@@ -216,13 +219,13 @@ shows them on the map and in the `Trips` view.
   chip after the other filter chips; its `×`, Escape, `Clear all` or switching to single
   rallies removes it. Clicking a leg or connection of the open chain keeps the chain and marks
   that leg in the list. A click on a station filters to the chains starting there.
-- **Filters.** The chips read `First pick-up`, `Distance per leg`, `Chain starts at`
-  and `Chain ends at`: the start date and the week slider limit the first pick-up day,
-  the distance filter limits every leg, the pick-up filters apply to where the chain
-  starts and the return filters to where it ends.
+- **Filters.** The chips read `Dates`, `Distance`, `Chain starts at` and `Return`, and a
+  screen reader hears what they filter: the start date and the week slider limit the
+  first pick-up day, the distance filter limits every leg, the pick-up filters apply to
+  where the chain starts and the return filters to where it ends.
 
 Limits: the list and the map show the first 200 chains of the current sort order, and
-the filter bar counts all of them (`Showing 200 of N chains`). A chain shows only the best dates for its sequence of
+the filter bar counts all of them (`N chains from M trips`). A chain shows only the best dates for its sequence of
 routes; narrow the dates to see others. The dates are inferred from the offers, so the
 booking page can still refuse a leg, for example on a day a station is closed, and the
 page proposes chains from the offers as of the last scan; the booking pages have the
