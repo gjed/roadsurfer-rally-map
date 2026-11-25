@@ -35,9 +35,9 @@
   keeps the best itinerary that satisfies the days, so a chain is not hidden because its
   best itinerary is too long. A partial chain is dropped as soon as its days or km pass
   the maximum, since both only grow. The minimum days apply when a chain is kept.
-  Known ceiling: the search keeps one itinerary per return day (the one with the most
-  nights), so with a minimum a chain whose only long-enough itinerary has fewer nights
-  is missed. Marked `SIMPLIFIED:` in the code.
+  With a limit on the days, the search keeps per return day every itinerary that no other
+  beats on both nights and first pick-up, since a later start makes a shorter trip and an
+  earlier one a longer trip; without a limit one itinerary per return day is enough.
 - **Max total km** is the km of the legs, as the `km driven` column shows, not the
   connections.
 - **Round trip** is the last return station being in the first pick-up station's
@@ -52,8 +52,8 @@
   50 to 70 ms for those wider settings. The widest new setting (2 or 3 legs, 7 rest days,
   250 km, over 220,000 chains) takes 340 to 440 ms, above the 300 ms target but with eight
   times as many chains as the old widest.
-  Debouncing typed numbers was not added: selects and checkboxes are one change each,
-  and a few hundred milliseconds only happens at the extreme.
+  Typed numbers (trip days, max total km) search again after a 250 ms pause, or at once
+  when the field is left; selects and checkboxes are one change each and search at once.
   The gains: pairs are indexed by pick-up day, so a leg looks at the days its break
   allows instead of every pair; an itinerary links back to its parent and its legs are
   built only for a kept chain; the last leg keeps one itinerary; routes whose days

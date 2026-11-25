@@ -156,7 +156,9 @@ shows them on the map and in the list.
 
 - **Chain options.** Turning `Chains` on opens them (on a phone the filter panel opens
   with them). They count in `Filters (n)` when they are not at their default, and
-  `Reset` restores them.
+  `Reset` restores them. The widest settings (2 or 3 legs, 7 rest days, 250 km) match
+  over 200,000 chains on a real scan and take a few hundred milliseconds to search, and
+  typed numbers search again after a short pause; 4 legs is not offered.
   - Legs: 2 (default), 3, or 2 or 3.
   - Change between legs: `Same day` (on by default) and up to 0 (default) to 7 rest days.
     With `Same day` on, leg N+1 starts on the day leg N ends or up to that many days
@@ -169,8 +171,6 @@ shows them on the map and in the list.
     return. Max total km: a limit on the km of the legs. Both are empty (any) by default.
   - Round trip: the last return is within the next pick-up distance of the first
     pick-up.
-    The widest settings (2 or 3 legs, 7 rest days, 250 km) match over 200,000 chains on a
-    real scan and take a few hundred milliseconds to search; 4 legs is not offered.
 - **Dates.** An offer is a window: the booking page also accepts a shorter stay or a
   later start inside it. A chain uses the dates that put the most nights on the road,
   then the fewest rest days, then the earliest start, and every `Book` link carries
