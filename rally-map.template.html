@@ -297,6 +297,7 @@
     #fbar { gap: 6px 8px; padding: 8px 12px; }
     #chips { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; width: calc(100% + 24px); margin: 0 -12px; padding: 0 12px; box-sizing: border-box; overflow-x: auto; scrollbar-width: none; }
     #chips > * { flex: none; }
+    #chips { position: relative; }  /* the chips' visually hidden names scroll with the row, not out of the page */
     #count { margin-left: 0; }
     .pop input, .pop select { font-size: 16px; }
     /* the chain options are a sheet from the bottom; the bars above it stay visible and a tap there closes it */
