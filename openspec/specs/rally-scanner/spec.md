@@ -307,14 +307,14 @@ the `Single rallies | Chains` switch and the scan time, and a filter bar with on
 per filter, the counts and `Clear all`. Each chip SHALL be a button with
 `aria-haspopup="dialog"` and `aria-expanded` that shows the filter's name and value and
 opens a panel (`role="dialog"`) with its controls, which Escape and a click outside
-close. Below 700 px the chips SHALL scroll sideways on one row.
+close. Below 700 px the chips SHALL scroll on one row after a `Filters` chip.
 
 #### Scenario: Phone width
 
 - **WHEN** the page is opened 375 px wide
 - **THEN** the app bar shows the title, the views, the mode switch and the scan time,
-  the chips scroll sideways on one row, and the map and the route list fill the rest of
-  the screen
+  the chips scroll sideways on one row after the `Filters` chip, and the map fills the
+  rest of the screen under the results sheet
 
 #### Scenario: Filters opened on a phone
 
@@ -625,9 +625,9 @@ chain details SHALL have a tap area of at least 24 by 24 CSS px.
 On a wide screen the trips table SHALL fill the page up to 1320 px, inside a box that
 scrolls sideways when it must, with the distance header right-aligned over the
 distances and a sticky header with a visible bottom edge. Below 700 px each row SHALL
-be a card that fits the screen without horizontal scrolling, with its dates, distance,
-stations and full-width `Map` and `Book` buttons, under a sticky bar with the sortable
-headers.
+be a card that fits the screen without horizontal scrolling, with its dates in bold,
+its distance and nights, its stations and its `Map` and `Book` buttons, under a sticky
+bar with the sortable headers.
 
 #### Scenario: Desktop list
 
@@ -640,6 +640,12 @@ headers.
 - **WHEN** the Trips view is shown 375 px wide
 - **THEN** each trip is a card with its dates, distance, stations, `Map` button and
   `Book` link, and the list does not scroll sideways
+
+#### Scenario: Phone card buttons
+
+- **WHEN** the Trips view is shown 390 px wide
+- **THEN** each card's `Map` button and `Book` link are 44 px tall and `Book` is twice
+  as wide as `Map`
 
 ### Requirement: Week slider follows typed dates
 
@@ -672,7 +678,8 @@ the first card when it was opened from the map.
 
 `Clear all` SHALL be in the filter bar and SHALL be shown only while at least one
 filter differs from its reset value. Pressing it SHALL clear every filter and the chain
-options, and focus SHALL move to the first chip.
+options, and focus SHALL move to the first chip. Below 700 px the filter sheet's
+`Reset (n)` SHALL take its place.
 
 #### Scenario: Nothing filtered
 
@@ -684,6 +691,12 @@ options, and focus SHALL move to the first chip.
 - **WHEN** the user picks a pick-up station
 - **THEN** `Clear all` is shown next to the counts, and pressing it clears every
   filter and hides it
+
+#### Scenario: Reset on a phone
+
+- **WHEN** a filter is active at 375 px and the user presses `Reset (1)` and then
+  `Show N trips` in the filter sheet
+- **THEN** every filter is cleared and the `Filters` chip reads `Filters`
 
 ### Requirement: Filter chip state
 
@@ -1113,7 +1126,8 @@ Below 700 px the `Chain options` panel SHALL be a sheet from the bottom of the s
 with the title `Chain options`, a close button, controls at least 44 px tall and a
 footer that stays in view. Turning `Chains` on SHALL open it, with `aria-expanded` true
 on its chip. `Show N chains`, the close button, Escape and a tap above the sheet SHALL
-close it.
+close it; only `Show N chains` SHALL keep the options changed in it, and the other ways
+SHALL restore the options it opened with.
 
 #### Scenario: Chains on at 375 px
 
@@ -1129,6 +1143,11 @@ close it.
 
 - **WHEN** the user presses `Show N chains` in the sheet
 - **THEN** the sheet closes and the map and its lines can be tapped
+
+#### Scenario: Closed without Show
+
+- **WHEN** the user picks `3` legs in the sheet and closes it with its close button
+- **THEN** the legs are `2` again and the chain list is the one from before
 
 ### Requirement: Chain search time
 
@@ -1311,3 +1330,99 @@ with its trip count, next start and km, or say `No rally leaves <station> in thi
 
 - **WHEN** the user opens a route and then a route under `Continue from`
 - **THEN** the second route opens, and one Back returns to the list
+
+### Requirement: Results sheet on phones
+
+Below 700 px the map view SHALL fill the screen with the map and show the route or
+chain list in a sheet from the bottom with three heights: peek (at most 330 px and half
+the view), half (about 62 % of the view) and full. The map above the sheet SHALL stay
+usable, and the map's attribution, its fits and the legend SHALL stay above the sheet.
+With reduced motion the sheet SHALL not animate.
+
+#### Scenario: First load on a phone
+
+- **WHEN** the page is opened 390 × 844 px
+- **THEN** the sheet is 330 px tall with the route count, the sort and the first cards,
+  every station is visible above it and the page does not scroll sideways
+
+### Requirement: Results sheet grip
+
+The sheet's grip SHALL be a button named `Expand results` (`Collapse results` at full)
+with `aria-expanded`. A tap, Enter or Space SHALL move the sheet to the next height, the
+arrow keys, Home and End SHALL move it between the heights, and a drag SHALL end at the
+nearest height.
+
+#### Scenario: Grip
+
+- **WHEN** the user taps the grip three times
+- **THEN** the sheet goes to half, to full with the grip named `Collapse results`, and
+  back to peek
+
+#### Scenario: Grip from the keyboard
+
+- **WHEN** a keyboard user focuses the grip and presses the up arrow, End and Home
+- **THEN** the sheet goes to half, full and peek
+
+### Requirement: Route and chain on phones
+
+Below 700 px opening a route or a chain SHALL put the sheet at half with the route or
+chain detail, fit the map in the space above the sheet, and show a floating back button
+and the route or chain title over the map. Going back, with that button, the detail's
+back button, Escape or the browser's Back, SHALL return the sheet to the height it had
+and the focus to the card that opened it.
+
+#### Scenario: Open a route
+
+- **WHEN** the user taps a route card at peek
+- **THEN** the sheet is at half with the route's windows and `Book` links, the map shows
+  the route above it and a floating bar reads `← Vienna → Berlin-Schönefeld`
+
+#### Scenario: Back
+
+- **WHEN** the user taps the floating back button
+- **THEN** the route closes, the sheet returns to peek and focus is on the route's card
+
+### Requirement: Filter sheet on phones
+
+Below 700 px a `Filters` chip SHALL open a full-height sheet (`role="dialog"`) with the
+date, distance, pick-up and return filters and, in chain mode, the chain options, with
+16 px text and inputs at least 44 px tall. Its footer SHALL have `Reset (n)`, which
+clears every filter, and `Show N trips` (`Show N chains` in chain mode) with the live
+count.
+
+#### Scenario: Sheet content
+
+- **WHEN** the user presses `Filters` at 390 px in chain mode
+- **THEN** a full-height sheet shows the chain options and the four filters, and its
+  footer reads `Reset` and `Show N chains`
+
+### Requirement: Filter sheet applies on Show
+
+Changes in the phone filter sheet SHALL apply when `Show` is pressed. The close button,
+Escape and a tap outside SHALL close it and restore the filters it opened with. Focus
+SHALL return to the `Filters` chip.
+
+#### Scenario: Show applies
+
+- **WHEN** the user sets the maximum distance to 1000 km in the sheet and presses
+  `Show N trips`
+- **THEN** the sheet closes, the map and list show trips of up to 1000 km and the chip
+  reads `Filters · 1`
+
+#### Scenario: Close discards
+
+- **WHEN** the user sets the maximum distance in the sheet and closes it with its close
+  button, Escape or a tap outside
+- **THEN** no filter is set and the chip reads `Filters`
+
+### Requirement: Filters chip count
+
+Below 700 px the `Filters` chip SHALL read `Filters · n`, where `n` counts the active
+filters, the chain options that differ from their defaults and the leg filter, and
+`Filters` when there is none. The trip, route and chain counts SHALL then show in the
+results sheet and the Trips heading instead of the filter bar.
+
+#### Scenario: Count in chain mode
+
+- **WHEN** the user turns `Chains` on, picks `3` legs and opens a leg filter
+- **THEN** the chip reads `Filters · 2`

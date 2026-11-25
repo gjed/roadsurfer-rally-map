@@ -9,9 +9,7 @@ the `Single rallies | Chains` switch and the scan time, and a filter bar with on
 per filter, the counts and `Clear all`. Each chip SHALL be a button with
 `aria-haspopup="dialog"` and `aria-expanded` that shows the filter's name and value and
 opens a panel (`role="dialog"`) with its controls, which Escape and a click outside
-close. Below 700 px the chips SHALL scroll sideways on one row that starts with a
-`Filters` chip, and the counts SHALL move from the filter bar to the results sheet and
-the Trips heading.
+close. Below 700 px the chips SHALL scroll on one row after a `Filters` chip.
 
 #### Scenario: Phone width
 
@@ -37,9 +35,8 @@ On a wide screen the trips table SHALL fill the page up to 1320 px, inside a box
 scrolls sideways when it must, with the distance header right-aligned over the
 distances and a sticky header with a visible bottom edge. Below 700 px each row SHALL
 be a card that fits the screen without horizontal scrolling, with its dates in bold,
-its distance and nights, its stations, and a `Map` button one third and a `Book` link
-two thirds wide, both at least 44 px tall, under a sticky bar with the sortable
-headers.
+its distance and nights, its stations and its `Map` and `Book` buttons, under a sticky
+bar with the sortable headers.
 
 #### Scenario: Desktop list
 
@@ -141,7 +138,7 @@ nearest height.
 - **THEN** the sheet goes to half, to full with the grip named `Collapse results`, and
   back to peek
 
-#### Scenario: Keyboard
+#### Scenario: Grip from the keyboard
 
 - **WHEN** a keyboard user focuses the grip and presses the up arrow, End and Home
 - **THEN** the sheet goes to half, full and peek
@@ -202,7 +199,8 @@ SHALL return to the `Filters` chip.
 
 Below 700 px the `Filters` chip SHALL read `Filters · n`, where `n` counts the active
 filters, the chain options that differ from their defaults and the leg filter, and
-`Filters` when there is none.
+`Filters` when there is none. The trip, route and chain counts SHALL then show in the
+results sheet and the Trips heading instead of the filter bar.
 
 #### Scenario: Count in chain mode
 
