@@ -174,7 +174,9 @@ exit with a non-zero status and SHALL NOT write the `--json-out` or `--map` file
 
 When the map page has scan metadata, its app bar SHALL show the time the scan
 finished, in UTC to the minute, as `Updated 18 Nov, 03:12 UTC`, with the offer, request
-and failed-request counts in its tooltip. Without scan metadata it SHALL show no time.
+and failed-request counts in its tooltip. Below 700 px the time SHALL be at the bottom of
+the filter sheet instead, as `Offers as of the scan of 18 Nov, 03:12 UTC`. Without scan
+metadata it SHALL show no time.
 
 #### Scenario: Page with scan metadata
 
@@ -185,6 +187,11 @@ and failed-request counts in its tooltip. Without scan metadata it SHALL show no
 
 - **WHEN** a page rendered from a data file without a `scan` object is opened
 - **THEN** its filter bar shows the trip and route counts and the page shows no time
+
+#### Scenario: Scan time on a phone
+
+- **WHEN** the user opens the filter sheet at 390 px on that page
+- **THEN** the sheet ends with `Offers as of the scan of 18 Nov, 03:12 UTC`
 
 ### Requirement: Trips view
 
@@ -312,9 +319,9 @@ close. Below 700 px the chips SHALL scroll on one row after a `Filters` chip.
 #### Scenario: Phone width
 
 - **WHEN** the page is opened 375 px wide
-- **THEN** the app bar shows the title, the views, the mode switch and the scan time,
-  the chips scroll sideways on one row after the `Filters` chip, and the map fills the
-  rest of the screen under the results sheet
+- **THEN** the app bar shows the logo, the title and the views on one row, the chips
+  scroll sideways on one row after the `Filters` chip, and the map fills the rest of
+  the screen under the results sheet
 
 #### Scenario: Filters opened on a phone
 
@@ -349,10 +356,10 @@ every highlight.
 
 The map SHALL show a legend that the user can collapse, with a one-trip line, a
 five-or-more-trips line at their drawn weights and opacities, the highlighted route
-and a station marker, worded `1 trip on this route`, `5 or more trips`,
-`selected route` and `station: click to only show trips from here`. While the page has an
-estimated distance, it SHALL add a fifth entry, `~ estimated distance, not routed`.
-It SHALL start open at desktop widths and collapsed below 700 px.
+and a station marker, worded `1 trip on a route`, `5 or more trips`, `Selected` and
+`Station — click to filter pick-ups`. While the page has an estimated distance, it SHALL
+add a fifth entry, `~ Estimated distance, not routed`. It SHALL start open at desktop
+widths and SHALL be hidden below 700 px.
 
 #### Scenario: Reading the map
 
@@ -363,7 +370,7 @@ It SHALL start open at desktop widths and collapsed below 700 px.
 #### Scenario: Estimates on the page
 
 - **WHEN** the page is opened with at least one estimated distance
-- **THEN** the legend also shows `~ estimated distance, not routed`
+- **THEN** the legend also shows `~ Estimated distance, not routed`
 
 ### Requirement: Route detail
 
@@ -613,12 +620,19 @@ stations, the map SHALL show a default view of Europe.
 ### Requirement: Booking link tap area
 
 Under `@media (pointer: coarse)`, every booking link in the lists and the route and
-chain details SHALL have a tap area of at least 24 by 24 CSS px.
+chain details SHALL have a tap area of at least 24 by 24 CSS px. Below 700 px the
+`Book` links of the route and chain details and of the chain cards SHALL be at least
+44 px tall.
 
 #### Scenario: Phone
 
 - **WHEN** the page is used with a coarse pointer
 - **THEN** each booking link measures at least 24 by 24 px
+
+#### Scenario: Route detail on a phone
+
+- **WHEN** the user opens a route at 390 px
+- **THEN** every window's `Book` link is at least 44 px tall
 
 ### Requirement: Trip list layout
 
@@ -626,8 +640,8 @@ On a wide screen the trips table SHALL fill the page up to 1320 px, inside a box
 scrolls sideways when it must, with the distance header right-aligned over the
 distances and a sticky header with a visible bottom edge. Below 700 px each row SHALL
 be a card that fits the screen without horizontal scrolling, with its dates in bold,
-its distance and nights, its stations and its `Map` and `Book` buttons, under a sticky
-bar with the sortable headers.
+its distance and nights, its stations and its `Map` and `Book` buttons, under the
+count, the mode switch, `Sort` and `Group`.
 
 #### Scenario: Desktop list
 
@@ -646,6 +660,11 @@ bar with the sortable headers.
 - **WHEN** the Trips view is shown 390 px wide
 - **THEN** each card's `Map` button and `Book` link are 44 px tall and `Book` is twice
   as wide as `Map`
+
+#### Scenario: Phone sort
+
+- **WHEN** the user picks `Longest drive` in `Sort` at 390 px
+- **THEN** the cards are ordered by distance, longest first, and focus stays on `Sort`
 
 ### Requirement: Week slider follows typed dates
 
@@ -764,16 +783,16 @@ seven days starting `k - 1` weeks after the first start date, with `aria-valuete
 ### Requirement: Chain mode
 
 The app bar SHALL have a `Single rallies | Chains` switch whose buttons carry
-`aria-pressed`. A chain is a sequence of 2 or 3 rally legs, each booked as its own
-trip, found from the offers on the page without any request. Switching modes SHALL keep
-every filter and the view and close an open route or chain. The count SHALL read
-`N chains`, or `Showing 200 of N chains` above 200. `Chains` SHALL have a title that
-says what chains are.
+`aria-pressed`. A chain is a sequence of 2 or 3 rally legs, each
+booked as its own trip, found from the offers on the page without any request.
+Switching modes SHALL keep every filter and the view and close an open route or chain.
+The count SHALL read `N chains from M trips`, M being the offers the chains are built
+from. `Chains` SHALL have a title that says what chains are.
 
 #### Scenario: Entering chain mode
 
 - **WHEN** the user presses `Chains` on a page with offers
-- **THEN** the button is pressed and the filter bar reads `N chains`
+- **THEN** the button is pressed and the filter bar reads `N chains from M trips`
 
 #### Scenario: Back to trips
 
@@ -942,12 +961,11 @@ multiple of 25 km up to 250. A station SHALL NOT be a pick-up twice in a chain. 
 
 ### Requirement: Chain filters
 
-In chain mode the start date filter and the week slider SHALL limit the first pick-up
-day, the distance filter SHALL limit the distance of every leg, the pick-up filters SHALL
-apply to where the chain starts and the return filters to where it ends, and their
-chips SHALL be labelled `First pick-up`, `Distance per leg`, `Chain starts at` and
-`Chain ends at`. The dropdown options SHALL count chains. The stations in between SHALL
-NOT be filtered.
+In chain mode the dates SHALL limit the first pick-up day, the distance filter SHALL limit the distance of every leg, the pick-up filters SHALL
+apply to where the chain starts and the return filters to where it ends. Their chips
+SHALL read `Dates`, `Distance`, `Chain starts at` and `Return`, with the accessible names
+`First pick-up date`, `Distance per leg`, `Chain starts at` and `Chain ends at`. The
+dropdown options SHALL count chains. The stations in between SHALL NOT be filtered.
 
 #### Scenario: Pick-up station
 
@@ -958,6 +976,11 @@ NOT be filtered.
 
 - **WHEN** the user moves the week slider
 - **THEN** every chain listed starts in that week
+
+#### Scenario: One row at 1440 px
+
+- **WHEN** the page is in chain mode at 1440 px with no leg picked
+- **THEN** the chips, `Chain options` and the count share one row
 
 ### Requirement: Chain cards
 
@@ -984,13 +1007,14 @@ after the leg, and the hand-over before every leg after the first.
 
 ### Requirement: Chain list size
 
-The chain lists SHALL show the first 200 chains in the sort order, and the filter bar
-SHALL show how many chains there are in all, as `Showing 200 of 23,267 chains`.
+The chain lists SHALL show the first 200 chains in the sort order and say so, and the
+filter bar SHALL show how many chains there are in all, as
+`23,267 chains from 781 trips`.
 
 #### Scenario: More than 200 chains
 
 - **WHEN** there are 2075 chains
-- **THEN** the filter bar reads `Showing 200 of 2,075 chains`, the list has 200 cards
+- **THEN** the filter bar reads `2,075 chains from M trips`, the list has 200 cards
   and a note says how many are shown
 
 ### Requirement: Chain list sorting
@@ -1062,14 +1086,15 @@ SHALL remove the leg filter.
 
 ### Requirement: Chain legend
 
-In chain mode the legend SHALL read `leg of 1 chain`, `10 or more chains`, `connection to the next pick-up (train, bus)`, `selected chain` and `station: click to only show chains starting here`, and it
-SHALL keep the estimate entry when a connection is allowed or a distance is estimated and
-end with `click a line to pick a chain`.
+In chain mode the legend SHALL read `Leg of 1 chain`, `10 or more chains`, `Selected`,
+`Hop to the next pick-up`, `Click a leg or hop to list its chains` and
+`Station — click to filter chain starts`, and it SHALL keep the estimate entry when a
+connection is allowed or a distance is estimated.
 
 #### Scenario: Legend in chain mode
 
 - **WHEN** the user opens the legend in chain mode
-- **THEN** it has an entry with a dotted line labelled `connection to the next pick-up (train, bus)`
+- **THEN** it has an entry with a dotted line labelled `Hop to the next pick-up`
 
 ### Requirement: Chain empty-state hints
 
@@ -1122,12 +1147,11 @@ its default. In trip mode the options SHALL NOT count.
 
 ### Requirement: Chain options on phones
 
-Below 700 px the `Chain options` panel SHALL be a sheet from the bottom of the screen
-with the title `Chain options`, a close button, controls at least 44 px tall and a
-footer that stays in view. Turning `Chains` on SHALL open it, with `aria-expanded` true
-on its chip. `Show N chains`, the close button, Escape and a tap above the sheet SHALL
-close it; only `Show N chains` SHALL keep the options changed in it, and the other ways
-SHALL restore the options it opened with.
+Below 700 px the `Chain options` panel SHALL be a sheet from the bottom of the screen,
+over a dark backdrop, with `Chains: 2–3 rallies booked back to back. Set how they may connect, then browse them on the map.` above it, a title, a close button, 44 px
+controls and a footer in view. Turning `Chains` on SHALL open it, with
+`aria-expanded` true on its chip. `Show N chains`, the close button, Escape and a tap
+above the sheet SHALL close it; only `Show N chains` SHALL keep its changes.
 
 #### Scenario: Chains on at 375 px
 
@@ -1148,6 +1172,11 @@ SHALL restore the options it opened with.
 
 - **WHEN** the user picks `3` legs in the sheet and closes it with its close button
 - **THEN** the legs are `2` again and the chain list is the one from before
+
+#### Scenario: Explanation
+
+- **WHEN** the user presses `Chains` at 390 px
+- **THEN** the page behind the sheet is dark and the explanation reads above the sheet
 
 ### Requirement: Chain search time
 
@@ -1335,15 +1364,17 @@ with its trip count, next start and km, or say `No rally leaves <station> in thi
 
 Below 700 px the map view SHALL fill the screen with the map and show the route or
 chain list in a sheet from the bottom with three heights: peek (at most 330 px and half
-the view), half (about 62 % of the view) and full. The map above the sheet SHALL stay
-usable, and the map's attribution, its fits and the legend SHALL stay above the sheet.
-With reduced motion the sheet SHALL not animate.
+the view), half (about 62 % of the view) and full. The sheet header SHALL show the count
+and the `Rallies | Chains` switch. The map above the sheet SHALL stay usable, and its
+attribution and fits SHALL stay above the sheet. With reduced motion the sheet SHALL
+not animate.
 
 #### Scenario: First load on a phone
 
 - **WHEN** the page is opened 390 × 844 px
-- **THEN** the sheet is 330 px tall with the route count, the sort and the first cards,
-  every station is visible above it and the page does not scroll sideways
+- **THEN** the sheet is 330 px tall with the route count, the `Rallies | Chains` switch
+  and the first cards, every station is visible above it and the page does not scroll
+  sideways
 
 ### Requirement: Results sheet grip
 
@@ -1365,11 +1396,12 @@ nearest height.
 
 ### Requirement: Route and chain on phones
 
-Below 700 px opening a route or a chain SHALL put the sheet at half with the route or
-chain detail, fit the map in the space above the sheet, and show a floating back button
-and the route or chain title over the map. Going back, with that button, the detail's
-back button, Escape or the browser's Back, SHALL return the sheet to the height it had
-and the focus to the card that opened it.
+Below 700 px opening a route or a chain SHALL hide the app bar and the filter bar, put
+the sheet at half with the route or chain detail, fit the map in the space above the
+sheet, dim the other routes and the stations, and show a floating back button and the
+route or chain title over the map. Going back, with that button, the detail's back
+button, Escape or the browser's Back, SHALL bring the bars back, return the sheet to the
+height it had and the focus to the card that opened it.
 
 #### Scenario: Open a route
 
@@ -1381,6 +1413,11 @@ and the focus to the card that opened it.
 
 - **WHEN** the user taps the floating back button
 - **THEN** the route closes, the sheet returns to peek and focus is on the route's card
+
+#### Scenario: Full-screen map
+
+- **WHEN** a route is open at 390 × 844 px
+- **THEN** no app bar or filter bar is shown and the map reaches the top of the screen
 
 ### Requirement: Filter sheet on phones
 
@@ -1426,3 +1463,50 @@ results sheet and the Trips heading instead of the filter bar.
 
 - **WHEN** the user turns `Chains` on, picks `3` legs and opens a leg filter
 - **THEN** the chip reads `Filters · 2`
+
+### Requirement: Phone app bar
+
+Below 700 px the app bar SHALL be one row with the logo, `Rally map` and the views; the
+`Rallies | Chains` switch SHALL be in the results sheet header and the Trips header.
+
+#### Scenario: One row
+
+- **WHEN** the page is opened 390 px wide
+- **THEN** the app bar is one row with the logo, `Rally map`, `Map` and `Trips`, and the
+  results sheet header has `Rallies` and `Chains`
+
+### Requirement: Map controls on phones
+
+Below 700 px the map SHALL show a 44 by 44 px `Fit` button and no zoom buttons; the map
+SHALL still zoom with a pinch.
+
+#### Scenario: Phone map
+
+- **WHEN** the page is opened at 390 px
+- **THEN** the map has a 44 px `Fit all routes` button, no `+` or `−` buttons and no
+  legend
+
+### Requirement: Date quick picks
+
+The date panel SHALL offer `Any`, `This week` and `Next week`, each with `aria-pressed`
+true exactly while the dates equal its range: all dates, today to Sunday, and next
+Monday to Sunday.
+
+#### Scenario: Next week
+
+- **WHEN** the user presses `Next week`
+- **THEN** the dates are next Monday to Sunday and only `Next week` is pressed
+
+#### Scenario: Any
+
+- **WHEN** the user then presses `Any`
+- **THEN** every date is allowed again and only `Any` is pressed
+
+### Requirement: Map link focus
+
+Opening the page, or going Back, to a `#map` address SHALL NOT move focus to the map.
+
+#### Scenario: Escape from a route
+
+- **WHEN** the user opens a route from the list and presses Escape
+- **THEN** focus is on the route's card and the map shows no focus ring

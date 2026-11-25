@@ -27,8 +27,13 @@
   `Distance per leg`, `Chain ends at`); the panel headings and the `×` labels use the
   long names. At 1440 px the bar stays one row; the `Chain uses` chip, when a leg is
   picked, may still wrap the bar.
-- **Count source.** `from M trips` is the number of offers the chains are built from:
-  the offers that pass the distance filter, the input of `findChains()`.
+- **Count source and size.** `from M trips` is the number of offers the chains are
+  built from: the offers that pass the distance filter, the input of `findChains()`.
+  `Showing 200 of N chains` no longer fits the one-row bar, so the bar reads
+  `2,192 chains` over `from 781 trips` on two short lines, and the lists keep saying
+  when they show only the first 200 (`The first 200 ·` in the sidebar heading, the
+  note under the list, `Showing 200 of N chains` on the Trips page). The bar is one row
+  at 1440 px; at 1280 px and below, and with a leg picked, it still wraps.
 - **`#map` focus.** Chrome focuses the element whose id matches the URL fragment when a
   fragment navigation happens (a `#map` link, Back to `#map`), and the map container
   is focusable, so it got a focus ring. The element's id becomes `rmap`; the hash
