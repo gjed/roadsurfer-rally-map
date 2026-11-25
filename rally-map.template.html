@@ -88,7 +88,7 @@
   .pop .chk:has(input.on) { color: var(--accent-h); font-weight: 600; }
   .pop .sd { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
   .pop .inl select { width: auto; }
-  .pop input:not([type="checkbox"]), .pop select { width: 100%; height: 36px; box-sizing: border-box; min-width: 0; padding: 0 8px; border: 1px solid var(--field); border-radius: 8px; background: #fff; font-size: 14px; color: var(--ink); }
+  .pop input:not([type="checkbox"]):not([type="range"]), .pop select { width: 100%; height: 36px; box-sizing: border-box; min-width: 0; padding: 0 8px; border: 1px solid var(--field); border-radius: 8px; background: #fff; font-size: 14px; color: var(--ink); }
   .pop .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
   .pop .quick { display: flex; flex-wrap: wrap; gap: 6px; }
   .pop .quick button { height: 32px; padding: 0 12px; border: 1px solid var(--field); border-radius: 16px; background: #fff; font-size: 13px; cursor: pointer; }
@@ -96,8 +96,45 @@
   .pop .wkh { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
   .pop .wkh output { color: var(--ink); font-weight: 600; }
   .pop #week { height: auto; padding: 0; border: 0; accent-color: var(--accent); }
-  .pop .on:not([type="checkbox"]) { border-color: var(--accent); background: var(--accent-bg); box-shadow: inset 0 0 0 1px var(--accent); }
+  .pop input.on:not([type="checkbox"]):not([type="range"]):not(.step input), .pop select.on { border-color: var(--accent); background: var(--accent-bg); box-shadow: inset 0 0 0 1px var(--accent); }
   .pop .pf { display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line2); }
+  /* chain options: a popover on a desktop, a sheet on a phone */
+  #p-chain { width: min(380px, calc(100vw - 16px)); }
+  #p-chain .shh { display: none; }
+  #p-chain .shh h2 { flex: 1; font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
+  #p-chain fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+  .copt { display: flex; flex-direction: column; gap: 18px; padding: 16px 18px; }
+  .copt .ct { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: var(--ink); }
+  .copt .ogrp { display: flex; flex-direction: column; gap: 12px; }
+  .copt .ogrp .ct { margin-bottom: -2px; }
+  .seg3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding: 3px; background: var(--seg); border-radius: 10px; }
+  .seg3 button { height: 34px; border: 0; border-radius: 8px; background: none; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .seg3 button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
+  @media (hover: hover) { .seg3 button:hover { color: var(--ink); } }
+  .pop .orow { display: flex; flex-direction: row; align-items: center; gap: 12px; font-size: 14px; color: var(--ink); }
+  .orow .t { flex: 1; min-width: 0; }
+  .orow small { display: block; margin-top: 1px; font-size: 12px; color: var(--muted); }
+  .orow output { font-weight: 600; }
+  label.orow { cursor: pointer; }
+  /* a checkbox drawn as a switch; role="switch" makes it read as one */
+  .sw { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 44px; height: 26px; margin: 0; border-radius: 13px; background: #8A929E; cursor: pointer; transition: background-color .15s; }
+  .sw::before { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .15s; }
+  .sw:checked { background: var(--accent); }
+  .sw:checked::before { transform: translateX(18px); }
+  .step { flex: none; display: flex; align-items: center; border: 1px solid var(--field); border-radius: 10px; }
+  .step button { width: 36px; height: 34px; padding: 0; border: 0; background: none; font-size: 18px; line-height: 1; cursor: pointer; }
+  .step button:disabled { color: #B8BEC7; cursor: default; }
+  #p-chain .step input { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 0; background: none; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
+  .step input::-webkit-inner-spin-button, .step input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .step:has(.on) { border-color: var(--accent); background: var(--accent-bg); }
+  .hop { display: flex; flex-direction: column; gap: 6px; }
+  .hop .hl2 { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; color: var(--ink); }
+  .hop label { display: inline; font-size: 14px; color: var(--ink); }
+  .hop strong { font-variant-numeric: tabular-nums; }
+  .hop input { width: 100%; height: 24px; margin: 0; accent-color: var(--accent); }
+  .hop .scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+  .row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  #cshow { min-width: 9em; }
 
   /* views */
   #main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -255,6 +292,29 @@
     #chips > * { flex: none; }
     #count { margin-left: 0; }
     .pop input, .pop select { font-size: 16px; }
+    /* the chain options are a sheet from the bottom; the bars above it stay visible and a tap there closes it */
+    #p-chain { top: auto !important; left: 0 !important; right: 0; bottom: 0; width: auto; max-height: calc(100% - 110px); display: flex; flex-direction: column; border: 0; border-radius: 20px 20px 0 0; box-shadow: 0 -8px 32px rgba(16, 24, 40, .22); font-size: 16px; animation: sheet-up .2s ease-out; }
+    #p-chain[hidden] { display: none; }
+    @keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } }
+    #p-chain .shh { display: flex; align-items: center; gap: 8px; padding: 10px 8px 10px 20px; border-bottom: 1px solid var(--line2); }
+    #p-chain .shh h2 { margin: 0; }
+    #p-chain .shx { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 22px; background: none; color: var(--ink); cursor: pointer; }
+    #p-chain fieldset { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .copt { gap: 20px; padding: 16px 20px; }
+    .copt .ct, .pop .orow, .hop .hl2, .hop label { font-size: 16px; }
+    .orow small, .hop .scale { font-size: 13px; }
+    .seg3 button { height: 44px; }
+    .sw { width: 52px; height: 32px; border-radius: 16px; }
+    .sw::before { width: 26px; height: 26px; }
+    .sw:checked::before { transform: translateX(20px); }
+    .step button { width: 44px; height: 44px; font-size: 20px; }
+    #p-chain .step input { height: 44px; }
+    .hop input { height: 32px; }
+    .row3 input { height: 44px !important; }
+    #p-chain .pf { padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); }
+    #p-chain .pf button { height: 48px; }
+    #cshow { flex: 1; }
+    #p-chain .pf .grow { display: none; }
     .sortl select { font-size: 16px; }
     #mapview { flex-direction: column; }
     #mapwrap { flex: 1 1 55%; min-height: 200px; }
@@ -364,19 +424,26 @@
   <div class="pf"><button class="ghost" data-clear="gto">Clear</button><span class="grow"></span><button class="btn" data-done>Done</button></div>
 </div>
 <div class="pop" id="p-chain" role="dialog" aria-labelledby="h-chain" hidden>
-  <fieldset id="gchain" hidden><div class="pb">
-    <h2 id="h-chain">Chain options</h2>
-    <label>Legs<select id="cn"><option value="2">2</option><option value="3">3</option><option value="2-3">2 or 3</option></select></label>
-    <div class="sd">
-      <label class="chk"><input type="checkbox" id="cs" checked> Same day</label>
-      <label class="inl"><span id="cgc">or up to</span> <select id="cg" aria-label="Most rest days between legs"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select> rest days</label>
+  <div class="shh"><h2 id="h-chain">Chain options</h2><button class="shx" data-done aria-label="Close chain options"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
+  <fieldset id="gchain" hidden><legend class="sr">Chain options</legend><div class="copt">
+    <div role="group" aria-labelledby="l-legs"><span class="ct" id="l-legs">Legs</span>
+      <div class="seg3"><button data-legs="2">2</button><button data-legs="3">3</button><button data-legs="2-3">2 or 3</button></div>
+      <input type="hidden" id="cn" value="2">
     </div>
-    <label>Next pick-up within<select id="ck"><option value="0">same station</option><option value="25">~25 km</option><option value="50">~50 km</option><option value="100">~100 km</option><option value="150">~150 km</option><option value="250">~250 km</option></select></label>
-    <div class="row"><label>Trip days, min<input type="number" id="cdmin" min="1" step="1" inputmode="numeric" placeholder="any" aria-label="Shortest trip in days"></label><label>Trip days, max<input type="number" id="cdmax" min="1" step="1" inputmode="numeric" placeholder="any" aria-label="Longest trip in days"></label></div>
-    <label>Max total km<input type="number" id="cdrive" min="0" step="50" inputmode="numeric" placeholder="any"></label>
-    <label class="chk" title="Ends within the next pick-up distance of the first pick-up"><input type="checkbox" id="cr"> Round trip</label>
+    <div role="group" aria-labelledby="l-between" class="ogrp"><span class="ct" id="l-between">Between legs</span>
+      <label class="orow"><span class="t">Same day<small>Next pick-up on the day you return</small></span><input type="checkbox" role="switch" class="sw" id="cs" checked></label>
+      <div class="orow"><span class="t" id="l-rest">Rest days, <span id="cgc">up to</span></span>
+        <span class="step" role="group" aria-labelledby="l-rest"><button id="cg-dn" aria-label="Fewer rest days">−</button><input type="number" id="cg" min="0" max="7" step="1" value="0" inputmode="numeric" aria-label="Most rest days between legs"><button id="cg-up" aria-label="More rest days">+</button></span></div>
+      <div class="hop"><span class="hl2"><label for="ck">Next pick-up within</label><strong id="ckout">same station</strong></span>
+        <input type="range" id="ck" min="0" max="250" step="25" value="0" aria-valuetext="same station">
+        <span class="scale" aria-hidden="true"><span>Same station</span><span>~250 km</span></span></div>
+    </div>
+    <div role="group" aria-labelledby="l-whole" class="ogrp"><span class="ct" id="l-whole">Whole trip</span>
+      <div class="row3"><label>Min days<input type="number" id="cdmin" min="1" step="1" inputmode="numeric" placeholder="Any" aria-label="Shortest trip in days"></label><label>Max days<input type="number" id="cdmax" min="1" step="1" inputmode="numeric" placeholder="Any" aria-label="Longest trip in days"></label><label>Max km<input type="number" id="cdrive" min="0" step="100" inputmode="numeric" placeholder="Any" aria-label="Most km driven in total"></label></div>
+      <label class="orow"><span class="t">Round trip<small>End within the next pick-up distance of where you start</small></span><input type="checkbox" role="switch" class="sw" id="cr"></label>
+    </div>
   </div></fieldset>
-  <div class="pf"><button class="ghost" data-clear="gchain">Reset</button><span class="grow"></span><button class="btn" data-done>Done</button></div>
+  <div class="pf"><button class="ghost" data-clear="gchain">Reset</button><span class="grow"></span><button class="btn" id="cshow" data-done>Show chains</button></div>
 </div>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script>
@@ -1170,6 +1237,8 @@ function render() {
   if (S.view === 'map') renderSide(); else renderTrips();
   markActive();
   updateChips();
+  syncChainUI();
+  $('cshow').textContent = `Show ${count(n, 'chain')}`;
   placePop();
   commit(false);
 }
@@ -1232,7 +1301,7 @@ function readHash() {
   clearTimeout(typing);
   setChainOptions({
     cn: pick(get('legs'), ['2', '3', '2-3'], '2'), cs: get('same') !== '0', cg: pick(get('rest'), ['0', '1', '2', '3', '4', '5', '6', '7'], '0'),
-    ck: pick(get('hop'), ['0', '25', '50', '100', '150', '250'], '0'), cdmin: num(get('dmin'), 1e4), cdmax: num(get('dmax'), 1e4),
+    ck: /^\d{1,3}$/.test(get('hop')) && +get('hop') % 25 === 0 && +get('hop') <= 250 ? String(+get('hop')) : '0', cdmin: num(get('dmin'), 1e4), cdmax: num(get('dmax'), 1e4),
     cdrive: num(get('drive'), 1e6), cr: get('round') === '1',
   });
   S.route = !chainMode && ROUTES.has(get('route')) ? get('route') : null;
@@ -1382,20 +1451,39 @@ const custom = () => { $('week').value = 0; weekText('custom dates'); };
 function setChainOptions(v) {
   for (const id in v) $(id)[$(id).type === 'checkbox' ? 'checked' : 'value'] = v[id];
   // Same day off means a break of 1 to N days: 0 rest days can no longer be picked
-  const same = $('cs').checked;
-  $('cg').options[0].disabled = !same;
-  if (!same && +$('cg').value < 1) $('cg').value = '1';
-  $('cgc').textContent = same ? 'or up to' : '1 to';
+  const same = $('cs').checked, rest = whole('cg', same ? 0 : 1, 7);
+  $('cg').min = same ? 0 : 1;
+  $('cg').value = isNaN(rest) ? (same ? 0 : 1) : rest;
+  $('cgc').textContent = same ? 'up to' : '1 to';
+  syncChainUI();
+}
+// the controls that show a value the inputs hold: the legs buttons, the rest days stepper and the next pick-up label
+function syncChainUI() {
+  for (const b of document.querySelectorAll('[data-legs]')) b.setAttribute('aria-pressed', b.dataset.legs === $('cn').value);
+  $('cg-dn').disabled = +$('cg').value <= +$('cg').min;
+  $('cg-up').disabled = +$('cg').value >= 7;
+  const km = +$('ck').value, t = km ? `~${km} km` : 'same station';
+  $('ckout').textContent = t;
+  $('ck').setAttribute('aria-valuetext', km ? `within ${km} km` : t);
 }
 $('cs').oninput = () => { setChainOptions({}); render(); };
-// typed numbers search again after a pause (or at once on change, when the field is left); the search can take a few hundred ms
+document.querySelectorAll('[data-legs]').forEach(b => b.onclick = () => { setChainOptions({ cn: b.dataset.legs }); render(); });
+for (const [id, d] of [['cg-dn', -1], ['cg-up', 1]]) $(id).onclick = () => { setChainOptions({ cg: +$('cg').value + d }); render(); };
+// A wide search (3 legs, 250 km) takes a few hundred ms: typed numbers and the slider search again after a pause, at once
+// when the field is left or the slider let go, and say so meanwhile
 let typing;
+const later = ms => () => {
+  clearTimeout(typing);
+  syncChainUI();
+  $('count').textContent = $('cshow').textContent = 'Finding chains\u2026';
+  typing = setTimeout(render, ms);
+};
+const now = () => { clearTimeout(typing); setChainOptions({}); render(); };
 const TYPED = ['cdmin', 'cdmax', 'cdrive'];
-CHAIN_IDS.filter(id => id !== 'cs' && !TYPED.includes(id)).forEach(id => $(id).oninput = render);
-TYPED.forEach(id => {
-  $(id).oninput = () => { clearTimeout(typing); typing = setTimeout(render, 250); };
-  $(id).onchange = () => { clearTimeout(typing); render(); };
-});
+CHAIN_IDS.filter(id => !['cs', 'cn', 'ck'].includes(id) && !TYPED.includes(id)).forEach(id => $(id).oninput = now);
+TYPED.forEach(id => { $(id).oninput = later(250); $(id).onchange = now; });
+$('ck').oninput = later(150);
+$('ck').onchange = now;
 // this week: today to Sunday; next week: Monday to Sunday (UTC)
 document.querySelectorAll('[data-quick]').forEach(b => b.onclick = () => {
   const t = Math.floor(Date.now() / 864e5), mon = t - (new Date(t * 864e5).getUTCDay() + 6) % 7, nx = +b.dataset.quick;
@@ -1441,7 +1529,9 @@ function openPop(chip) {
   chip.setAttribute('aria-expanded', 'true');
   popOpen = { chip, pop };
   placePop();
-  pop.querySelector('button, input, select').focus();
+  // the first control, not the sheet's close button
+  const f = [...pop.querySelectorAll('button, input, select')].find(x => x.offsetParent && !x.disabled && !x.classList.contains('shx'));
+  if (f) f.focus();
 }
 function closePop(focus) {
   if (!popOpen) return;
