@@ -34,7 +34,7 @@
   #from, #to { width: 104px; }
   #kmin, #kmax { width: 54px; }
   #bar #week { width: 70px; padding: 0; border: 0; accent-color: var(--accent); }
-  #bar input.on, #bar select.on { border-color: var(--accent); background: #e6f0fa; box-shadow: inset 0 0 0 1px var(--accent); }
+  #bar input.on:not([type="checkbox"]), #bar select.on { border-color: var(--accent); background: #e6f0fa; box-shadow: inset 0 0 0 1px var(--accent); }
   #main { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; }
   #map { flex: 1; }
   #empty { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px 12px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0, 0, 0, .3); }
@@ -70,9 +70,14 @@
   #list .legs .nk::before { content: none; }
   #list .sub { display: block; color: var(--muted); font-size: 11px; }
   .legno { background: #bf360c; color: #fff; border-radius: 50%; font: 600 11px/18px system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 2px #fff; }
-  #gchain { order: -1; }
-  #filt #gchain { border-left-color: var(--accent); }
-  #gchain legend { color: var(--accent); }
+  #gchain { flex: 1 1 100%; }
+  #gchain .f { column-gap: 10px; }
+  #gchain select { width: auto; }
+  #gchain .sd, #gchain .pair { display: flex; align-items: center; gap: 4px 6px; }
+  #gchain #cdmin, #gchain #cdmax { width: 54px; }
+  #gchain #cdrive { width: 64px; }
+  #gchain label:has(input[type="checkbox"].on) { color: var(--accent); font-weight: 600; }
+  #bar input[type="checkbox"] { margin: 0; padding: 0; accent-color: var(--accent); }
   @media (hover: hover) { #list tbody tr:hover { background: #eef5ff; } }
   #list tbody tr:focus-within { background: #eef5ff; }
   #list button.go, #list button.reset-all { font: inherit; font-size: 12px; color: inherit; padding: 2px 8px; min-height: 24px; border: 1px solid #767676; border-radius: 4px; background: #fff; cursor: pointer; }
@@ -153,7 +158,14 @@
     #list .legs .leg a { grid-area: bk; align-self: center; }
     #list .legs .nk::before { content: " \00b7  "; }
     #gchain .f { display: grid; grid-template-columns: max-content 1fr; gap: 6px 8px; align-items: center; }
-    #gchain .f label { display: contents; }
+    #gchain .f > label { display: contents; }
+    #gchain .sd, #gchain .f > label.chk { grid-column: 1 / -1; }
+    #gchain .sd { flex-wrap: wrap; }
+    #gchain .sd label, #gchain .sd select { flex: 0 0 auto; }
+    #gchain .pair > input { flex: 1; min-width: 0; width: auto; }
+    #gchain #cdrive { width: auto; }
+    #gchain select, #gchain input:not([type="checkbox"]) { min-height: 44px; box-sizing: border-box; }
+    #gchain label.chk, #gchain .sd label { display: flex; align-items: center; min-height: 44px; }
     #list td.de::before { content: "\2013  "; content: "\2013  " / ""; }
     #list td.to::before { content: "\2192  "; content: "\2192  " / ""; color: var(--muted); }
     #list td.km::after { content: " km"; }
@@ -178,6 +190,17 @@
     <button id="view">List</button>
   </div>
   <div id="filt">
+    <fieldset id="gchain" hidden><legend>Chain options</legend><div class="f">
+      <label>Legs <select id="cn"><option value="2">2</option><option value="3">3</option><option value="2-3">2 or 3</option></select></label>
+      <div class="sd">
+        <label class="chk"><input type="checkbox" id="cs" checked> Same day</label>
+        <label><span id="cgc">or up to</span> <select id="cg" aria-label="Most rest days between legs"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select> rest days</label>
+      </div>
+      <label>Next pick-up within <select id="ck"><option value="0">same station</option><option value="25">~25 km</option><option value="50">~50 km</option><option value="100">~100 km</option><option value="150">~150 km</option><option value="250">~250 km</option></select></label>
+      <label>Trip days <span class="pair"><input type="number" id="cdmin" min="1" step="1" inputmode="numeric" placeholder="any" aria-label="Shortest trip in days"> &ndash; <input type="number" id="cdmax" min="1" step="1" inputmode="numeric" placeholder="any" aria-label="Longest trip in days"></span></label>
+      <label>Max total km <input type="number" id="cdrive" min="0" step="50" placeholder="any"></label>
+      <label class="chk" title="Ends within the next pick-up distance of the first pick-up"><input type="checkbox" id="cr"> Round trip</label>
+    </div></fieldset>
     <fieldset id="gdate"><legend>Start date</legend><div class="f">
       <input type="date" id="from" aria-label="Earliest start date"> &ndash;
       <input type="date" id="to" aria-label="Latest start date">
@@ -194,11 +217,6 @@
     <fieldset id="gto"><legend>Return</legend><div class="f">
       <select id="tcc" aria-label="Return country"></select>
       <select id="tst" aria-label="Return station"></select>
-    </div></fieldset>
-    <fieldset id="gchain" hidden><legend>Chains</legend><div class="f">
-      <label>Legs <select id="cn"><option value="2">2</option><option value="3">2 or 3</option></select></label>
-      <label>Rest days <select id="cg"><option value="0">none</option><option value="1">up to 1</option><option value="2">up to 2</option></select></label>
-      <label>Connection <select id="ck"><option value="0">same station</option><option value="50">within 50 km</option><option value="100">within 100 km</option></select></label>
     </div></fieldset>
   </div>
 </header>
@@ -280,7 +298,8 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
 const day = s => Date.parse(s + 'T00:00:00Z');
 const iso = ms => new Date(ms).toISOString().slice(0, 10);
-const short = s => new Date(day(s)).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+const shorts = new Map();  // formatting a date is slow, and a list shows the same few hundred
+const short = s => { if (!shorts.has(s)) shorts.set(s, new Date(day(s)).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })); return shorts.get(s); };
 const place = s => `${s.name}, ${s.cc}`;
 // the arrow is read as "rightwards arrow" otherwise
 const ARROW = '<span aria-hidden="true">\u2192</span><span class="sr"> to </span>';
@@ -290,7 +309,7 @@ const ARROW = '<span aria-hidden="true">\u2192</span><span class="sr"> to </span
 // 7 nights, and prices it flat. A leg is therefore a pick-up day p and a return day q with start <= p < q <= end,
 // so consecutive legs can be made to line up. Only days on which the data itself shows a pick-up or return
 // (the start or end of some offer) are used: that skips Sundays and holidays without a calendar.
-// Leg N+1 starts at p' with q <= p' <= q + gap, at a station within conn km of where leg N ended (0: the same one).
+// Leg N+1 starts at p' with q + gmin <= p' <= q + gmax, at a station within conn km of where leg N ended (0: the same one).
 // Per chain (a sequence of routes) the dates kept are the best itinerary: most nights on the road, then fewest
 // rest days, then the earliest start. No station is a pick-up twice in a chain.
 const NIGHTS = 7;
@@ -298,8 +317,10 @@ const dn = s => Date.parse(s + 'T00:00:00Z') / 864e5;  // day number
 const OPEN = new Set([...DATA.map(r => dn(r.start)), ...DATA.map(r => dn(r.end))]);
 const legKey = r => r.from.name + '>' + r.to.name;
 
-// offers: the records to chain; open: the set of bookable day numbers; o: { legs, gap, conn, lo, hi } where
-// lo..hi are the allowed first pick-up days. Returns [{ key, legs: [{ p, q, r }], hops: [{ same, km }],
+// offers: the records to chain; open: the set of bookable day numbers; o: { lmin, lmax, gmin, gmax, conn, lo, hi, dmin, dmax,
+// drive, round } where lmin..lmax are the legs, gmin..gmax the days between a return and the next pick-up, lo..hi the allowed
+// first pick-up days, dmin..dmax the trip days, drive the most km driven and round asks that the last return is near the first
+// pick-up. Returns [{ key, legs: [{ p, q, r }], hops: [{ same, km }],
 // start, end, days, rest, drive }] with one entry per route sequence; start/end/days span first pick-up to last return,
 // rest is the rest days in between,
 // drive is the km of the legs (connections not included).
@@ -313,7 +334,12 @@ function findChains(offers, open, o) {
       for (let q = p + 1; q <= Math.min(e, p + NIGHTS); q++) if (open.has(q) && !pairs.has(p * 1e4 + q)) pairs.set(p * 1e4 + q, { p, q, r });
     }
   }
-  const routes = [...nodes.values()].map(x => ({ ...x, pairs: [...x.pairs.values()] }));
+  // at[p - p0]: the pairs that pick up on day p, so a leg after a return looks only at the days its rest days allow
+  const routes = [...nodes.values()].map(x => {
+    const pairs = [...x.pairs.values()], p0 = pairs.length ? Math.min(...pairs.map(l => l.p)) : 0, at = [];
+    for (const l of pairs) (at[l.p - p0] = at[l.p - p0] || []).push(l);
+    return { ...x, pairs, p0, at, id: legKey(x.r) };
+  });
   const byFrom = new Map(), stations = new Map();
   for (const x of routes) {
     byFrom.set(x.r.from.name, (byFrom.get(x.r.from.name) || []).concat(x));
@@ -329,40 +355,60 @@ function findChains(offers, open, o) {
     }
     near.set(a.name, l);
   }
-  // an itinerary ends on its return day q: keep the best one per q, which is enough to extend it
+  // an itinerary ends on its return day q: keep the best one per q, which is enough to extend it. It links back to the
+  // itinerary it extends (prev) and its leg (l); the legs are put together only for a chain that is kept.
+  // fin: the chain cannot grow any more, so only its single best itinerary is kept, and it must have the minimum days.
   const better = (x, y) => x.nights !== y.nights ? x.nights > y.nights : x.rest !== y.rest ? x.rest < y.rest : x.p1 < y.p1;
-  const extend = (states, x) => {
+  const wins = (nights, rest, p1, cur) => !cur || (nights !== cur.nights ? nights > cur.nights : rest !== cur.rest ? rest < cur.rest : p1 < cur.p1);
+  const extend = (states, x, fin) => {
     const next = new Map();
+    let best = null;
+    const add = (st, l) => {
+      const p1 = st ? st.p1 : l.p, nights = (st ? st.nights : 0) + l.q - l.p, rest = st ? st.rest + l.p - st.q : 0;
+      if (l.q - p1 > o.dmax || (fin && l.q - p1 < o.dmin)) return;  // the trip only gets longer: drop it at once
+      if (fin ? !wins(nights, rest, p1, best) : !wins(nights, rest, p1, next.get(l.q))) return;
+      const c = { q: l.q, nights, rest, p1, prev: st, l };
+      if (fin) best = c; else next.set(l.q, c);
+    };
     for (const st of states) {
-      for (const l of x.pairs) {
-        if (st ? l.p < st.q || l.p > st.q + o.gap : l.p < o.lo || l.p > o.hi) continue;
-        const c = { q: l.q, nights: (st ? st.nights : 0) + l.q - l.p, rest: st ? st.rest + l.p - st.q : 0, p1: st ? st.p1 : l.p, legs: (st ? st.legs : []).concat(l) };
-        if (!next.has(l.q) || better(c, next.get(l.q))) next.set(l.q, c);
+      if (!st) { for (const l of x.pairs) if (l.p >= o.lo && l.p <= o.hi) add(null, l); continue; }
+      for (let p = Math.max(st.q + o.gmin, x.p0); p <= st.q + o.gmax && p - x.p0 < x.at.length; p++) for (const l of x.at[p - x.p0] || []) add(st, l);
+    }
+    return fin ? (best ? [best] : []) : [...next.values()];
+  };
+  const legsOf = c => { const l = []; for (; c; c = c.prev) l.push(c.l); return l.reverse(); };
+  const out = [];
+  // first: the first pick-up station; last: the station the chain ends at; hops.length + 1 is the number of legs
+  const walk = (first, last, hops, states, used, drive, key) => {
+    if (hops.length + 1 >= o.lmin) {
+      // SIMPLIFIED: extend keeps one itinerary per return day, the one with the most nights, so with a minimum trip length a
+      // chain whose only itinerary of that length has fewer nights is missed; upgrade: keep the earliest start per return day too
+      const fit = o.dmin ? states.filter(c => c.q - c.p1 >= o.dmin) : states;
+      if (fit.length && (!o.round || near.get(last).some(h => h.name === first))) {
+        const b = fit.reduce((m, c) => better(c, m) ? c : m);
+        out.push({ key, legs: legsOf(b), hops, start: b.p1, end: b.q, days: b.q - b.p1, rest: b.rest, drive });
       }
     }
-    return [...next.values()];
-  };
-  const out = [];
-  const walk = (path, hops, states, used) => {
-    if (path.length > 1) {
-      const b = states.reduce((m, c) => better(c, m) ? c : m);
-      out.push({ key: path.map(x => legKey(x.r)).join('|'), legs: b.legs, hops, start: b.p1, end: b.q, days: b.q - b.p1, rest: b.rest, drive: path.reduce((n, x) => n + x.km, 0) });
-    }
-    if (path.length === o.legs) return;
-    for (const h of near.get(path[path.length - 1].r.to.name)) {
+    if (hops.length + 1 === o.lmax) return;
+    // the days a next leg could pick up on: a route outside them is skipped without a look
+    let from = Infinity, to = -Infinity;
+    for (const st of states) { from = Math.min(from, st.q + o.gmin); to = Math.max(to, st.q + o.gmax); }
+    for (const h of near.get(last)) {
       if (used.has(h.name)) continue;
       for (const x of byFrom.get(h.name) || []) {
-        const next = extend(states, x);
+        if (drive + x.km > o.drive || x.p0 > to || x.p0 + x.at.length <= from) continue;
+        const next = extend(states, x, hops.length + 2 === o.lmax);
         if (!next.length) continue;
         used.add(h.name);
-        walk(path.concat(x), hops.concat(h), next, used);
+        walk(first, x.r.to.name, hops.concat(h), next, used, drive + x.km, key + '|' + x.id);
         used.delete(h.name);
       }
     }
   };
   for (const x of routes) {
-    const first = extend([null], x);
-    if (first.length) walk([x], [], first, new Set([x.r.from.name]));
+    if (x.km > o.drive) continue;
+    const states = extend([null], x);
+    if (states.length) walk(x.r.from.name, x.r.to.name, [], states, new Set([x.r.from.name]), x.km, x.id);
   }
   return out;
 }
@@ -400,15 +446,19 @@ const FILTERS = {
 const sel = {};  // current selections, '' = any
 const NOUN = { fcc: 'country', fst: 'station', tcc: 'country', tst: 'station' };
 // a filter is active when it differs from its reset value; groups mirror the fieldsets
-const GROUPS = { gdate: ['from', 'to'], gkm: ['kmin', 'kmax'], gfrom: ['fcc', 'fst'], gto: ['tcc', 'tst'] };
-const RESET = { from: min || '', to: max || '' };
+const CHAIN_IDS = ['cn', 'cs', 'cg', 'ck', 'cdmin', 'cdmax', 'cdrive', 'cr'];
+const GROUPS = { gdate: ['from', 'to'], gkm: ['kmin', 'kmax'], gfrom: ['fcc', 'fst'], gto: ['tcc', 'tst'], gchain: CHAIN_IDS };
+// a checkbox reads '1' when checked and '' when not
+const RESET = { from: min || '', to: max || '', cn: '2', cs: '1', cg: '0', ck: '0', cr: '' };
+const valueOf = id => $(id).type === 'checkbox' ? ($(id).checked ? '1' : '') : $(id).value;
 
 function markActive() {
   let n = 0;
   for (const g in GROUPS) {
+    if (g === 'gchain' && !chainMode) continue;  // the options mean nothing for trips
     let on = false;
     for (const id of GROUPS[g]) {
-      const a = $(id).value !== (RESET[id] || '');
+      const a = valueOf(id) !== (RESET[id] || '');
       $(id).classList.toggle('on', a);
       on = on || a;
     }
@@ -438,8 +488,20 @@ const ENDS = {
 let eff = sel;
 const endsPass = (c, skip) => { for (const k in ENDS) if (k !== skip && eff[k] && ENDS[k](c) !== eff[k]) return false; return true; };
 let chainMemo = { key: '', list: [], ms: 0 };  // the chains for the current chain settings, filters and dates
+// the chain options as findChains reads them; an empty or odd number means "no limit" or the default
+const whole = (id, lo, hi) => { const v = Math.floor(+$(id).value); return $(id).value === '' || !isFinite(v) ? NaN : Math.min(hi, Math.max(lo, v)); };
+function chainOptions() {
+  const [lmin, lmax] = $('cn').value.split('-').map(Number), same = $('cs').checked;
+  const dmin = whole('cdmin', 1, 1e4), dmax = whole('cdmax', 1, 1e4), drive = whole('cdrive', 0, 1e6);
+  return {
+    lmin, lmax: lmax || lmin,
+    gmin: same ? 0 : 1, gmax: Math.max(whole('cg', 0, 7) || 0, same ? 0 : 1),
+    conn: +$('ck').value, lo: dn($('from').value), hi: dn($('to').value),
+    dmin: dmin || 0, dmax: dmax || Infinity, drive: isNaN(drive) ? Infinity : drive, round: $('cr').checked,
+  };
+}
 function chainList() {
-  const o = { legs: +$('cn').value, gap: +$('cg').value, conn: +$('ck').value, lo: dn($('from').value), hi: dn($('to').value) };
+  const o = chainOptions();
   const kmin = +$('kmin').value, kmax = $('kmax').value;
   const key = JSON.stringify([o, kmin, kmax]);
   if (chainMemo.key !== key) {
@@ -511,9 +573,14 @@ const legItem = (c, l, i) => {
     `<span class="dt"><span class="d">${legDates(l)}</span><span class="nk">${count(l.q - l.p, 'night')} \u00b7 ${kmCell(l.r)} km</span></span>` +
     `<a href="${esc(legLink(l))}" target="_blank" rel="noopener" aria-label="${esc(label)}">Book</a></div></li>`;
 };
+const chainLegs = () => { const o = chainOptions(); return o.lmin === o.lmax ? o.lmin : `${o.lmin}\u2013${o.lmax}`; };
 const chainEst = c => c.legs.some(l => dist(l.r).est);
-// what to relax when no chain is left: only the settings that are not at their maximum
-const chainTry = () => [+$('cg').value < 2 && 'allow rest days', +$('ck').value < 100 && 'allow a longer connection', +$('cn').value < 3 && 'allow 3 legs'].filter(Boolean).join(', ');
+// what to relax when no chain is left: the first two settings that are not at their widest
+const chainTry = () => {
+  const o = chainOptions();
+  return [!$('cs').checked && 'allow same-day changes', o.gmax < 7 && 'allow more rest days', o.conn < 250 && 'allow a farther next pick-up', o.lmax === 2 && 'allow 3 legs',
+    (o.dmin || o.dmax < Infinity || o.drive < Infinity || o.round) && 'remove the trip length, km or round-trip limit'].filter(Boolean).slice(0, 2).join(', ');
+};
 // a chain's start and end in the short form, the ISO date in the title
 const chainDate = (cls, n) => `<td class="${cls}" title="${dayIso(n)}">${esc(sd(n))}</td>`;
 
@@ -535,7 +602,7 @@ function renderList() {
         `<td class="m"><button class="go" data-key="${esc(c.key)}" aria-label="Show chain ${esc(chainLabel(c))} on the map">Map</button></td></tr>`;
     }).join('');
     const none = DATA.length ? `No chains match${chainTry() ? `. Try: ${chainTry()}.` : ' these filters.'} <button class="reset-all">Reset filters</button>` : 'No rally trips are on offer right now.';
-    $('list').innerHTML = `<table class="ch"><caption>2\u20133 rallies back to back. Each leg is booked on its own.</caption><thead><tr>${th('start', 'Start')}${th('end', 'End')}${th('days', 'Days', 'dd')}${th('km', 'km driven', 'km')}` +
+    $('list').innerHTML = `<table class="ch"><caption>${chainLegs()} rallies back to back. Each leg is booked on its own.</caption><thead><tr>${th('start', 'Start')}${th('end', 'End')}${th('days', 'Days', 'dd')}${th('km', 'km driven', 'km')}` +
       `<th>Legs</th><th><span class="sr">Map</span></th></tr></thead><tbody>` +
       (rows || `<tr class="none"><td colspan="6">${none}</td></tr>`) + '</tbody></table>' +
       (chains.length > CHAIN_ROWS ? `<p class="note">Showing ${CHAIN_ROWS} of ${chains.length.toLocaleString('en-GB')} chains, on the map too. Sort or filter to see the others.</p>` : '');
@@ -746,10 +813,19 @@ for (const k in FILTERS) $(k).onchange = () => { sel[k] = $(k).value; render(); 
   $('week').setAttribute('aria-valuetext', 'custom dates');
   render();
 });
+function setChainOptions(v) {
+  for (const id in v) $(id)[$(id).type === 'checkbox' ? 'checked' : 'value'] = v[id];
+  // Same day off means a break of 1 to N days: 0 rest days can no longer be picked
+  const same = $('cs').checked;
+  $('cg').options[0].disabled = !same;
+  if (!same && +$('cg').value < 1) $('cg').value = '1';
+  $('cgc').textContent = same ? 'or up to' : '1 to';
+}
 $('reset').onclick = () => {
   for (const k in FILTERS) sel[k] = '';
   $('from').value = min; $('to').value = max; $('week').value = 0; $('kmin').value = $('kmax').value = '';
   $('week').setAttribute('aria-valuetext', 'all dates');
+  setChainOptions({ cn: '2', cs: true, cg: '0', ck: '0', cdmin: '', cdmax: '', cdrive: '', cr: false });
   render();
   $('view').focus();  // Reset hides itself: do not leave keyboard focus on it
 };
@@ -764,12 +840,18 @@ $('mode').onclick = () => {
   fromRow = null;
   $('mode').setAttribute('aria-pressed', chainMode);
   $('gchain').hidden = !chainMode;
+  if (chainMode && matchMedia('(max-width: 700px)').matches) {  // on a phone the options are hidden with the other filters: open them at once
+    document.body.classList.add('filt');
+    $('filters').setAttribute('aria-expanded', true);
+    $('filt').scrollTop = 0;
+  }
   // the filters mean something else for chains
   for (const [id, trips, chain] of [['gkm', 'Distance', 'Distance per leg'], ['gfrom', 'Pick-up', 'Chain starts at'], ['gto', 'Return', 'Chain ends at']]) $(id).querySelector('legend').textContent = chainMode ? chain : trips;
   $('list').setAttribute('aria-label', chainMode ? 'Chain list' : 'Trip list');
   render();
 };
-['cn', 'cg', 'ck'].forEach(id => $(id).onchange = render);
+$('cs').oninput = () => { setChainOptions({}); render(); };
+CHAIN_IDS.filter(id => id !== 'cs').forEach(id => $(id).oninput = render);
 $('list').onclick = e => {
   const b = e.target.closest('button[data-sort]');
   if (b) {
