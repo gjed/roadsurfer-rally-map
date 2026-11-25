@@ -593,11 +593,10 @@ class RoadScanTest(unittest.TestCase):
         self.main("--from-json", str(FIXTURE), "--map", str(self.dir / "i.html"))
         html = (self.dir / "i.html").read_text(encoding="utf-8")
         # a leg or connection lists its chains, past 8 it filters the list; Reset clears the filter
-        self.assertIn('<fieldset id="gleg" hidden>', html)
+        self.assertIn('<fieldset id="gleg" class="on" hidden>', html)
         self.assertIn("const USE_ROWS = 8;", html)
         self.assertIn("legFilter = null;", html)
-        # a row is selectable, and the chain on the map marks its row
-        self.assertIn('<tr data-key="${esc(c.key)}">', html)
+        # the chain on the map marks its row's Map button
         self.assertIn("aria-current", html)
         # the tooltip and the legend say that a click filters
         self.assertIn("Click to only show", html)
