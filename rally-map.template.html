@@ -307,7 +307,8 @@
     #p-chain .shh { display: flex; align-items: center; gap: 8px; padding: 10px 8px 10px 20px; border-bottom: 1px solid var(--line2); }
     #p-chain .shh h2 { margin: 0; }
     #p-chain .shx { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 22px; background: none; color: var(--ink); cursor: pointer; }
-    #p-chain fieldset { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    /* a div scrolls the options: a fieldset does not reliably scroll as a flex item */
+    #cbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
     .copt { gap: 20px; padding: 16px 20px; }
     .copt .ct, .pop .orow, .hop .hl2, .hop label { font-size: 16px; }
     .orow small, .hop .scale { font-size: 13px; }
@@ -514,7 +515,7 @@
 <div class="pop" id="p-chain" role="dialog" aria-labelledby="h-chain" aria-describedby="chint" hidden>
   <p class="chint" id="chint">Chains: 2–3 rallies booked back to back. Set how they may connect, then browse them on the map.</p>
   <div class="shh"><h2 id="h-chain">Chain options</h2><button class="shx" data-done aria-label="Close chain options"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
-  <fieldset id="gchain" hidden><legend class="sr">Chain options</legend><div class="copt">
+  <div id="cbody"><fieldset id="gchain" hidden><legend class="sr">Chain options</legend><div class="copt">
     <div role="group" aria-labelledby="l-legs"><span class="ct" id="l-legs">Legs</span>
       <div class="seg3"><button data-legs="2">2</button><button data-legs="3">3</button><button data-legs="2-3">2 or 3</button></div>
       <input type="hidden" id="cn" value="2">
@@ -531,7 +532,7 @@
       <div class="row3"><label>Min days<input type="number" id="cdmin" min="1" step="1" inputmode="numeric" placeholder="Any" aria-label="Shortest trip in days"></label><label>Max days<input type="number" id="cdmax" min="1" step="1" inputmode="numeric" placeholder="Any" aria-label="Longest trip in days"></label><label>Max km<input type="number" id="cdrive" min="0" step="100" inputmode="numeric" placeholder="Any" aria-label="Most km driven in total"></label></div>
       <label class="orow"><span class="t">Round trip<small>End near where you start</small></span><input type="checkbox" role="switch" class="sw" id="cr"></label>
     </div>
-  </div></fieldset>
+  </div></fieldset></div>
   <div class="pf"><button class="ghost" data-clear="gchain">Reset</button><span class="grow"></span><button class="btn" id="cshow" data-done>Show chains</button></div>
 </div>
 <script src="vendor/leaflet/leaflet.js"></script>
@@ -1669,7 +1670,7 @@ function lend() {
   }
 }
 function giveBack() {
-  for (const [pop, body] of lent) pop.insertBefore(body, pop.querySelector('.pf'));
+  for (const [pop, body] of lent) pop.id === 'p-chain' ? $('cbody').append(body) : pop.insertBefore(body, pop.querySelector('.pf'));
   lent = [];
 }
 // opener: what gets focus back when the panel closes, the chip unless it was opened from elsewhere
