@@ -236,6 +236,7 @@
   .tt td { padding: 8px 16px; border-bottom: 1px solid var(--line2); white-space: nowrap; }
   .tt td.ds { font-weight: 600; }
   .tt td.nt { color: var(--muted); }
+  .tt .kn { display: none; }  /* the nights beside the km, on phone cards only */
   .tt .r { text-align: right; }
   .tt td.act { padding: 6px 16px; text-align: right; }
   .tt td.act .btn2 { margin-right: 6px; }
@@ -373,21 +374,21 @@
     .tt thead th:not([aria-sort]) { display: none; }
     .tt tbody { display: block; }
     /* a trip is a card: dates, km and nights, pick-up, return, then Map (1/3) and Book (2/3) */
-    .tt tbody tr { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: "s e k n" "f f f f" "t t t t" "p p p p" "a a a a"; gap: 2px 6px; margin-bottom: 8px; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+    /* a trip is a card: the dates, then the km and nights, which wrap whole under the dates when they do not fit */
+    .tt tbody tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; margin-bottom: 8px; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
     .tt tbody tr.gh { display: block; margin: 8px 0 6px; padding: 0; background: none; border: 0; }
     .tt tbody th { display: block; padding: 0 2px; background: none; border: 0; }
     .tt td { padding: 0; border: 0; white-space: normal; }
-    .tt td.ds { grid-area: s; }
-    .tt td.de { grid-area: e; }
-    .tt td.de { font-weight: 600; }
+    .tt td.ds { order: 1; }
+    .tt td.de { order: 2; flex: 1 0 auto; font-weight: 600; }  /* grows: the km sits right beside the dates, or left under them */
     .tt td.de::before { content: "\2013  "; content: "\2013  " / ""; }
-    .tt td.km { grid-area: k; justify-self: end; white-space: nowrap; font-size: 13px; color: var(--muted); }
-    .tt td.nt { grid-area: n; font-size: 13px; }
-    .tt td.nt::before { content: "\00b7  "; content: "\00b7  " / ""; }
-    .tt td.pr { grid-area: p; }
-    .tt td.from { grid-area: f; margin-top: 4px; }
-    .tt td.to { grid-area: t; }
-    .tt td.act { grid-area: a; display: flex; gap: 8px; margin-top: 8px; padding: 0; text-align: left; }
+    .tt td.km { order: 3; white-space: nowrap; font-size: 13px; color: var(--muted); }
+    .tt .kn { display: inline; }
+    .tt td.nt { display: none; }
+    .tt td.from { order: 4; flex-basis: 100%; margin-top: 4px; }
+    .tt td.to { order: 5; flex-basis: 100%; }
+    .tt td.pr { order: 6; flex-basis: 100%; }
+    .tt td.act { order: 7; flex-basis: 100%; display: flex; gap: 8px; margin-top: 8px; padding: 0; text-align: left; }
     .tt td.act > * { flex: 1; height: 44px; }
     .tt td.act > .btn { flex: 2; }
     .tt td.act .btn2 { margin-right: 0; }
@@ -1187,7 +1188,7 @@ function renderSide() {
 const foot = () => `<p class="foot">${DATA.some(r => !dist(r).est) ? 'Distances are road distances from OSRM; a leading ~ marks an estimate.' : 'Distances with a leading ~ are estimates: the straight line \u00d7 1.3.'} Offers as of the last scan \u2014 the booking page has the last word.</p>`;
 const tripRow = r => `<tr><td class="ds" title="${esc(r.start)}">${esc(short(r.start))}</td><td class="de" title="${esc(r.end)}">${esc(short(r.end))}</td><td class="nt">${count(nightsOf(r), 'night')}</td>` +
   `<td class="from"><span class="st">${RING('#15181E', 4)}${esc(place(r.from))}</span></td><td class="to"><span class="st">${DOT('#15181E', 4)}${esc(place(r.to))}</span></td>` +
-  `<td class="km r">${kmCell(r)} km</td>${hasPrice ? `<td class="pr">${r.price ? esc(r.price) : ''}</td>` : ''}` +
+  `<td class="km r"><span class="kv">${kmCell(r)} km</span><span class="kn"> \u00b7 ${count(nightsOf(r), 'night')}</span></td>${hasPrice ? `<td class="pr">${r.price ? esc(r.price) : ''}</td>` : ''}` +
   `<td class="act"><button class="btn2 sm" data-route="${esc(routeKey(r))}" aria-label="${esc(`Show ${place(r.from)} to ${place(r.to)} on the map`)}">${MAPI}Map</button>` +
   `<a class="btn sm" href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="${esc(`Book ${place(r.from)} to ${place(r.to)}, ${short(r.start)}`)}">Book${EXT}</a></td></tr>`;
 
@@ -1236,8 +1237,10 @@ function renderTrips() {
 }
 
 // ---- one render for the whole page --------------------------------------------------------------
+let shownView = null;  // the view on screen, to notice a view change
 function applyView() {
   const m = S.view === 'map';
+  if (S.view !== shownView) { shownView = S.view; chipsTouched = false; }
   $('mapview').hidden = !m;
   $('tripsview').hidden = m;
   $(m ? 'v-map' : 'v-trips').setAttribute('aria-current', 'page');
@@ -1296,6 +1299,7 @@ function render() {
   $('cshow').textContent = `Show ${count(n, 'chain')}`;
   $('fshow').textContent = `Show ${count(n, chainMode ? 'chain' : 'trip')}`;
   pill();
+  if (!popOpen) homeChips();  // not under an open panel: it would leave its chip
   placePop();
   commit(false);
 }
@@ -1459,14 +1463,15 @@ function applyMode() {
 function setMode(on) {
   if (chainMode === on) return;
   chainMode = on;
+  chipsTouched = false;
   S.route = S.chain = null;
   legFilter = focusKey = null;
   opener = null;
   pushed = false;
   applyMode();
   render();
-  // on a phone the options sit behind their chip: open them at once
-  if (on && phone()) openPop($('c-chain'));
+  // on a phone the options sit behind their chip: open them at once, and give focus back to Chains
+  if (on && phone()) openPop($('c-chain'), $('m-chains'));
 }
 $('m-trips').onclick = () => setMode(false);
 $('m-chains').onclick = () => setMode(true);
@@ -1564,16 +1569,31 @@ document.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => {
   CLEAR[b.dataset.clear]();
   render();
   // the x hides itself: keep keyboard focus on its chip
-  if (b.classList.contains('x')) $(b.dataset.clear).querySelector('.chip').focus();
+  if (b.classList.contains('x')) focusBack($(b.dataset.clear).querySelector('.chip'));
 });
 $('reset').onclick = () => {
   for (const g in CLEAR) CLEAR[g]();
   legFilter = null;
   render();
-  $('c-date').focus();  // Clear all hides itself: do not leave keyboard focus on it
+  focusBack($('c-date'));  // Clear all hides itself: do not leave keyboard focus on it
 };
 $('empty-reset').onclick = () => $('reset').click();
-$('legx').onclick = () => clearLeg($('c-date'));  // the chip hides itself: do not leave keyboard focus on it
+$('legx').onclick = () => { clearLeg(); focusBack($('c-date')); };  // the chip hides itself: do not leave keyboard focus on it
+
+// ---- the chip row: on a phone it scrolls sideways and starts at Filters --------------------------
+// It goes back to its start when a view renders or a panel closes, unless the user scrolled it since
+// (a view or mode change forgets that). A scroll counts as the user's when a wheel or a touch drag moved it.
+let chipsTouched = false, gestureAt = -1e9;
+for (const ev of ['wheel', 'touchmove', 'pointermove']) {
+  $('chips').addEventListener(ev, e => { if (ev !== 'pointermove' || e.buttons) gestureAt = e.timeStamp; }, { passive: true });
+}
+$('chips').addEventListener('scroll', e => { if (e.timeStamp - gestureAt < 800) chipsTouched = true; });
+function homeChips() { if (!chipsTouched) $('chips').scrollLeft = 0; }
+// focus back on a control; a chip is scrolled into view only as far as needed
+function focusBack(el) {
+  el.focus({ preventScroll: true });
+  if ($('chips').contains(el)) el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: still.matches ? 'auto' : 'smooth' });
+}
 
 // ---- popovers: one open at a time, under its chip ------------------------------------------------
 let popOpen = null;
@@ -1596,14 +1616,15 @@ function giveBack() {
   for (const [pop, body] of lent) pop.insertBefore(body, pop.querySelector('.pf'));
   lent = [];
 }
-function openPop(chip) {
+// opener: what gets focus back when the panel closes, the chip unless it was opened from elsewhere
+function openPop(chip, opener) {
   closePop(false);
   const pop = $(chip.getAttribute('aria-controls'));
   if (pop.id === 'p-filt') lend();
   pop.hidden = false;
   chip.setAttribute('aria-expanded', 'true');
   // the phone sheets change the page only with Show: closing them otherwise puts the state back
-  popOpen = { chip, pop, was: phone() && (pop.id === 'p-filt' || pop.id === 'p-chain') ? hashOf(S.view) : null };
+  popOpen = { chip, pop, opener: opener || chip, was: phone() && (pop.id === 'p-filt' || pop.id === 'p-chain') ? hashOf(S.view) : null };
   placePop();
   // the first control, not the sheet's close button
   const f = [...pop.querySelectorAll('button, input, select')].find(x => x.offsetParent && !x.disabled && !x.classList.contains('shx'));
@@ -1612,7 +1633,7 @@ function openPop(chip) {
 // keep: the changes stay (Show, Done); otherwise a phone sheet puts back the state it opened with
 function closePop(focus, keep) {
   if (!popOpen) return;
-  const { chip, pop, was } = popOpen;
+  const { chip, pop, was, opener } = popOpen;
   pop.hidden = true;
   chip.setAttribute('aria-expanded', 'false');
   popOpen = null;
@@ -1623,7 +1644,8 @@ function closePop(focus, keep) {
     readHash();
     render();
   }
-  if (focus) chip.focus();
+  homeChips();
+  if (focus) focusBack(opener);
 }
 document.querySelectorAll('.chip').forEach(c => c.onclick = () => c.getAttribute('aria-expanded') === 'true' ? closePop(true) : openPop(c));
 // the sheets' x closes without applying, Show and Done apply
