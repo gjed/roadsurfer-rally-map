@@ -185,9 +185,9 @@ shows them on the map and in the list.
   on the map is highlighted in the list. Every part of the selected chain opens that
   popup, and only Escape, a click on empty map or a filter change clears it.
 - **Pick from the map.** Click or tap a blue leg or a dotted connection: the popup
-  `In N chains` lists up to 8 chains that use it, in list order, and choosing one shows
-  it. With more than 8, `Show all N in the list` filters the list to the chains that use that leg
-  (`Chains using ...`, counted in `Filters (n)`, removed by `Reset`). A click on a station
+  `In N chains` lists up to 8 chains on the map that use it, in list order, and choosing
+  one shows it. When more chains use it, `Show all N in the list` filters the list to
+  them (`Chain uses`, counted in `Filters (n)`, removed by `Reset`). A click on a station
   filters to the chains starting there.
 - **Filters.** The start date and the week slider limit the first pick-up day, the
   distance filter limits every leg, the pick-up filters apply to where the chain starts
