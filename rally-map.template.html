@@ -739,10 +739,13 @@ function showRoute(key, btn, keyboard) {
   setView(false);
   if (chainMode) {
     // the popup sits on the chain's northern edge and the chain is fitted below it
-    const b = picked.getBounds();
+    // no autoPan here: the fit below sets the view; a click on another part of the chain keeps the pan on
+    const b = picked.getBounds(), pop = line.getPopup();
+    pop.options.autoPan = false;
     line.openPopup(L.latLng(b.getNorth(), b.getCenter().lng));
-    map.fitBounds(b, { paddingTopLeft: [40, line.getPopup().getElement().offsetHeight + 70], paddingBottomRight: [40, 30], maxZoom: 8, animate: false });
-    line.getPopup().update();
+    map.fitBounds(b, { paddingTopLeft: [40, pop.getElement().offsetHeight + 70], paddingBottomRight: [40, 30], maxZoom: 8, animate: false });
+    pop.update();
+    pop.options.autoPan = true;
   } else {
     map.fitBounds(line.getBounds(), { padding: [40, 40], maxZoom: 8, animate: false });
     line.openPopup();
