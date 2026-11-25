@@ -652,8 +652,8 @@ chain uses it, that chain SHALL open at once. Choosing a card SHALL open its cha
 
 ### Requirement: Chain leg list layout
 
-Over the chains of a leg the sidebar SHALL show `Only chains using <Leg|Hop> <from> → <to>` with a `×` button named `Show all chains`, in the sticky header, so only the cards
-scroll. A tap on a line outside an open filter panel SHALL close the panel and still
+The chains of a leg SHALL be listed under the sidebar's sticky header, `N chains use this leg` (or `hop`) with `Pick one to open it`, so only the cards scroll; the leg filter
+itself shows only as its chip. A tap on a line outside an open filter panel SHALL close the panel and still
 list that line's chains.
 
 #### Scenario: Tap on a line on a phone
@@ -664,9 +664,9 @@ list that line's chains.
 ### Requirement: Chain leg filter
 
 The chains of a leg SHALL be a filter: it SHALL count as an active filter and show
-`Clear all`, show as a `Chain uses` chip with a `×` button in the filter bar and as
-`Only chains using <leg>` over the lists of both views, and be cleared by `Clear all`,
-by either `×`, by Escape with no chain open and by switching to single rallies.
+`Clear all`, show once, as a `Chain uses <Leg|Hop> <from> → <to>` chip with a `×`
+button after the other filter chips, and be cleared by `Clear all`, by its `×`, by
+Escape with no chain open and by switching to single rallies.
 
 #### Scenario: Show all
 
