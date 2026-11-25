@@ -123,7 +123,7 @@
   .sw:checked::before { transform: translateX(18px); }
   .step { flex: none; display: flex; align-items: center; border: 1px solid var(--field); border-radius: 10px; }
   .step button { width: 36px; height: 34px; padding: 0; border: 0; background: none; font-size: 18px; line-height: 1; cursor: pointer; }
-  .step button:disabled { color: #B8BEC7; cursor: default; }
+  .step button[aria-disabled="true"] { color: #B8BEC7; cursor: default; }
   #p-chain .step input { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 0; background: none; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
   .step input::-webkit-inner-spin-button, .step input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   .step:has(.on) { border-color: var(--accent); background: var(--accent-bg); }
@@ -1460,8 +1460,9 @@ function setChainOptions(v) {
 // the controls that show a value the inputs hold: the legs buttons, the rest days stepper and the next pick-up label
 function syncChainUI() {
   for (const b of document.querySelectorAll('[data-legs]')) b.setAttribute('aria-pressed', b.dataset.legs === $('cn').value);
-  $('cg-dn').disabled = +$('cg').value <= +$('cg').min;
-  $('cg-up').disabled = +$('cg').value >= 7;
+  // aria-disabled, not disabled: a disabled button drops the focus, and Escape and Tab with it
+  $('cg-dn').setAttribute('aria-disabled', +$('cg').value <= +$('cg').min);
+  $('cg-up').setAttribute('aria-disabled', +$('cg').value >= 7);
   const km = +$('ck').value, t = km ? `~${km} km` : 'same station';
   $('ckout').textContent = t;
   $('ck').setAttribute('aria-valuetext', km ? `within ${km} km` : t);
