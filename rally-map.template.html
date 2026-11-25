@@ -142,7 +142,7 @@
   #mapview { flex: 1; min-height: 0; display: flex; }
   #side { position: relative; flex: 0 0 clamp(300px, 28vw, 400px); min-width: 0; overflow-y: auto; border-right: 1px solid var(--line); display: flex; flex-direction: column; }
   #mapwrap { position: relative; flex: 1; min-width: 0; }
-  #map { position: absolute; inset: 0; background: #DCE4EA; }
+  #rmap { position: absolute; inset: 0; background: #DCE4EA; }
   #empty { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 32px); box-sizing: border-box; background: #fff; padding: 8px 8px 8px 14px; border-radius: 10px; box-shadow: 0 4px 12px rgba(16, 24, 40, .18); }
 
   /* sidebar */
@@ -269,8 +269,8 @@
   .leaflet-bar a, .leaflet-touch .leaflet-bar a { width: 36px; height: 36px; line-height: 36px; color: var(--ink); }
   .leaflet-bar button.fit { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; background: #fff; color: var(--ink); cursor: pointer; }
   @media (hover: hover) { .leaflet-bar button.fit:hover { background: #F3F5F7; } }
-  #map.dim path.base { stroke-opacity: .18; }
-  #map path.noclick { cursor: grab; }
+  #rmap.dim path.base { stroke-opacity: .18; }
+  #rmap path.noclick { cursor: grab; }
   .legend { background: #fff; padding: 8px 12px; font-size: 12px; }
   .legend summary { cursor: pointer; font-weight: 600; }
   .legend ul { list-style: none; margin: 6px 0 0; padding: 0; }
@@ -405,7 +405,7 @@
     .fupd { display: block; margin: 0; padding: 14px 0 4px; font-size: 13px; color: var(--muted); }
     /* a route or chain open: the map takes the whole screen under the floating back button and title */
     body.detail #appbar, body.detail #fbar { display: none; }
-    #map.dim path.stn { stroke-opacity: .3; fill-opacity: .3; }
+    #rmap.dim path.stn { stroke-opacity: .3; fill-opacity: .3; }
     .wins .btn, .legs .btn, .ccard .btn { min-height: 44px; }
     /* the map keeps only Fit; zoom is a pinch and the legend's lines read without it */
     .leaflet-control-zoom, .legend { display: none; }
@@ -463,7 +463,7 @@
   <div id="mapview">
     <div id="sheet"><button class="grip" id="grip" aria-controls="side" aria-expanded="false" aria-label="Expand results"><span aria-hidden="true"></span></button><aside id="side" aria-label="Routes"></aside></div>
     <div id="mapwrap">
-      <div id="map" role="region" aria-label="Route map"></div>
+      <div id="rmap" role="region" aria-label="Route map"></div>
       <div id="mpill" hidden><button id="mpback" aria-label="Back to all routes"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4l-5 5 5 5"/></svg></button><span id="mptitle"></span></div>
       <div id="empty" role="status" hidden><span id="empty-msg"></span><button id="empty-reset" class="btn2 sm">Reset filters</button></div>
     </div>
@@ -542,10 +542,11 @@ let chainMode = false;  // chain mode shows chains of rallies instead of single 
 const S = { view: 'map', route: null, chain: null, rsort: 'start', group: 'none' };
 const still = matchMedia('(prefers-reduced-motion: reduce)');
 // a view from the start, so render() finds the route paths in the DOM before the first fitAll()
-const map = L.map('map', { maxZoom: 16, zoomControl: false }).setView([50, 9], 5);
+// not id="map": the browser would focus it on every #map address (a link, Back)
+const map = L.map('rmap', { maxZoom: 16, zoomControl: false }).setView([50, 9], 5);
 L.control.zoom({ position: 'topright' }).addTo(map);
 // the bars wrap and the views swap: keep Leaflet's cached size current
-new ResizeObserver(() => map.invalidateSize()).observe(document.getElementById('map'));
+new ResizeObserver(() => map.invalidateSize()).observe(document.getElementById('rmap'));
 map.createPane('hot').style.zIndex = 410;  // the opened or hovered route, above the others and below the city names
 map.createPane('labels').style.cssText = 'z-index: 420; pointer-events: none';  // city names above the routes
 map.createPane('stations').style.zIndex = 450;  // above the route lines, so a raised line never covers a station
@@ -1115,7 +1116,7 @@ function drawSelection() {
   }
   picked.eachLayer(l => { const el = l.getElement && l.getElement(); if (el) el.setAttribute('tabindex', '-1'); });
 }
-const dimMap = () => $('map').classList.toggle('dim', picked.getLayers().length + hover.getLayers().length > 0);
+const dimMap = () => $('rmap').classList.toggle('dim', picked.getLayers().length + hover.getLayers().length > 0);
 
 let hot;  // the route or chain key drawn in the hover layer
 function hoverRoute(key, fromMap) {
@@ -1143,7 +1144,7 @@ function hoverChain(key) {
 
 // whole-number zoom: fractional zoom leaves seams and shrinks labels on raster tiles
 function fitAll(user) {
-  if (!$('map').clientWidth) return;  // the Trips page is shown: fit when the map is
+  if (!$('rmap').clientWidth) return;  // the Trips page is shown: fit when the map is
   fitted = true;
   const b = layer.getBounds();
   if (b.isValid()) map.fitBounds(b, { paddingTopLeft: [16, 16], paddingBottomRight: [16, 16 + sheetPad()], animate: user && !still.matches });
@@ -1151,7 +1152,7 @@ function fitAll(user) {
 }
 function fitPicked() {
   const b = picked.getBounds();
-  if (!$('map').clientWidth || !b.isValid()) return;
+  if (!$('rmap').clientWidth || !b.isValid()) return;
   fitted = true;
   const ph = phone();  // on a phone: under the floating title and above the sheet
   map.fitBounds(b, { paddingTopLeft: ph ? [24, 72] : [48, 72], paddingBottomRight: ph ? [24, 24 + sheetPad()] : [48, 32], maxZoom: 8, animate: !still.matches });
