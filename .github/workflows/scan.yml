@@ -100,7 +100,7 @@ jobs:
           key: road-distances-${{ github.run_id }}
 
       # read after the scan, so a release cut during it is shown
-      - name: Render the map with the latest release tag
+      - name: Render the map and the feeds with the latest release tag
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -109,13 +109,14 @@ jobs:
           # empty before the first release: the page then shows no release tag
           TAG="$(gh release list --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // empty')" || { echo "::warning::Could not read the latest release; rendering without a release tag."; TAG=""; }
           echo "Release tag: ${TAG:-none}"
-          python3 roadsurfer-rally.py --from-json offers.json --map index.html --release "$TAG"
+          python3 roadsurfer-rally.py --from-json offers.json --map index.html --feeds feeds --release "$TAG"
 
       - name: Assemble site
         run: |
           mkdir _site
           cp index.html _site/
           cp -r vendor _site/
+          cp -r feeds _site/
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v5
