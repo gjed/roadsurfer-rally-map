@@ -7,9 +7,10 @@ Instructions for AI coding agents working in this repo.
 A scanner and a map for [roadsurfer Rally](https://booking.roadsurfer.com/en/rally)
 one-way campervan relocation offers. `roadsurfer-rally.py` (Python 3.8+, standard
 library only) asks the roadsurfer booking API for every Rally route and its
-timeframes. It prints the offers and can save them as JSON and render
-`rally-map.template.html` into a self-contained Leaflet page. The workflow
-`scan.yml` publishes that page to <https://gjed.github.io/roadsurfer-rally-map/>.
+timeframes. It prints the offers and can save them as JSON, render
+`rally-map.template.html` into a self-contained Leaflet page and write Atom feeds. The
+workflow `scan.yml` publishes the page and the feeds to
+<https://gjed.github.io/roadsurfer-rally-map/>.
 
 The API is unofficial and undocumented. The project is not affiliated with
 roadsurfer.
@@ -17,10 +18,11 @@ roadsurfer.
 ## Layout
 
 ```text
-roadsurfer-rally.py         scanner, JSON writer and map renderer
+roadsurfer-rally.py         scanner, JSON writer, map renderer and Atom feed writer
 rally-map.template.html     map page template; render() fills /*DATA*/[], /*SCAN*/null
                             and /*RELEASE*/null
 tests/                      offline unittest suite and fixtures/offers.json
+feeds/                      generated Atom feeds (all.xml, from-<slug>.xml); git-ignored
 vendor/leaflet/             unmodified upstream Leaflet
 openspec/                   specs and changes (OpenSpec)
 .github/workflows/          scan.yml (scheduled scan + Pages), release.yml
@@ -45,7 +47,8 @@ The API answers bursts with HTTP 429. Do not weaken these rules:
 - Each request waits for `--delay` seconds plus up to 20% jitter. The default is
   0.5 s for local runs; `scan.yml` uses `--delay 5`.
 - A scan with more than 10% failed requests (`MAX_FAILED`) exits with status 1 and
-  writes no `--json-out` or `--map` file, so a blocked scan never replaces good data.
+  writes no `--json-out` or `--map` file and no `--feeds` file, so a blocked scan never
+  replaces good data.
 - Road distances come from OSRM, not roadsurfer: sequential `/table` requests at most
   one per second, with a User-Agent naming the project, and only for station pairs
   missing from the cache (`--road-cache`, default `road-distances.json`, git-ignored;
@@ -84,6 +87,10 @@ Scanning needs the network; rendering does not.
 - `--json-out FILE.json` saves the scanned offers.
 - `--from-json FILE.json --map index.html` renders the page from that file without
   any request.
+- `--feeds DIR` writes the Atom feeds (`all.xml` and one `from-<slug>.xml` per pick-up
+  station), from a scan or with `--from-json`. The slug rule is in the README section
+  "Feeds" and in the `rally-scanner` spec; the map's per-station links use the same one.
+  The entry ids are stable `tag:` URIs: do not change them, readers rely on them.
 
 The JSON file is an object whose `offers` key holds the list of offer records, the
 same records the page embeds. Each record has the timeframe, the booking link and
@@ -106,7 +113,8 @@ make scan     # full scan into offers.json; slow, hits the live API
 ```
 
 The page loads Leaflet from `vendor/leaflet/` by relative path, so write and serve
-`index.html` from the repo root. `offers.json`, `index.html` and `road-distances.json` are git-ignored.
+`index.html` from the repo root. `offers.json`, `index.html`, `feeds/` and
+`road-distances.json` are git-ignored.
 The PR check (`pr-check.yml`) runs the same lint and tests, renders the fixture and
 checks the generated page; run `make lint test map` before pushing.
 
@@ -148,11 +156,12 @@ the commit types decide the version:
   1.0.0 and no commit is marked breaking.
 
 A release creates the tag `vX.Y.Z` and a GitHub release; it commits nothing to
-`main`. Then the workflow renders the page with `--from-json` from the `offers`
-artifact of the newest `scan.yml` run on `main` that uploaded one, and `--release vX.Y.Z`,
-and deploys it. It never scans and never contacts roadsurfer: keep it that way. With
+`main`. Then the workflow renders the page and the feeds (`--feeds feeds`) with
+`--from-json` from the `offers` artifact of the newest `scan.yml` run on `main` that
+uploaded one, and `--release vX.Y.Z`, and deploys them. It never scans and never contacts roadsurfer: keep it that way. With
 no such artifact the release job fails and nothing is deployed. `scan.yml` renders
 with the latest release tag too, so the version stays on the page between releases.
+Both workflows copy `feeds/` into `_site/` next to `index.html` and `vendor/`.
 Only the two deploy jobs share the concurrency group `pages`.
 
 ## vendor/

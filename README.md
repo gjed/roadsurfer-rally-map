@@ -132,8 +132,9 @@ python3 roadsurfer-rally.py --json-out offers.json        # scan only
 python3 roadsurfer-rally.py --from-json offers.json --map index.html  # render offline
 ```
 
-`--from-json` needs `--map` and does not accept `--list`, `--json-out`, `--from`,
-`--to` or `--prices`. `--map` without `--from-json` scans and renders in one run.
+`--from-json` needs `--map` or `--feeds` and does not accept `--list`, `--json-out`,
+`--from`, `--to` or `--prices`. `--map` and `--feeds` without `--from-json` scan and
+render in one run.
 `--from-json` embeds the file's `scan` object as is; a file without one, written
 before the metadata existed, still renders, with no scan time on the page.
 `--release TAG` (with `--map`) shows the tag in the map's attribution, linked to its
@@ -165,8 +166,8 @@ tooltips all use that value.
   straight-line distance × 1.3 rounded to 10 km, with `km_estimated` set to `true`.
   It is not cached, so the next scan tries it again, and it never fails the scan. After
   a 429 answer or three failed requests in a row the scanner stops routing for that
-  run. Routing runs only when the scan writes `--json-out` or `--map`, after the scan
-  check.
+  run. Routing runs only when the scan writes `--json-out`, `--map` or `--feeds`,
+  after the scan check.
 - **Old data.** `--from-json` never routes. A record without `km`, such as a file
   written before this existed, gets the same × 1.3 estimate in the page, labelled
   as an estimate.
@@ -241,9 +242,10 @@ label the options section `optional arguments:`.
 usage: roadsurfer-rally.py [-h] [--to [TO ...]] [--from [ORIGIN ...]]
                            [--start START] [--end END] [--prices]
                            [--map FILE.html] [--json-out FILE.json]
-                           [--from-json FILE.json] [--delay DELAY]
-                           [--release TAG] [--road-cache FILE.json]
-                           [--routing-url URL] [--list]
+                           [--feeds DIR] [--from-json FILE.json]
+                           [--delay DELAY] [--release TAG]
+                           [--road-cache FILE.json] [--routing-url URL]
+                           [--list]
 
 Query roadsurfer Rally (one-way relocation) offers.
 
@@ -268,9 +270,11 @@ options:
   --map FILE.html       write a self-contained map of the offers (add --prices
                         for models/price)
   --json-out FILE.json  write the scan as {"scan": {...}, "offers": [...]}
+  --feeds DIR           write Atom feeds of the offers: all.xml and one
+                        from-<station>.xml each
   --from-json FILE.json
-                        render --map from a --json-out file, without network
-                        access
+                        render --map and --feeds from a --json-out file,
+                        without network access
   --delay DELAY         seconds between requests (default 0.5)
   --release TAG         release tag to show in the --map attribution, e.g.
                         v1.2.0
@@ -287,7 +291,8 @@ options:
 The workflow [`scan.yml`](.github/workflows/scan.yml) scans on Monday and Thursday at
 03:17 UTC, and on manual dispatch, with `--delay 5`. It renders the page from the scan
 with the latest release tag (none before the first release) and publishes
-`index.html` and `vendor/` to <https://gjed.github.io/roadsurfer-rally-map/>. The run
+`index.html`, `vendor/` and the `feeds/` directory (see "Feeds") to
+<https://gjed.github.io/roadsurfer-rally-map/>. The run
 also keeps the scanned `offers.json` as the workflow artifact `offers`. When the scan fails, nothing
 is deployed and the published page stays at the last good scan. GitHub pauses
 scheduled workflows after 60 days without repository activity; a maintainer then
@@ -295,6 +300,39 @@ re-enables the scan with `gh workflow enable scan.yml` (or Actions → Enable).
 
 The scan keeps `road-distances.json` between runs, so only new station pairs are
 routed (see below).
+
+### Feeds
+
+Each scan also publishes [Atom](https://www.rfc-editor.org/rfc/rfc4287) feeds next to
+the page, so a feed reader can tell you about a rally without opening the map:
+
+- <https://gjed.github.io/roadsurfer-rally-map/feeds/all.xml> lists every offer.
+- `feeds/from-<slug>.xml` lists the offers of one pick-up station, for example
+  `feeds/from-munich.xml`. A station without offers has no file.
+
+An entry is one offer window: the title reads
+`Munich, DE → Bordeaux, FR · Tue 24 Nov – Tue 1 Dec`, its link is the booking page, and
+the summary has the distance (a leading `~` marks an estimate) and the price when the
+scan fetched one. The entry's `id` is built from the route and the window, so a reader
+shows only the windows it has not seen before; that is what makes an offer "new" with no
+state kept between scans. A window that disappears from the next scan disappears from
+the feed. `updated` is the time the scan finished. The text is English.
+
+The slug is the station name in lowercase ASCII with hyphens: accents and `ß`, `æ`, `œ`,
+`ø`, `ł`, `đ` are folded, every other run of characters becomes one hyphen
+(`Zürich Flughafen` is `zurich-flughafen`). When two pick-up stations would share a
+slug, both get their country code appended (`neustadt-de`, `neustadt-at`), and a slug
+that is still taken gets `-2`, `-3`, in the order of the sorted names. The map links
+`all.xml` from its `<head>`.
+
+`--feeds DIR` writes the same files locally, from a scan or from a data file, and keeps
+other files in `DIR`:
+
+```sh
+python3 roadsurfer-rally.py --from-json offers.json --feeds feeds   # no request
+```
+
+`feeds/` is git-ignored. A blocked scan writes no feed.
 
 ### Road distance cache in S3
 
@@ -350,7 +388,7 @@ generated notes; nothing is committed back to `main`.
 
 A release also redeploys the page without scanning: the workflow renders it from the
 newest unexpired `offers` artifact of a `scan.yml` run on `main`, with the new tag
-in the map attribution, so code changes reach the map without waiting for the next scan
+in the map attribution, with the feeds, so code changes reach the map without waiting for the next scan
 and without any request to roadsurfer. If that artifact is missing or expired (after
 90 days), the release job fails with an error and the page stays as it is; dispatch
 `scan.yml` to publish a fresh page with the tag.
@@ -430,8 +468,8 @@ a 404 HTML page.
   on a request after five attempts, and at once on any other 4xx answer.
 - After a scan, the scanner prints the number of requests, failed requests and 429
   answers, and the duration. When more than 10% of the requests failed
-  (`MAX_FAILED`), it exits with status 1 and writes neither the `--json-out` nor the
-  `--map` file.
+  (`MAX_FAILED`), it exits with status 1 and writes neither the `--json-out` file,
+  the `--map` file nor the `--feeds` files.
 - A full scan makes about 850 requests. With `--delay 5` it takes about 70 to 90
   minutes; the workflow allows 150.
 - Every rally lasts 7 days and costs a flat €129.01.
