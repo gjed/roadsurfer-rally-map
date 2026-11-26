@@ -44,7 +44,8 @@ offers stations and countries that still have trips under the other filters. An 
 chip turns blue and gets an `×` that clears it, and `Clear all`, next to the trip and
 route counts, clears every filter; it only shows while a filter is active.
 
-The map view opens fitted to the stations, on a light grey Esri basemap, with the
+The map view opens fitted to the stations, on a grey Esri basemap (light or dark,
+following the page's theme: `System`, `Light` or `Dark` in the `Display` menu), with the
 routes listed beside it, one card per route with its distance, its trips and the next
 start. Sort the cards by earliest start, shortest or longest drive or most trips.
 Pointing at a card highlights its route on the map, and pointing at a route highlights
