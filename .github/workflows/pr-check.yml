@@ -75,9 +75,9 @@ jobs:
       - name: Render the map from the fixture on 3.8 (offline)
         run: |
           set -euo pipefail
-          uv run --no-project python roadsurfer-rally.py --from-json tests/fixtures/offers.json --map "$RUNNER_TEMP/index.html" || {
+          uv run --no-project python roadsurfer-rally.py --from-json tests/fixtures/offers.json --map "$RUNNER_TEMP/index.html" --feeds "$RUNNER_TEMP/feeds" || {
             EXIT_CODE=$?
-            echo "::error::Rendering tests/fixtures/offers.json failed on Python 3.8, the stated minimum. Reproduce with 'uv run --python 3.8 python roadsurfer-rally.py --from-json tests/fixtures/offers.json --map index.html'."
+            echo "::error::Rendering tests/fixtures/offers.json failed on Python 3.8, the stated minimum. Reproduce with 'uv run --python 3.8 python roadsurfer-rally.py --from-json tests/fixtures/offers.json --map index.html --feeds feeds'."
             exit $EXIT_CODE
           }
 
@@ -106,9 +106,9 @@ jobs:
           set -euo pipefail
           SITE="$RUNNER_TEMP/site"
           mkdir -p "$SITE"
-          python3 roadsurfer-rally.py --from-json tests/fixtures/offers.json --map "$SITE/index.html" || {
+          python3 roadsurfer-rally.py --from-json tests/fixtures/offers.json --map "$SITE/index.html" --feeds "$SITE/feeds" || {
             EXIT_CODE=$?
-            echo "::error::Rendering tests/fixtures/offers.json failed. Reproduce with 'python3 roadsurfer-rally.py --from-json tests/fixtures/offers.json --map index.html' and fix the traceback above."
+            echo "::error::Rendering tests/fixtures/offers.json failed. Reproduce with 'python3 roadsurfer-rally.py --from-json tests/fixtures/offers.json --map index.html --feeds feeds' and fix the traceback above."
             exit $EXIT_CODE
           }
 
@@ -125,6 +125,23 @@ jobs:
             echo "::error::The page must load Leaflet from vendor/leaflet/ and must not load it from a CDN. Fix the <link>/<script> tags in rally-map.template.html."
             exit 1
           fi
+          if ! grep -qF '<link rel="alternate" type="application/atom+xml"' "$PAGE"; then
+            echo "::error::The page has no Atom feed <link rel=\"alternate\" type=\"application/atom+xml\"> in <head>. Keep the feed link of rally-map.template.html."
+            exit 1
+          fi
+          python3 - "$SITE/feeds" <<'EOF' || {
+          import glob
+          import sys
+          import xml.etree.ElementTree as ET
+          files = sorted(glob.glob(sys.argv[1] + "/*.xml"))
+          assert any(f.endswith("/all.xml") for f in files), "no all.xml"
+          for f in files:
+              ET.parse(f)
+              print("feed OK:", f)
+          EOF
+            echo "::error::A generated Atom feed is missing or is not well-formed XML (see the error above). Reproduce with 'python3 roadsurfer-rally.py --from-json tests/fixtures/offers.json --feeds feeds' and fix the feed code in roadsurfer-rally.py."
+            exit 1
+          }
           python3 - "$PAGE" "$SITE/map.js" <<'EOF' || {
           import sys
           html = open(sys.argv[1], encoding="utf-8").read()
