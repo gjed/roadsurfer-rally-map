@@ -3,18 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>roadsurfer Rally map</title>
+<script>
+// the theme before the first paint, so a saved dark page never flashes light; the page script below keeps it current
+(function () {
+  var c;
+  try { c = localStorage.getItem('rally-map:theme'); } catch (e) {}
+  document.documentElement.dataset.theme = c === 'dark' || (c !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+})();
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230066cc'/%3E%3Cpath d='M8 24Q9 9 24 8' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='24' r='4' fill='%230066cc' stroke='%23fff' stroke-width='2.5'/%3E%3Ccircle cx='24' cy='8' r='4.5' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <style>
-  :root {
-    --ink: #15181E; --muted: #5B6270; --line: #E3E5E8; --line2: #EEF0F2; --field: #CFD3D9; --s2: #F6F7F8; --seg: #F1F3F5;
-    --accent: #1D5FB8; --accent-h: #174C93; --accent-bg: #E8F0FB; --sel: #C2410C; --hop: #7C3AED;
-    --warn-bg: #FFF7ED; --warn: #7C2D12; --fresh: #16A34A;
+  /* every colour of the page is a token here; JS reads the map's from these (see T) and the head script picks the theme */
+  :root, :root[data-theme=light] {
+    color-scheme: light;
+    --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F6F7F8; --ink: #15181E; --muted: #5B6270;
+    --line: #E3E5E8; --line2: #EEF0F2; --field: #CFD3D9; --seg: #F1F3F5; --seg-on: #FFFFFF; --seg-grp: #E9ECEF; --thead: #FAFBFC;
+    --accent: #1D5FB8; --accent-h: #174C93; --on-accent: #FFFFFF; --chip-on-bg: #E8F0FB; --chip-on-fg: #174C93;
+    --hover: #F3F5F7; --hover-card: #F3F6FA; --hover-on: #DCE8F8; --hover-x: rgba(29, 95, 184, .14);
+    --route: #2F6DB8; --selected: #C2410C; --on-selected: #FFFFFF; --sel-bg: #FFF4ED; --halo: #FFFFFF; --hop: #7C3AED; --hop-text: #6D28D9;
+    --station: #0E2A47; --station-fill: #FFFFFF;
+    --note-bg: #FFF7ED; --note-fg: #7C2D12; --fresh: #16A34A; --stale: #9AA1AC;
+    --sea: #DCE4EA; --attr-bg: rgba(255, 255, 255, .8); --attr-link: #005F87;
+    --sw-off: #8A929E; --sw-knob: #FFFFFF; --step-off: #B8BEC7; --grip: #9AA1AC;
+    --logo-bg: #15181E; --logo-fg: #FFFFFF; --logo-dot: #F97316; --logo-line: transparent;
+    --scrim: rgba(15, 18, 24, .45); --scrim-chain: rgba(55, 63, 77, .94); --scrim-hint: rgba(255, 255, 255, .14); --scrim-fg: #FFFFFF;
+    --sh-seg: 0 1px 2px rgba(16, 24, 40, .12); --sh-ctl: 0 1px 3px rgba(16, 24, 40, .2); --sh-md: 0 4px 12px rgba(16, 24, 40, .18);
+    --sh-pop: 0 12px 32px rgba(16, 24, 40, .18); --sh-sheet: 0 -6px 24px rgba(16, 24, 40, .16);
+    --sh-knob: 0 1px 2px rgba(0, 0, 0, .25); --sh-badge: 0 0 0 2px var(--halo), 0 2px 6px rgba(0, 0, 0, .25);
+  }
+  /* in dark a shadow barely shows: a 1 px border takes its place, and a panel that has a border keeps just that */
+  :root[data-theme=dark] {
+    color-scheme: dark;
+    --bg: #0F1115; --surface: #171A21; --surface-2: #1D2129; --ink: #E8EAED; --muted: #A1A8B3;
+    --line: #2A2F38; --line2: #20252D; --field: #3A404B; --seg: #1D2129; --seg-on: #333A46; --seg-grp: #262B34; --thead: #1B1F27;
+    --accent: #5B9BFF; --accent-h: #86B4FF; --on-accent: #0B1220; --chip-on-bg: #1B2A44; --chip-on-fg: #B9D3FF;
+    --hover: #232832; --hover-card: #1F2530; --hover-on: #223A60; --hover-x: rgba(91, 155, 255, .22);
+    --route: #6FA8FF; --selected: #FF8A4C; --on-selected: #0F1115; --sel-bg: #2A1A10; --halo: #0F1115; --hop: #B794F6; --hop-text: #B794F6;
+    --station: #E8EAED; --station-fill: #171A21;
+    --note-bg: #2A1A10; --note-fg: #FDBA8C; --fresh: #22C55E; --stale: #6B7280;
+    --sea: #1B2027; --attr-bg: rgba(15, 17, 21, .8); --attr-link: #8CC4E8;
+    --sw-off: #6B7482; --sw-knob: #E8EAED; --step-off: #4B5260; --grip: #4B5260;
+    --logo-bg: #1D2129; --logo-fg: #E8EAED; --logo-dot: #FF8A4C; --logo-line: #3A404B;
+    --scrim: rgba(0, 0, 0, .6); --scrim-chain: rgba(4, 5, 7, .92); --scrim-hint: rgba(255, 255, 255, .1); --scrim-fg: #FFFFFF;
+    --sh-seg: 0 0 0 1px var(--line); --sh-ctl: 0 0 0 1px var(--line); --sh-md: 0 0 0 1px var(--line);
+    --sh-pop: none; --sh-sheet: 0 0 0 1px var(--line);
+    --sh-knob: none; --sh-badge: 0 0 0 2px var(--halo);
   }
   [hidden] { display: none !important; }
   html, body { height: 100%; margin: 0; }
-  body { display: flex; flex-direction: column; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: #fff; }
+  body { display: flex; flex-direction: column; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); }
   button, input, select { font: inherit; color: inherit; }
   a { color: var(--accent); }
   @media (hover: hover) { a:hover { color: var(--accent-h); } }
@@ -25,44 +65,44 @@
   .grow { flex: 1; }
 
   /* app bar */
-  #appbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+  #appbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; padding: 10px 20px; background: var(--surface); border-bottom: 1px solid var(--line); }
   .brand { display: flex; align-items: center; gap: 10px; }
   .brand h1 { margin: 0; font-size: 18px; font-weight: 650; line-height: 1.15; letter-spacing: -.01em; }
   .brand .tag { display: block; font-size: 12px; color: var(--muted); line-height: 1.2; }
   .seg { display: flex; gap: 2px; padding: 3px; background: var(--seg); border-radius: 10px; }
   .seg > a, .seg > button { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border: 0; border-radius: 8px; background: none; color: var(--muted); font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; }
-  .seg > [aria-current="page"], .seg > [aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
+  .seg > [aria-current="page"], .seg > [aria-pressed="true"] { background: var(--seg-on); color: var(--ink); box-shadow: var(--sh-seg); }
   @media (hover: hover) { .seg > a:hover, .seg > button:hover { color: var(--ink); } }
   #updated { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; }
-  #updated .fresh { width: 8px; height: 8px; border-radius: 50%; background: #9AA1AC; }
+  #updated .fresh { width: 8px; height: 8px; border-radius: 50%; background: var(--stale); }
   #updated .fresh.on { background: var(--fresh); }
 
   /* filter bar */
-  #fbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+  #fbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 20px; background: var(--surface); border-bottom: 1px solid var(--line); }
   /* the chips share the bar's rows with the count, so a chip that does not fit wraps next to the count, not onto a row
      of its own */
   #chips { display: contents; }
-  .chipw { display: flex; align-items: center; height: 36px; box-sizing: border-box; border: 1px solid var(--field); border-radius: 18px; background: #fff; transition: background-color .12s; }
+  .chipw { display: flex; align-items: center; height: 36px; box-sizing: border-box; border: 1px solid var(--field); border-radius: 18px; background: var(--surface); transition: background-color .12s; }
   .chip { display: flex; align-items: center; gap: 6px; height: 100%; padding: 0 12px; border: 0; border-radius: 18px; background: none; white-space: nowrap; cursor: pointer; }
   .chip .k { color: var(--muted); }
   .chip .v { font-weight: 600; }
   .chip svg { color: var(--muted); }
   .chip .chev { transition: transform .15s; }
   .chip[aria-expanded="true"] .chev { transform: rotate(180deg); }
-  .chipw .x { display: none; align-items: center; justify-content: center; width: 28px; height: 28px; margin-right: 3px; padding: 0; border: 0; border-radius: 14px; background: none; color: var(--accent-h); cursor: pointer; }
-  .chipw.on { border-color: var(--accent); background: var(--accent-bg); color: var(--accent-h); }
-  .chipw.on .k, .chipw.on .chip svg { color: var(--accent-h); }
+  .chipw .x { display: none; align-items: center; justify-content: center; width: 28px; height: 28px; margin-right: 3px; padding: 0; border: 0; border-radius: 14px; background: none; color: var(--chip-on-fg); cursor: pointer; }
+  .chipw.on { border-color: var(--accent); background: var(--chip-on-bg); color: var(--chip-on-fg); }
+  .chipw.on .k, .chipw.on .chip svg { color: var(--chip-on-fg); }
   .chipw.on .chip { padding-right: 4px; }
   .chipw.on .x { display: flex; }
   /* the leg filter: a chip that only clears */
-  #gleg { position: relative; display: flex; align-items: center; gap: 6px; height: 36px; box-sizing: border-box; min-width: 0; margin: 0; padding: 0 3px 0 12px; border: 1px solid var(--accent); border-radius: 18px; background: var(--accent-bg); color: var(--accent-h); white-space: nowrap; }
+  #gleg { position: relative; display: flex; align-items: center; gap: 6px; height: 36px; box-sizing: border-box; min-width: 0; margin: 0; padding: 0 3px 0 12px; border: 1px solid var(--accent); border-radius: 18px; background: var(--chip-on-bg); color: var(--chip-on-fg); white-space: nowrap; }
   #gleg .v { font-weight: 600; }
   #gleg .x { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 14px; background: none; color: inherit; cursor: pointer; }
-  @media (hover: hover) { #gleg .x:hover { background: rgba(29, 95, 184, .14); } }
+  @media (hover: hover) { #gleg .x:hover { background: var(--hover-x); } }
   @media (hover: hover) {
-    .chipw:hover { background: #F3F5F7; }
-    .chipw.on:hover { background: #DCE8F8; }
-    .chipw .x:hover { background: rgba(29, 95, 184, .14); }
+    .chipw:hover { background: var(--hover); }
+    .chipw.on:hover { background: var(--hover-on); }
+    .chipw .x:hover { background: var(--hover-x); }
   }
   .sep { width: 1px; height: 24px; margin: 0 4px; background: var(--line); }
   /* as tall as a chip: a chip that wraps next to it does not make its row taller, so the map does not move */
@@ -70,35 +110,35 @@
   #count strong { color: var(--ink); font-weight: 600; }
   #count.two { flex-direction: column; align-items: flex-end; justify-content: center; gap: 0; line-height: 1.25; }
   .ghost { height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--accent); font-weight: 600; cursor: pointer; }
-  @media (hover: hover) { .ghost:hover { background: #F3F5F7; } }
+  @media (hover: hover) { .ghost:hover { background: var(--hover); } }
   .btn, .btn2 { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; box-sizing: border-box; padding: 0 14px; border-radius: 8px; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; vertical-align: middle; }
-  .btn { border: 0; background: var(--accent); color: #fff; }
-  a.btn { color: #fff; }
-  .btn2 { border: 1px solid var(--field); background: #fff; color: var(--ink); }
-  @media (hover: hover) { .btn:hover, a.btn:hover { background: var(--accent-h); color: #fff; } .btn2:hover { background: #F3F5F7; } }
+  .btn { border: 0; background: var(--accent); color: var(--on-accent); }
+  a.btn { color: var(--on-accent); }
+  .btn2 { border: 1px solid var(--field); background: var(--surface); color: var(--ink); }
+  @media (hover: hover) { .btn:hover, a.btn:hover { background: var(--accent-h); color: var(--on-accent); } .btn2:hover { background: var(--hover); } }
   .sm { height: 34px; padding: 0 12px; }
 
   /* popovers under the chips */
-  .pop { position: fixed; z-index: 2000; width: min(360px, calc(100vw - 16px)); box-sizing: border-box; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 32px rgba(16, 24, 40, .18); }
+  .pop { position: fixed; z-index: 2000; width: min(360px, calc(100vw - 16px)); box-sizing: border-box; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--sh-pop); }
   .pop .pb { display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; }
   .pop h2 { margin: 0; font-size: 14px; font-weight: 600; }
   .pop label, .pop .lab { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
   .pop fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
   .pop .chk, .pop .inl { flex-direction: row; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); cursor: pointer; }
   .pop .chk input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
-  .pop .chk:has(input.on) { color: var(--accent-h); font-weight: 600; }
+  .pop .chk:has(input.on) { color: var(--chip-on-fg); font-weight: 600; }
   .pop .sd { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
   .pop .inl select { width: auto; }
-  .pop input:not([type="checkbox"]):not([type="range"]), .pop select { width: 100%; height: 36px; box-sizing: border-box; min-width: 0; padding: 0 8px; border: 1px solid var(--field); border-radius: 8px; background: #fff; font-size: 14px; color: var(--ink); }
+  .pop input:not([type="checkbox"]):not([type="range"]), .pop select { width: 100%; height: 36px; box-sizing: border-box; min-width: 0; padding: 0 8px; border: 1px solid var(--field); border-radius: 8px; background: var(--surface); font-size: 14px; color: var(--ink); }
   .pop .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
   .pop .quick { display: flex; flex-wrap: wrap; gap: 6px; }
-  .pop .quick button { height: 32px; padding: 0 12px; border: 1px solid var(--field); border-radius: 16px; background: #fff; font-size: 13px; cursor: pointer; }
-  .pop .quick button[aria-pressed="true"] { border-color: var(--accent); background: #E8F0FB; color: #174C93; font-weight: 600; }
-  @media (hover: hover) { .pop .quick button:hover { background: #F3F5F7; } }
+  .pop .quick button { height: 32px; padding: 0 12px; border: 1px solid var(--field); border-radius: 16px; background: var(--surface); font-size: 13px; cursor: pointer; }
+  .pop .quick button[aria-pressed="true"] { border-color: var(--accent); background: var(--chip-on-bg); color: var(--chip-on-fg); font-weight: 600; }
+  @media (hover: hover) { .pop .quick button:hover { background: var(--hover); } }
   .pop .wkh { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
   .pop .wkh output { color: var(--ink); font-weight: 600; }
   .pop #week { height: auto; padding: 0; border: 0; accent-color: var(--accent); }
-  .pop input.on:not([type="checkbox"]):not([type="range"]):not(.step input), .pop select.on { border-color: var(--accent); background: var(--accent-bg); box-shadow: inset 0 0 0 1px var(--accent); }
+  .pop input.on:not([type="checkbox"]):not([type="range"]):not(.step input), .pop select.on { border-color: var(--accent); background: var(--chip-on-bg); box-shadow: inset 0 0 0 1px var(--accent); }
   .pop .pf { display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line2); }
   /* chain options: a popover on a desktop, a sheet on a phone */
   #p-chain { width: min(380px, calc(100vw - 16px)); }
@@ -111,7 +151,7 @@
   .copt .ogrp .ct { margin-bottom: -2px; }
   .seg3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding: 3px; background: var(--seg); border-radius: 10px; }
   .seg3 button { height: 34px; border: 0; border-radius: 8px; background: none; font-weight: 600; color: var(--muted); cursor: pointer; }
-  .seg3 button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
+  .seg3 button[aria-pressed="true"] { background: var(--seg-on); color: var(--ink); box-shadow: var(--sh-seg); }
   @media (hover: hover) { .seg3 button:hover { color: var(--ink); } }
   .pop .orow { display: flex; flex-direction: row; align-items: center; gap: 12px; font-size: 14px; color: var(--ink); }
   .orow .t { flex: 1; min-width: 0; }
@@ -119,16 +159,16 @@
   .orow output { font-weight: 600; }
   label.orow { cursor: pointer; }
   /* a checkbox drawn as a switch; role="switch" makes it read as one */
-  .sw { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 44px; height: 26px; margin: 0; border-radius: 13px; background: #8A929E; cursor: pointer; transition: background-color .15s; }
-  .sw::before { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .15s; }
+  .sw { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 44px; height: 26px; margin: 0; border-radius: 13px; background: var(--sw-off); cursor: pointer; transition: background-color .15s; }
+  .sw::before { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--sw-knob); box-shadow: var(--sh-knob); transition: transform .15s; }
   .sw:checked { background: var(--accent); }
   .sw:checked::before { transform: translateX(18px); }
   .step { flex: none; display: flex; align-items: center; border: 1px solid var(--field); border-radius: 10px; }
   .step button { width: 36px; height: 34px; padding: 0; border: 0; background: none; font-size: 18px; line-height: 1; cursor: pointer; }
-  .step button[aria-disabled="true"] { color: #B8BEC7; cursor: default; }
+  .step button[aria-disabled="true"] { color: var(--step-off); cursor: default; }
   #p-chain .step input { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 0; background: none; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
   .step input::-webkit-inner-spin-button, .step input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  .step:has(.on) { border-color: var(--accent); background: var(--accent-bg); }
+  .step:has(.on) { border-color: var(--accent); background: var(--chip-on-bg); }
   .hop { display: flex; flex-direction: column; gap: 6px; }
   .hop .hl2 { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; color: var(--ink); }
   .hop label { display: inline; font-size: 14px; color: var(--ink); }
@@ -138,24 +178,40 @@
   .row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   #cshow { min-width: 9em; }
 
+  /* Display menu: one button at the end of the app bar; a popover on a desktop, a sheet on a phone. Each setting is a
+     .dsec section, so a Language section can go above Theme */
+  .dispw { display: flex; }
+  .dispbtn { display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--field); border-radius: 8px; background: var(--surface); font-weight: 600; cursor: pointer; }
+  @media (hover: hover) { .dispbtn:hover { background: var(--hover); } }
+  .dispbtn .dots { display: none; }
+  #p-disp { width: min(280px, calc(100vw - 16px)); }
+  #p-disp .shh { display: none; }
+  #p-disp .pb { gap: 20px; }
+  .dsec .ct { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: var(--ink); }
+  .dsec p { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+  .ringc { fill: var(--surface); stroke: var(--ink); }
+  .ringc.sel { stroke: var(--selected); }
+  .dotc { fill: var(--ink); }
+  .dotc.sel { fill: var(--selected); }
+
   /* views */
   #main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   #mapview { flex: 1; min-height: 0; display: flex; }
-  #side { position: relative; flex: 0 0 clamp(300px, 28vw, 400px); min-width: 0; overflow-y: auto; border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+  #side { position: relative; flex: 0 0 clamp(300px, 28vw, 400px); min-width: 0; overflow-y: auto; border-right: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; }
   #mapwrap { position: relative; flex: 1; min-width: 0; }
-  #rmap { position: absolute; inset: 0; background: #DCE4EA; }
-  #empty { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 32px); box-sizing: border-box; background: #fff; padding: 8px 8px 8px 14px; border-radius: 10px; box-shadow: 0 4px 12px rgba(16, 24, 40, .18); }
+  #rmap { position: absolute; inset: 0; background: var(--sea); }
+  #empty { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 32px); box-sizing: border-box; background: var(--surface); padding: 8px 8px 8px 14px; border-radius: 10px; box-shadow: var(--sh-md); }
 
   /* sidebar */
-  .shead { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-end; gap: 12px; padding: 16px 20px 12px; background: #fff; border-bottom: 1px solid var(--line2); }
+  .shead { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-end; gap: 12px; padding: 16px 20px 12px; background: var(--surface); border-bottom: 1px solid var(--line2); }
   .shead > div { flex: 1; min-width: 0; }
   .shead h2 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
   .shead p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
   .sortl { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
-  .sortl select { height: 32px; padding: 0 8px; border: 1px solid var(--field); border-radius: 8px; background: #fff; font-size: 13px; color: var(--ink); }
+  .sortl select { height: 32px; padding: 0 8px; border: 1px solid var(--field); border-radius: 8px; background: var(--surface); font-size: 13px; color: var(--ink); }
   .cards { list-style: none; margin: 0; padding: 0; }
   .cards > li { border-bottom: 1px solid var(--line2); }
-  .card { width: 100%; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center; padding: 12px 20px; border: 0; background: #fff; text-align: left; cursor: pointer; transition: background-color .12s; }
+  .card { width: 100%; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center; padding: 12px 20px; border: 0; background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; transition: background-color .12s; }
   .card .nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card .km { font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap; }
   .card .n { font-size: 12px; color: var(--muted); text-align: right; white-space: nowrap; }
@@ -163,13 +219,13 @@
   .card.ch { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 14px 20px; }
   .card.ch .t { font-weight: 600; }
   .card.ch .d { font-size: 13px; color: var(--muted); }
-  .card.hot, .card:focus-visible { background: #F3F6FA; box-shadow: inset 3px 0 0 var(--sel); }
+  .card.hot, .card:focus-visible { background: var(--hover-card); box-shadow: inset 3px 0 0 var(--selected); }
   .card:focus-visible { outline-offset: -2px; }
-  @media (hover: hover) { .card:hover { background: #F3F6FA; } }
+  @media (hover: hover) { .card:hover { background: var(--hover-card); } }
   .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
   .badges span { padding: 2px 8px; border-radius: 6px; background: var(--seg); font-size: 12px; font-weight: 600; }
   .badges span.lt { font-weight: 400; }
-  .hopsep { color: var(--hop); font-weight: 700; }
+  .hopsep { color: var(--hop-text); font-weight: 700; }
   .none { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 24px 20px; }
   .none p { margin: 0; color: var(--muted); }
   .note { margin: 0; padding: 12px 20px; font-size: 12px; color: var(--muted); }
@@ -178,61 +234,62 @@
   .detail { display: flex; flex-direction: column; flex: 1; animation: slide .18s ease-out; }
   @keyframes slide { from { opacity: 0; transform: translateX(-10px); } }
   .back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 32px; margin: 12px 0 0 16px; padding: 0 8px 0 4px; border: 0; border-radius: 8px; background: none; color: var(--accent); font-weight: 600; cursor: pointer; }
-  @media (hover: hover) { .back:hover { background: #F3F5F7; } }
+  @media (hover: hover) { .back:hover { background: var(--hover); } }
   .dhead { padding: 8px 20px 16px; border-bottom: 1px solid var(--line2); }
   .dhead h2 { margin: 0; font-size: 22px; font-weight: 650; line-height: 1.25; letter-spacing: -.01em; }
   .dhead h2:focus { outline: none; }
   .dhead h2:focus-visible { outline: 2px solid var(--accent); }
   .rt { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: 12px; align-items: center; }
-  .rt .vl { justify-self: center; width: 2px; height: 18px; background: repeating-linear-gradient(var(--sel) 0 3px, transparent 3px 6px); }
+  .rt .vl { justify-self: center; width: 2px; height: 18px; background: repeating-linear-gradient(var(--selected) 0 3px, transparent 3px 6px); }
   .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 16px 0 0; }
-  .stats div { padding: 10px 12px; background: var(--s2); border-radius: 10px; }
+  .stats div { padding: 10px 12px; background: var(--surface-2); border-radius: 10px; }
   .stats dt { font-size: 12px; color: var(--muted); }
   .stats dd { margin: 2px 0 0; font-weight: 600; }
   .sec { padding: 16px 20px; border-bottom: 1px solid var(--line2); }
   .sec h3 { margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
   .sec .help { margin: 4px 0 12px; font-size: 13px; color: var(--muted); }
-  .sec .soft { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--s2); font-size: 13px; color: var(--muted); }
+  .sec .soft { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font-size: 13px; color: var(--muted); }
   .wins, .nexts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
   .wins li { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
   .wins .w { flex: 1; min-width: 0; }
   .wins .d { font-weight: 600; }
   .wins .m { margin-top: 2px; font-size: 12px; color: var(--muted); }
-  .nx { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; text-align: left; cursor: pointer; }
+  .nx { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-align: left; cursor: pointer; }
+  .nx svg { color: var(--muted); }
   .nx > span { flex: 1; min-width: 0; }
   .nx b { display: block; font-weight: 600; }
   .nx small { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
   .also { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .also button { height: 32px; padding: 0 12px; border: 1px solid var(--field); border-radius: 16px; background: #fff; font-size: 13px; cursor: pointer; }
-  @media (hover: hover) { .nx:hover, .also button:hover { background: #F3F6FA; } }
+  .also button { height: 32px; padding: 0 12px; border: 1px solid var(--field); border-radius: 16px; background: var(--surface); font-size: 13px; cursor: pointer; }
+  @media (hover: hover) { .nx:hover, .also button:hover { background: var(--hover-card); } }
   .more { margin-top: auto; padding: 12px 20px 20px; font-size: 13px; font-weight: 600; }
   .legs { list-style: none; margin: 0; padding: 16px 20px; display: flex; flex-direction: column; }
   .legs .leg { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
   .legs .r { font-weight: 600; }
   .legs .m { margin-top: 2px; font-size: 12px; color: var(--muted); }
-  .no { width: 28px; height: 28px; border-radius: 50%; background: var(--sel); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .no { width: 28px; height: 28px; border-radius: 50%; background: var(--selected); color: var(--on-selected); font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; }
   .ho { margin-left: 13px; padding: 10px 0 10px 21px; border-left: 2px solid var(--line); font-size: 13px; color: var(--muted); }
   .ho.hop { border-left: 2px dotted var(--hop); }
   /* the leg or connection picked on the map */
-  .legs .leg.on { border: 2px solid var(--sel); padding: 11px; background: #FFF4ED; }
-  .ho.on { color: var(--warn); font-weight: 600; }
-  .warn { margin: 0 20px 20px; padding: 10px 12px; border-radius: 10px; background: var(--warn-bg); color: var(--warn); font-size: 13px; }
+  .legs .leg.on { border: 2px solid var(--selected); padding: 11px; background: var(--sel-bg); }
+  .ho.on { color: var(--note-fg); font-weight: 600; }
+  .warn { margin: 0 20px 20px; padding: 10px 12px; border-radius: 10px; background: var(--note-bg); color: var(--note-fg); font-size: 13px; }
 
   /* trips page */
-  #tripsview { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--s2); }
+  #tripsview { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--surface-2); }
   .inner { flex: 1; min-height: 0; width: 100%; max-width: 1320px; box-sizing: border-box; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
   .thead { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 24px; }
   .thead > div:first-child { flex: 1; min-width: 240px; }
   .thead h2 { margin: 0; font-size: 26px; font-weight: 650; letter-spacing: -.01em; }
   .thead p { margin: 4px 0 0; color: var(--muted); }
   .grp { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
-  .grp .seg { background: #E9ECEF; }
+  .grp .seg { background: var(--seg-grp); }
   .grp .seg > button { padding: 6px 12px; font-size: 13px; }
   .inner, .tbox { position: relative; }
-  .tbox { flex: 0 1 auto; min-height: 0; overflow: auto; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+  .tbox { flex: 0 1 auto; min-height: 0; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
   .tbox.plain { background: none; border: 0; border-radius: 0; }
   .tt { width: 100%; min-width: 860px; border-collapse: collapse; }
-  .tt thead th { position: sticky; top: 0; z-index: 1; padding: 12px 16px; background: #FAFBFC; box-shadow: inset 0 -1px var(--line); text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+  .tt thead th { position: sticky; top: 0; z-index: 1; padding: 12px 16px; background: var(--thead); box-shadow: inset 0 -1px var(--line); text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
   .tt thead th button { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
   .tt thead th[aria-sort="ascending"] button, .tt thead th[aria-sort="descending"] button { color: var(--ink); }
   .tt td { padding: 8px 16px; border-bottom: 1px solid var(--line2); white-space: nowrap; }
@@ -242,13 +299,13 @@
   .tt .r { text-align: right; }
   .tt td.act { padding: 6px 16px; text-align: right; }
   .tt td.act .btn2 { margin-right: 6px; }
-  .tt tbody th { padding: 14px 16px 8px; text-align: left; background: var(--s2); border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+  .tt tbody th { padding: 14px 16px 8px; text-align: left; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; }
   .tt tbody th span { color: var(--muted); font-weight: 400; }
   .st { display: inline-flex; align-items: center; gap: 8px; }
-  @media (hover: hover) { .tt tbody tr:hover td { background: #F6F8FB; } }
-  .tt tbody tr:focus-within td { background: #F6F8FB; }
+  @media (hover: hover) { .tt tbody tr:hover td { background: var(--hover-card); } }
+  .tt tbody tr:focus-within td { background: var(--hover-card); }
   .ccards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
-  .ccard { cursor: pointer; display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-start; padding: 16px 18px; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+  .ccard { cursor: pointer; display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-start; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
   .ccard .sum { flex: 1 1 260px; min-width: 0; }
   .ccard h3 { margin: 0; font-size: 16px; font-weight: 600; }
   .ccard .sum p { margin: 4px 0 10px; color: var(--muted); }
@@ -257,31 +314,40 @@
   .ccard .no { width: 24px; height: 24px; font-size: 12px; }
   .ccard .dt { color: var(--muted); font-size: 13px; }
   .ccard .hn { display: block; font-size: 12px; color: var(--muted); }
-  .ccard .hn.hop { color: #6D28D9; }
+  .ccard .hn.hop { color: var(--hop-text); }
   .ccard > .btn2 { align-self: center; }
-  .ccard:has(button[aria-current="true"]) { border-color: var(--sel); box-shadow: inset 3px 0 var(--sel); }
+  .ccard:has(button[aria-current="true"]) { border-color: var(--selected); box-shadow: inset 3px 0 var(--selected); }
   .foot { margin: 0; font-size: 12px; color: var(--muted); }
 
   /* map */
   .leaflet-container { font: 12px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  .leaflet-control-attribution a { color: #005f87; }
+  .leaflet-container .leaflet-control-attribution { background: var(--attr-bg); color: var(--muted); }
+  .leaflet-container .leaflet-control-attribution a { color: var(--attr-link); }
+  .leaflet-bar a { background-color: var(--surface); border-bottom-color: var(--line); color: var(--ink); }
+  .leaflet-bar a:hover, .leaflet-bar a:focus { background-color: var(--hover); }
+  .leaflet-bar a.leaflet-disabled { background-color: var(--surface); color: var(--step-off); }
+  .leaflet-tooltip { border-color: var(--surface); background: var(--surface); color: var(--ink); box-shadow: var(--sh-ctl); }
+  .leaflet-tooltip-top:before { border-top-color: var(--surface); }
+  .leaflet-tooltip-bottom:before { border-bottom-color: var(--surface); }
+  .leaflet-tooltip-left:before { border-left-color: var(--surface); }
+  .leaflet-tooltip-right:before { border-right-color: var(--surface); }
   .leaflet-container path.leaflet-interactive:focus { outline: none; }
-  .leaflet-touch .leaflet-bar, .leaflet-bar { border: 0; border-radius: 10px; box-shadow: 0 1px 3px rgba(16, 24, 40, .2); overflow: hidden; }
+  .leaflet-touch .leaflet-bar, .leaflet-bar { border: 0; border-radius: 10px; box-shadow: var(--sh-ctl); overflow: hidden; }
   .leaflet-bar a, .leaflet-touch .leaflet-bar a { width: 36px; height: 36px; line-height: 36px; color: var(--ink); }
-  .leaflet-bar button.fit { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; background: #fff; color: var(--ink); cursor: pointer; }
-  @media (hover: hover) { .leaflet-bar button.fit:hover { background: #F3F5F7; } }
+  .leaflet-bar button.fit { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; background: var(--surface); color: var(--ink); cursor: pointer; }
+  @media (hover: hover) { .leaflet-bar button.fit:hover { background: var(--hover); } }
   #rmap.dim path.base { stroke-opacity: .18; }
   #rmap path.noclick { cursor: grab; }
-  .legend { background: #fff; padding: 8px 12px; font-size: 12px; }
+  .legend { background: var(--surface); padding: 8px 12px; font-size: 12px; }
   .legend summary { cursor: pointer; font-weight: 600; }
   .legend ul { list-style: none; margin: 6px 0 0; padding: 0; }
   .legend li { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
   .legend li.hint { color: var(--muted); }
   .legend svg { width: 28px; height: 14px; }
   .legend .tilde { width: 28px; flex: none; text-align: center; font-weight: 600; }
-  .legno { background: var(--sel); color: #fff; border-radius: 50%; font: 700 12px/24px system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(0, 0, 0, .25); }
-  .leaflet-tooltip.rpill { padding: 6px 10px; border: 1.5px solid var(--sel); border-radius: 8px; font-weight: 600; font-size: 12px; box-shadow: 0 4px 12px rgba(16, 24, 40, .18); }
-  .leaflet-tooltip-top.rpill::before { border-top-color: var(--sel); }
+  .legno { background: var(--selected); color: var(--on-selected); border-radius: 50%; font: 700 12px/24px system-ui, sans-serif; text-align: center; box-shadow: var(--sh-badge); }
+  .leaflet-tooltip.rpill { padding: 6px 10px; border: 1.5px solid var(--selected); border-radius: 8px; font-weight: 600; font-size: 12px; box-shadow: var(--sh-md); }
+  .leaflet-tooltip-top.rpill::before { border-top-color: var(--selected); }
 
   /* phone only: the Filters entry, the filter sheet, the sheet's grip and the floating route title */
   .fbw, .grip, #mpill, #p-filt, .pmode, .phead, .prow, .chint, .fupd { display: none; }
@@ -301,12 +367,22 @@
     #count { margin-left: 0; }
     .pop input, .pop select { font-size: 16px; }
     /* the chain options are a sheet from the bottom; the bars above it stay visible and a tap there closes it */
-    #p-chain { top: auto !important; left: 0 !important; right: 0; bottom: 0; width: auto; max-height: calc(100% - 110px); display: flex; flex-direction: column; border: 0; border-radius: 20px 20px 0 0; box-shadow: 0 -8px 32px rgba(16, 24, 40, .22); font-size: 16px; animation: sheet-up .2s ease-out; }
+    #p-chain { top: auto !important; left: 0 !important; right: 0; bottom: 0; width: auto; max-height: calc(100% - 110px); display: flex; flex-direction: column; border: 0; border-radius: 20px 20px 0 0; box-shadow: var(--sh-sheet); font-size: 16px; animation: sheet-up .2s ease-out; }
     #p-chain[hidden] { display: none; }
     @keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } }
     #p-chain .shh { display: flex; align-items: center; gap: 8px; padding: 10px 8px 10px 20px; border-bottom: 1px solid var(--line2); }
     #p-chain .shh h2 { margin: 0; }
-    #p-chain .shx { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 22px; background: none; color: var(--ink); cursor: pointer; }
+    #p-chain .shx, #p-disp .shx { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 22px; background: none; color: var(--ink); cursor: pointer; }
+    /* the Display panel is a sheet too, over a darkened page */
+    #p-disp:not([hidden]) { top: auto !important; left: 0 !important; right: 0; bottom: 0; width: auto; max-height: calc(100% - 110px); display: flex; flex-direction: column; border: 0; border-radius: 20px 20px 0 0; box-shadow: var(--sh-sheet), 0 0 0 100vmax var(--scrim); font-size: 16px; animation: sheet-up .2s ease-out; }
+    #p-disp .shh { display: flex; align-items: center; gap: 8px; padding: 10px 8px 10px 20px; border-bottom: 1px solid var(--line2); }
+    #p-disp .shh h2 { flex: 1; margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
+    #p-disp .pb { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px calc(20px + env(safe-area-inset-bottom)); }
+    #p-disp .seg3 button { height: 44px; }
+    #p-disp .dsec p { font-size: 13px; }
+    .dispbtn { width: 44px; height: 44px; padding: 0; border-radius: 12px; }
+    .dispbtn .ti { display: none; }
+    .dispbtn .dots { display: block; }
     /* a div scrolls the options: a fieldset does not reliably scroll as a flex item */
     #cbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
     .copt { gap: 20px; padding: 16px 20px; }
@@ -328,28 +404,28 @@
     /* the map fills the view; the results are a bottom sheet over it (peek, half, full) */
     #mapview { position: relative; display: block; }
     #mapwrap { position: absolute; inset: 0; }
-    #sheet { position: absolute; z-index: 1100; left: 0; right: 0; bottom: 0; height: var(--sh, 330px); display: flex; flex-direction: column; background: #fff; border-radius: 20px 20px 0 0; box-shadow: 0 -6px 24px rgba(16, 24, 40, .16); transition: height .25s ease-out; }
+    #sheet { position: absolute; z-index: 1100; left: 0; right: 0; bottom: 0; height: var(--sh, 330px); display: flex; flex-direction: column; background: var(--surface); border-radius: 20px 20px 0 0; box-shadow: var(--sh-sheet); transition: height .25s ease-out; }
     #sheet.drag { transition: none; }
     .grip { flex: none; display: flex; align-items: center; justify-content: center; width: 100%; height: 28px; padding: 0; border: 0; border-radius: 20px 20px 0 0; background: none; cursor: grab; touch-action: none; }
-    .grip span { width: 40px; height: 5px; border-radius: 3px; background: #9AA1AC; }
+    .grip span { width: 40px; height: 5px; border-radius: 3px; background: var(--grip); }
     .grip:focus-visible { outline-offset: -4px; }
     #side { flex: 1; min-height: 0; border: 0; overscroll-behavior: contain; }
     #side .shead { padding-top: 0; }
     #side .back { margin-top: 0; }
     .leaflet-bottom { bottom: var(--sheet, 0); }
     #mpill:not([hidden]) { position: absolute; z-index: 1001; top: 12px; left: 12px; right: 64px; display: flex; gap: 8px; pointer-events: none; }
-    #mpill > * { pointer-events: auto; height: 44px; box-sizing: border-box; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px rgba(16, 24, 40, .2); }
+    #mpill > * { pointer-events: auto; height: 44px; box-sizing: border-box; border-radius: 12px; background: var(--surface); box-shadow: var(--sh-ctl); }
     #mpback { flex: none; width: 44px; padding: 0; border: 0; display: flex; align-items: center; justify-content: center; color: var(--ink); cursor: pointer; }
     #mptitle { flex: 0 1 auto; min-width: 0; padding: 0 14px; line-height: 44px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     #mapwrap.pill .leaflet-top.leaflet-left { top: 56px; }
     /* one row of chips under the app bar: Filters, then the quick chips; the counts live in the sheet and the Trips heading */
     .fbw { display: block; }
-    .fbtn { height: 36px; padding: 0 12px; border: 1px solid var(--ink); border-radius: 18px; background: var(--ink); color: #fff; font-weight: 600; }
-    .fbtn svg { color: #fff; }
+    .fbtn { height: 36px; padding: 0 12px; border: 1px solid var(--ink); border-radius: 18px; background: var(--ink); color: var(--bg); font-weight: 600; }
+    .fbtn svg { color: var(--bg); }
     #count { position: absolute; width: 1px; height: 1px; min-height: 0; overflow: hidden; clip: rect(0 0 0 0); }
     #reset { display: none; }
     /* the filter sheet: full height, every filter, applied with Show */
-    #p-filt:not([hidden]) { display: flex; flex-direction: column; top: 12px !important; left: 0 !important; right: 0; bottom: 0; width: auto; border: 0; border-radius: 20px 20px 0 0; box-shadow: 0 0 0 100vmax rgba(15, 18, 24, .45); font-size: 16px; animation: sheet-up .2s ease-out; }
+    #p-filt:not([hidden]) { display: flex; flex-direction: column; top: 12px !important; left: 0 !important; right: 0; bottom: 0; width: auto; border: 0; border-radius: 20px 20px 0 0; box-shadow: 0 0 0 100vmax var(--scrim); font-size: 16px; animation: sheet-up .2s ease-out; }
     #p-filt .shh { display: flex; align-items: center; gap: 8px; padding: 10px 8px 10px 20px; border-bottom: 1px solid var(--line2); }
     #p-filt .shh h2 { flex: 1; margin: 0; font-size: 20px; font-weight: 650; }
     #p-filt .shx { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 22px; background: none; color: var(--ink); cursor: pointer; }
@@ -372,14 +448,14 @@
     .thead h2 { font-size: 22px; }
     .tbox { overflow: visible; background: none; border: 0; border-radius: 0; }
     .tt { display: block; min-width: 0; }
-    .tt thead { display: block; position: sticky; top: 0; z-index: 1; margin-bottom: 8px; background: #FAFBFC; border: 1px solid var(--line); border-radius: 12px; }
+    .tt thead { display: block; position: sticky; top: 0; z-index: 1; margin-bottom: 8px; background: var(--thead); border: 1px solid var(--line); border-radius: 12px; }
     .tt thead tr { display: flex; gap: 16px; padding: 10px 12px; }
     .tt thead th { position: static; padding: 0; background: none; box-shadow: none; }
     .tt thead th:not([aria-sort]) { display: none; }
     .tt tbody { display: block; }
     /* a trip is a card: dates, km and nights, pick-up, return, then Map (1/3) and Book (2/3) */
     /* a trip is a card: the dates, then the km and nights, which wrap whole under the dates when they do not fit */
-    .tt tbody tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; margin-bottom: 8px; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+    .tt tbody tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; margin-bottom: 8px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
     .tt tbody tr.gh { display: block; margin: 8px 0 6px; padding: 0; background: none; border: 0; }
     .tt tbody th { display: block; padding: 0 2px; background: none; border: 0; }
     .tt td { padding: 0; border: 0; white-space: normal; }
@@ -413,11 +489,11 @@
     .wins .btn, .legs .btn, .ccard .btn { min-height: 44px; }
     /* the map keeps only Fit; zoom is a pinch and the legend's lines read without it */
     .leaflet-control-zoom, .legend { display: none; }
-    .fitbar { border: 0 !important; border-radius: 12px !important; box-shadow: 0 1px 3px rgba(16, 24, 40, .2); overflow: hidden; }
+    .fitbar { border: 0 !important; border-radius: 12px !important; box-shadow: var(--sh-ctl); overflow: hidden; }
     .leaflet-bar.fitbar button.fit { width: 44px; height: 44px; }
     /* Chains pressed: the options open over a dark page with a short explanation above them */
-    #p-chain:not([hidden]) { box-shadow: 0 -8px 32px rgba(16, 24, 40, .22), 0 0 0 100vmax rgba(55, 63, 77, .94); }
-    #p-chain .chint { display: block; position: absolute; left: 16px; right: 16px; bottom: calc(100% + 20px); margin: 0; padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, .14); color: #fff; font-size: 15px; line-height: 1.4; }
+    #p-chain:not([hidden]) { box-shadow: var(--sh-sheet), 0 0 0 100vmax var(--scrim-chain); }
+    #p-chain .chint { display: block; position: absolute; left: 16px; right: 16px; bottom: calc(100% + 20px); margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--scrim-hint); color: var(--scrim-fg); font-size: 15px; line-height: 1.4; }
     /* Trips: one header row with the count and the mode, one with Sort and Group, then the cards */
     .tq, .thead > div:first-child, .tt thead { display: none; }
     #tlist { row-gap: 10px; }
@@ -436,7 +512,7 @@
 <body>
 <header id="appbar">
   <div class="brand">
-    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" fill="#15181E"/><path d="M8 22Q9 9 22 8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="8" cy="22" r="3.5" fill="#15181E" stroke="#fff" stroke-width="2"/><circle cx="22" cy="8" r="3.5" fill="#F97316"/></svg>
+    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" stroke-width="2" style="fill:var(--logo-bg);stroke:var(--logo-line)"/><path d="M8 22Q9 9 22 8" fill="none" stroke-width="2.5" stroke-linecap="round" style="stroke:var(--logo-fg)"/><circle cx="8" cy="22" r="3.5" stroke-width="2" style="fill:var(--logo-bg);stroke:var(--logo-fg)"/><circle cx="22" cy="8" r="3.5" style="fill:var(--logo-dot)"/></svg>
     <div><h1><span class="sr">roadsurfer </span>Rally map</h1><span class="tag">One-way campervan relocations · unofficial</span></div>
   </div>
   <nav class="seg" aria-label="Views">
@@ -448,6 +524,7 @@
     <button id="m-chains" aria-pressed="false" title="Longer trips: 2–3 rallies back to back">Chains</button>
   </div>
   <span id="updated"></span>
+  <span class="dispw"><button class="dispbtn" id="dbtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-disp" aria-label="Display settings: theme system"><svg class="ti" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></svg><svg class="dots" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="currentColor"><circle cx="3.5" cy="9" r="1.6"/><circle cx="9" cy="9" r="1.6"/><circle cx="14.5" cy="9" r="1.6"/></svg></button></span>
 </header>
 <div id="fbar" role="group" aria-label="Filters">
   <div id="chips">
@@ -535,12 +612,26 @@
   </div></fieldset></div>
   <div class="pf"><button class="ghost" data-clear="gchain">Reset</button><span class="grow"></span><button class="btn" id="cshow" data-done>Show chains</button></div>
 </div>
+<div class="pop" id="p-disp" role="dialog" aria-labelledby="h-disp" hidden>
+  <div class="shh"><h2 id="h-disp">Display settings</h2><button class="shx" data-done aria-label="Close display settings"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
+  <div class="pb">
+    <div class="dsec" role="group" aria-labelledby="l-theme"><span class="ct" id="l-theme">Theme</span>
+      <div class="seg3"><button data-themeopt="system">System</button><button data-themeopt="light">Light</button><button data-themeopt="dark">Dark</button></div>
+      <p>System follows your device setting.</p>
+    </div>
+  </div>
+</div>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script>
 const DATA = /*DATA*/[];
 const SCAN = /*SCAN*/null;
 const RELEASE = /*RELEASE*/null;
-const COL = '#2F6DB8', HOT = '#C2410C', STN = '#0E2A47', CONN = '#7C3AED';
+// Leaflet takes colours, not var(): T holds the map's tokens as the CSS has them for the theme on screen. A layer keeps
+// the token names of its colours (options.tok), so a theme change restyles it in place
+const T = {};
+const readTheme = () => { const s = getComputedStyle(document.documentElement); for (const k of ['route', 'selected', 'halo', 'hop', 'station', 'station-fill']) T[k] = s.getPropertyValue('--' + k).trim(); };
+const paint = tok => { const o = { tok }; for (const k in tok) o[k] = T[tok[k]]; return o; };
+readTheme();
 let chainMode = false;  // chain mode shows chains of rallies instead of single trips
 // the rest of what the URL keeps: the view, the opened route or chain, the route order and the grouping
 const S = { view: 'map', route: null, chain: null, rsort: 'start', group: 'none' };
@@ -556,8 +647,11 @@ map.createPane('labels').style.cssText = 'z-index: 420; pointer-events: none';  
 map.createPane('stations').style.zIndex = 450;  // above the route lines, so a raised line never covers a station
 // grey base: the street map's blue sea and yellow motorways are the routes' own colours
 const esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
-L.tileLayer(esri + 'World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: 'Tiles © Esri — Esri, HERE, Garmin' }).addTo(map);
-L.tileLayer(esri + 'World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, pane: 'labels' }).addTo(map);
+// the tiles follow the theme: the dark grey canvas in dark, swapped in place when the theme changes
+const tileUrl = (kind, theme) => `${esri}World_${theme === 'dark' ? 'Dark' : 'Light'}_Gray_${kind}/MapServer/tile/{z}/{y}/{x}`;
+const theme0 = document.documentElement.dataset.theme;
+const baseTiles = L.tileLayer(tileUrl('Base', theme0), { maxZoom: 16, attribution: 'Tiles © Esri — Esri, HERE, Garmin' }).addTo(map);
+const refTiles = L.tileLayer(tileUrl('Reference', theme0), { maxZoom: 16, pane: 'labels' }).addTo(map);
 const layer = L.featureGroup().addTo(map);   // the routes (or legs) and stations under the filters
 const picked = L.featureGroup().addTo(map);  // the opened route or chain
 const hover = L.featureGroup().addTo(map);   // the route or chain under the pointer in the sidebar
@@ -579,13 +673,13 @@ fit.addTo(map);
 const legend = L.control({ position: matchMedia('(max-width: 699px)').matches ? 'topleft' : 'bottomleft' });
 let legendList;
 function legendItems() {
-  const line = (w, op, col, dash) => `<svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7H26" stroke="${col}" stroke-width="${w}" stroke-opacity="${op}"${dash ? ` stroke-dasharray="${dash}" stroke-linecap="round"` : ''}/></svg>`;
-  const dot = `<svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4.5" stroke="${STN}" stroke-width="2.5" fill="#fff"/></svg>`;
+  const line = (w, op, col, dash) => `<svg viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7H26" style="stroke:var(--${col})" stroke-width="${w}" stroke-opacity="${op}"${dash ? ` stroke-dasharray="${dash}" stroke-linecap="round"` : ''}/></svg>`;
+  const dot = '<svg viewBox="0 0 28 14" aria-hidden="true"><circle cx="14" cy="7" r="4.5" stroke-width="2.5" style="fill:var(--station-fill);stroke:var(--station)"/></svg>';
   // the artboards' wording; in chain mode a hint says that legs and hops can be clicked
-  return (chainMode ? `<li>${line(chainWeight(1), chainOpacity(1), COL)} Leg of 1 chain</li><li>${line(chainWeight(10), chainOpacity(10), COL)} 10 or more chains</li>`
-    : `<li>${line(weight(1), opacity(1), COL)} 1 trip on a route</li><li>${line(weight(5), opacity(5), COL)} 5 or more trips</li>`) +
-    `<li>${line(4, 1, HOT)} Selected</li>` +
-    (chainMode ? `<li>${line(3, 1, CONN, '1 6')} Hop to the next pick-up</li><li class="hint">Click a leg or hop to list its chains</li>` : '') +
+  return (chainMode ? `<li>${line(chainWeight(1), chainOpacity(1), 'route')} Leg of 1 chain</li><li>${line(chainWeight(10), chainOpacity(10), 'route')} 10 or more chains</li>`
+    : `<li>${line(weight(1), opacity(1), 'route')} 1 trip on a route</li><li>${line(weight(5), opacity(5), 'route')} 5 or more trips</li>`) +
+    `<li>${line(4, 1, 'selected')} Selected</li>` +
+    (chainMode ? `<li>${line(3, 1, 'hop', '1 6')} Hop to the next pick-up</li><li class="hint">Click a leg or hop to list its chains</li>` : '') +
     `<li>${dot} Station \u2014 click to filter ${chainMode ? 'chain starts' : 'pick-ups'}</li>` +
     // ~ marks a distance that was not routed: straight line x 1.3
     (DATA.some(r => dist(r).est) || (chainMode && +$('ck').value > 0) ? '<li><span class="tilde" aria-hidden="true">~</span> Estimated distance, not routed</li>' : '');
@@ -637,9 +731,10 @@ const ARROW = '<span aria-hidden="true">\u2192</span><span class="sr"> to </span
 const EXT = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4.5 2.5h5v5M9.5 2.5l-7 7"/></svg>';
 const MAPI = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M1 3l4-1.5 4 2 4-1.5v9l-4 1.5-4-2-4 1.5z"/></svg>';
 const BACK = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg>';
-const CHEVR = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="#5B6270" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>';
-const RING = (c = '#15181E', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="${r}" fill="#fff" stroke="${c}" stroke-width="2"/></svg>`;
-const DOT = (c = '#15181E', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="${r}" fill="${c}"/></svg>`;
+const CHEVR = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>';
+// hollow and filled markers; cls 'sel' draws them in the selected colour (the CSS has the colours)
+const RING = (cls = '', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle class="ringc ${cls}" cx="7" cy="7" r="${r}" stroke-width="2"/></svg>`;
+const DOT = (cls = '', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle class="dotc ${cls}" cx="7" cy="7" r="${r}"/></svg>`;
 // ---- chains: pure computation, no DOM and no request --------------------------------------------
 // A record is a WINDOW (start..end): the booking page accepts any pick-up and return inside it, up to
 // 7 nights, and prices it flat. A leg is therefore a pick-up day p and a return day q with start <= p < q <= end,
@@ -1004,23 +1099,23 @@ const sortChains = () => { const s = SORT.chains; chains.sort(byOrder(s, CHAIN_S
 // a selected route: deep orange on a white halo, in the pane above the other routes
 function drawHot(group, a, b, w = 4.5) {
   const pts = arc(ll(a), ll(b));
-  L.polyline(pts, { pane: 'hot', color: '#fff', weight: w + 4, opacity: 1, interactive: false }).addTo(group);
-  L.polyline(pts, { pane: 'hot', color: HOT, weight: w, opacity: 1, interactive: false }).addTo(group);
+  L.polyline(pts, { pane: 'hot', ...paint({ color: 'halo' }), weight: w + 4, opacity: 1, interactive: false }).addTo(group);
+  L.polyline(pts, { pane: 'hot', ...paint({ color: 'selected' }), weight: w, opacity: 1, interactive: false }).addTo(group);
   return pts;
 }
 // A wide transparent line over a thin one, so a finger can hit it. It takes the clicks, so they never reach the map
 // or a station below.
 const HIT = matchMedia('(pointer: coarse)').matches ? 22 : 16;
-const hitLine = (group, pts, pane) => L.polyline(pts, { pane: pane || 'overlayPane', color: '#000', weight: HIT, opacity: 0, bubblingMouseEvents: false }).addTo(group);
+const hitLine = (group, pts, pane) => L.polyline(pts, { pane: pane || 'overlayPane', color: 'transparent', weight: HIT, opacity: 0, bubblingMouseEvents: false }).addTo(group);
 // A hand-over by another station: a dotted line on a white casing, so it reads as "not driven" over the legs.
 // Returns its hit line, none when the style says it is not interactive.
 function drawHop(group, a, b, style) {
   const pts = [ll(a), ll(b)];
-  L.polyline(pts, { pane: style.pane || 'overlayPane', color: '#fff', weight: 6, opacity: .9, interactive: false, className: style.className || '' }).addTo(group);
+  L.polyline(pts, { pane: style.pane || 'overlayPane', ...paint({ color: 'halo' }), weight: 6, opacity: .9, interactive: false, className: style.className || '' }).addTo(group);
   L.polyline(pts, { ...style, dashArray: '1 6', lineCap: 'round', interactive: false }).addTo(group);
   return style.interactive === false ? null : hitLine(group, pts, style.pane);
 }
-const ring = (group, s, filled) => L.circleMarker(ll(s), { pane: 'stations', radius: 6, weight: 2.5, color: HOT, fillColor: filled ? HOT : '#fff', fillOpacity: 1, interactive: false }).addTo(group);
+const ring = (group, s, filled) => L.circleMarker(ll(s), { pane: 'stations', radius: 6, weight: 2.5, ...paint({ color: 'selected', fillColor: filled ? 'selected' : 'station-fill' }), fillOpacity: 1, interactive: false }).addTo(group);
 // open: the open chain, numbered, whose legs, connections and stations take a click (so it never falls through to the
 // overview or a station filter below); a click on a leg or connection picks it in the sidebar
 function drawChainOn(group, c, open) {
@@ -1029,7 +1124,7 @@ function drawChainOn(group, c, open) {
     const key = routeKey(l.r), pts = drawHot(group, l.r.from, l.r.to, open ? w(key) : 4);
     if (open) hitLine(group, pts, 'hot').bindTooltip(`Leg ${i + 1}: ${esc(place(l.r.from))} ${ARROW} ${esc(place(l.r.to))} \u00b7 click to show it in the list`, { sticky: true }).on('click', () => pickLeg(key));
     if (i && !c.hops[i - 1].same) {
-      const hk = hopKey(c, i), hit = drawHop(group, c.legs[i - 1].r.to, l.r.from, { pane: 'hot', color: CONN, weight: 4, opacity: 1, interactive: open });
+      const hk = hopKey(c, i), hit = drawHop(group, c.legs[i - 1].r.to, l.r.from, { pane: 'hot', ...paint({ color: 'hop' }), weight: 4, opacity: 1, interactive: open });
       if (hit) hit.bindTooltip(`Hop ${esc(c.legs[i - 1].r.to.name)} ${ARROW} ${esc(l.r.from.name)} \u00b7 click to show it in the list`, { sticky: true }).on('click', () => pickLeg(hk));
     }
     if (open) L.marker(pts[20], { pane: 'stations', interactive: false, keyboard: false, icon: L.divIcon({ className: 'legno', html: String(i + 1), iconSize: [24, 24] }) }).addTo(group);
@@ -1037,7 +1132,7 @@ function drawChainOn(group, c, open) {
   });
   for (const s of st.values()) {
     if (!open) { ring(group, s, false); continue; }
-    L.circleMarker(ll(s), { pane: 'stations', radius: 6, weight: 2.5, color: HOT, fillColor: '#fff', fillOpacity: 1, bubblingMouseEvents: false }).addTo(group)
+    L.circleMarker(ll(s), { pane: 'stations', radius: 6, weight: 2.5, ...paint({ color: 'selected', fillColor: 'station-fill' }), fillOpacity: 1, bubblingMouseEvents: false }).addTo(group)
       .bindTooltip(`${esc(place(s))} \u00b7 on the open chain`, { direction: 'top', offset: [0, -8] });
   }
 }
@@ -1058,7 +1153,7 @@ function drawTrips() {
     t.sort((x, y) => x.start.localeCompare(y.start));
     g.first = t[0].start;
     g.last = t.map(r => r.end).sort().pop();
-    L.polyline(arc(ll(g.from), ll(g.to)), { color: COL, weight: weight(N), opacity: opacity(N), className: 'base' }).addTo(layer)
+    L.polyline(arc(ll(g.from), ll(g.to)), { ...paint({ color: 'route' }), weight: weight(N), opacity: opacity(N), className: 'base' }).addTo(layer)
       .bindTooltip(`${esc(place(g.from))} ${ARROW} ${esc(place(g.to))} \u00b7 ${kmText(g)} \u00b7 ${count(N, 'trip')}`, { sticky: true })
       .on('mouseover', () => hoverRoute(g.key, true))
       .on('mouseout', () => hoverRoute(null, true))
@@ -1091,12 +1186,12 @@ function drawChains() {
   const onMap = chains.length > CHAIN_ROWS ? ' on the map' : '';
   for (const [key, g] of [...legs].sort((x, y) => x[1].n - y[1].n)) {
     const pts = arc(ll(g.r.from), ll(g.r.to));
-    L.polyline(pts, { color: COL, weight: chainWeight(g.n), opacity: chainOpacity(g.n), interactive: false, className: 'base' }).addTo(layer);
+    L.polyline(pts, { ...paint({ color: 'route' }), weight: chainWeight(g.n), opacity: chainOpacity(g.n), interactive: false, className: 'base' }).addTo(layer);
     hitLine(layer, pts).on('click', () => pickLeg(key))
       .bindTooltip(`Leg ${esc(place(g.r.from))} ${ARROW} ${esc(place(g.r.to))} \u00b7 ${kmText(dist(g.r))} \u00b7 in ${count(g.n, 'chain')}${onMap} \u00b7 click to list them`, { sticky: true });
   }
   for (const [key, g] of hops) {
-    drawHop(layer, g.a, g.b, { color: CONN, weight: 3, opacity: 1, className: 'base' }).on('click', () => pickLeg(key))
+    drawHop(layer, g.a, g.b, { ...paint({ color: 'hop' }), weight: 3, opacity: 1, className: 'base' }).on('click', () => pickLeg(key))
       .bindTooltip(`Hop ${esc(g.a.name)} ${ARROW} ${esc(g.b.name)} \u00b7 ~${fmtKm(g.h.km)} km (estimated) \u00b7 in ${count(g.n, 'chain')}${onMap} \u00b7 click to list them`, { sticky: true });
   }
   return { stations, routes: legs.size, n: chains.length };
@@ -1117,7 +1212,7 @@ function drawSelection() {
   // the leg or connection whose chains are listed
   const ends = chainMode && !c && legFilter && legFilter.replace(/^hop /, '').split('>').map(n => STATIONS.get(n));
   if (ends && ends[0] && ends[1]) {
-    if (isHop(legFilter)) drawHop(picked, ends[0], ends[1], { pane: 'hot', color: CONN, weight: 4, opacity: 1, interactive: false });
+    if (isHop(legFilter)) drawHop(picked, ends[0], ends[1], { pane: 'hot', ...paint({ color: 'hop' }), weight: 4, opacity: 1, interactive: false });
     else drawHot(picked, ends[0], ends[1]);
   }
   picked.eachLayer(l => { const el = l.getElement && l.getElement(); if (el) el.setAttribute('tabindex', '-1'); });
@@ -1191,7 +1286,7 @@ function routeDetail(g) {
   const next = [...ROUTES.values()].filter(x => x.from.name === g.to.name && x.last >= g.first).sort((a, b) => a.first.localeCompare(b.first) || a.km - b.km);
   const also = [...ROUTES.values()].filter(x => x.from.name === g.from.name && x.key !== g.key).sort((a, b) => a.to.name.localeCompare(b.to.name));
   return `<div class="detail"><button class="back" data-act="back">${BACK}${esc(eff.fst ? `Routes from ${eff.fst}` : 'All routes')}</button>` +
-    `<div class="dhead"><h2 class="rt" id="dh" tabindex="-1">${RING(HOT, 5)}<span>${esc(place(g.from))}</span><span class="vl" aria-hidden="true"></span><span><span class="sr"> to </span></span>${DOT(HOT, 5.5)}<span>${esc(place(g.to))}</span></h2>` +
+    `<div class="dhead"><h2 class="rt" id="dh" tabindex="-1">${RING('sel', 5)}<span>${esc(place(g.from))}</span><span class="vl" aria-hidden="true"></span><span><span class="sr"> to </span></span>${DOT('sel', 5.5)}<span>${esc(place(g.to))}</span></h2>` +
     `<dl class="stats"><div><dt>By road</dt><dd>${kmHtml(g.km, g.est)} km</dd></div><div><dt>Windows</dt><dd>${wins.length}</dd></div><div><dt>Longest stay</dt><dd>${count(longest, 'night')}</dd></div></dl></div>` +
     `<section class="sec" aria-labelledby="h-win"><h3 id="h-win">Trip windows</h3><p class="help">Pick up and return on any days inside a window, up to ${NIGHTS} nights.</p><ul class="wins">` +
     wins.map(r => `<li><div class="w"><div class="d num">${esc(short(r.start))} ${ARROW} ${esc(short(r.end))}</div><div class="m">Up to ${count(nightsOf(r), 'night')}${r.price ? ` \u00b7 ${esc(r.price)}` : ''}</div></div>` +
@@ -1238,7 +1333,7 @@ function renderSide() {
 // ---- Trips page ---------------------------------------------------------------------------------
 const foot = () => `<p class="foot">${DATA.some(r => !dist(r).est) ? 'Distances are road distances from OSRM; a leading ~ marks an estimate.' : 'Distances with a leading ~ are estimates: the straight line \u00d7 1.3.'} Offers as of the last scan \u2014 the booking page has the last word.</p>`;
 const tripRow = r => `<tr><td class="ds" title="${esc(r.start)}">${esc(short(r.start))}</td><td class="de" title="${esc(r.end)}">${esc(short(r.end))}</td><td class="nt">${count(nightsOf(r), 'night')}</td>` +
-  `<td class="from"><span class="st">${RING('#15181E', 4)}${esc(place(r.from))}</span></td><td class="to"><span class="st">${DOT('#15181E', 4)}${esc(place(r.to))}</span></td>` +
+  `<td class="from"><span class="st">${RING('', 4)}${esc(place(r.from))}</span></td><td class="to"><span class="st">${DOT('', 4)}${esc(place(r.to))}</span></td>` +
   `<td class="km r"><span class="kv">${kmCell(r)} km</span><span class="kn"> \u00b7 ${count(nightsOf(r), 'night')}</span></td>${hasPrice ? `<td class="pr">${r.price ? esc(r.price) : ''}</td>` : ''}` +
   `<td class="act"><button class="btn2 sm" data-route="${esc(routeKey(r))}" aria-label="${esc(`Show ${place(r.from)} to ${place(r.to)} on the map`)}">${MAPI}Map</button>` +
   `<a class="btn sm" href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="${esc(`Book ${place(r.from)} to ${place(r.to)}, ${short(r.start)}`)}">Book${EXT}</a></td></tr>`;
@@ -1333,7 +1428,7 @@ function render() {
     const tip = `${esc(name)}, ${esc(g.s.cc)} \u00b7 ` + (chainMode ? `${count(g.dep, 'chain')} starting \u00b7 ${count(g.arr, 'chain')} ending` : `${count(g.dep, 'departure')} \u00b7 ${count(g.arr, 'arrival')}`) +
       // arrival only: the pick-up dropdown has no such option, so the click does nothing
       (click ? ` \u00b7 ${chainMode ? (on ? 'Click to show chains starting anywhere' : 'Click to only show chains starting here') : (on ? 'Click to show trips from every station' : 'Click to only show trips from here')}` : '');
-    L.circleMarker(ll(g.s), { pane: 'stations', radius: on ? 7 : 5.5, weight: 2.5, color: STN, fillColor: on ? STN : '#fff', fillOpacity: 1, className: click ? 'stn' : 'stn noclick' }).addTo(layer)
+    L.circleMarker(ll(g.s), { pane: 'stations', radius: on ? 7 : 5.5, weight: 2.5, ...paint({ color: 'station', fillColor: on ? 'station' : 'station-fill' }), fillOpacity: 1, className: click ? 'stn' : 'stn noclick' }).addTo(layer)
       .bindTooltip(tip, { direction: 'top', offset: [0, -8] })
       .on('click', () => { if (click) toggle(name); });
   }
@@ -1859,6 +1954,42 @@ document.addEventListener('keydown', e => {
   if (S.route || S.chain) closeDetail();
   else if (chainMode && legFilter) clearLeg($('side').querySelector('.card'));  // the second Escape shows every chain again
 });
+
+// ---- theme: System, Light or Dark ------------------------------------------------------------------
+// The head script set data-theme from the same storage key before the first paint. System follows the device live;
+// a choice is kept in localStorage (it can be unavailable) and never goes into the URL. The page keeps its state:
+// only colours and tiles change.
+const THEME_KEY = 'rally-map:theme', osDark = matchMedia('(prefers-color-scheme: dark)');
+const THEME_ICONS = {
+  system: '<circle cx="8" cy="8" r="6.5"/><path d="M8 1.5a6.5 6.5 0 000 13z" fill="currentColor"/>',
+  light: '<path d="M8 5a3 3 0 100 6 3 3 0 000-6zM8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/>',
+  dark: '<path d="M13.5 9.5A6 6 0 016.5 2.5a6 6 0 107 7z"/>',
+};
+let themeChoice;
+try { themeChoice = localStorage.getItem(THEME_KEY); } catch (e) {}
+if (!['system', 'light', 'dark'].includes(themeChoice)) themeChoice = 'system';
+function applyTheme() {
+  const dark = themeChoice === 'dark' || (themeChoice === 'system' && osDark.matches), root = document.documentElement;
+  const changed = root.dataset.theme !== (dark ? 'dark' : 'light');
+  root.dataset.theme = dark ? 'dark' : 'light';
+  if (changed) {
+    readTheme();
+    for (const g of [layer, picked, hover]) g.eachLayer(l => { if (l.options.tok) l.setStyle(paint(l.options.tok)); });
+    baseTiles.setUrl(tileUrl('Base', root.dataset.theme));
+    refTiles.setUrl(tileUrl('Reference', root.dataset.theme));
+  }
+  $('dbtn').setAttribute('aria-label', `Display settings: theme ${themeChoice}`);
+  $('dbtn').querySelector('.ti').innerHTML = THEME_ICONS[themeChoice];
+  for (const b of document.querySelectorAll('[data-themeopt]')) b.setAttribute('aria-pressed', b.dataset.themeopt === themeChoice);
+}
+document.querySelectorAll('[data-themeopt]').forEach(b => b.onclick = () => {
+  themeChoice = b.dataset.themeopt;
+  try { localStorage.setItem(THEME_KEY, themeChoice); } catch (e) {}
+  applyTheme();
+});
+osDark.addEventListener('change', () => { if (themeChoice === 'system') applyTheme(); });
+$('dbtn').onclick = e => e.currentTarget.getAttribute('aria-expanded') === 'true' ? closePop(true) : openPop(e.currentTarget);
+applyTheme();
 
 readHash();
 render();
