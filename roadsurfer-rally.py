@@ -103,9 +103,13 @@ def resolve(stations, terms):
     return out
 
 
+def origin_ids(args, stations):
+    return resolve(stations, args.origin) if args.origin else set(stations)
+
+
 def find_offers(args, stations):
     targets = resolve(stations, args.to) if args.to else None
-    origins = resolve(stations, args.origin) if args.origin else set(stations)
+    origins = origin_ids(args, stations)
 
     details = {i: get(f"/rally/stations/{i}", "rally.fetchRoutes") for i in origins}
     routes = [
@@ -348,7 +352,8 @@ def slugify(name):
 
 def station_slugs(stations):
     """{(name, cc): slug}. Stations with the same base slug get `-<cc>`; a slug still
-    taken gets `-2`, `-3`, ... in sorted order. Depends only on the set of stations."""
+    taken gets `-2`, `-3`, ... in sorted order. Depends only on the set of stations.
+    write_feeds passes every station the scan knows, not only those with offers."""
     base = {s: slugify(s[0]) for s in stations}
     shared = defaultdict(int)
     for slug in base.values():
@@ -414,12 +419,28 @@ def atom_feed(name, title, records, updated):
     return ET.ElementTree(feed)
 
 
+def scan_stations(scan):
+    """(name, cc) of the pick-up stations a scan recorded; junk entries are ignored."""
+    listed = (scan or {}).get("stations")
+    return {
+        (s["name"], s["cc"])
+        for s in (listed if isinstance(listed, list) else [])
+        if isinstance(s, dict)
+        and isinstance(s.get("name"), str)
+        and isinstance(s.get("cc"), str)
+    }
+
+
 def write_feeds(records, directory, scan=None):
-    """Write all.xml and one from-<slug>.xml per pick-up station into the directory."""
+    """Write all.xml and one from-<slug>.xml per pick-up station into the directory.
+    The stations are the scan's list and those of the records: a station without
+    offers gets a feed with no entries."""
     finished = (scan or {}).get("finished_at")
     if not (isinstance(finished, str) and SCAN_TIME.match(finished)):
         finished = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     by_station = defaultdict(list)
+    for st in scan_stations(scan):
+        by_station.setdefault(st, [])
     for r in records:
         by_station[(r["from"]["name"], r["from"]["cc"])].append(r)
     feeds = {"all.xml": ("roadsurfer Rally offers", records)}
@@ -566,6 +587,11 @@ def main():
         "end": args.end,
         "from": args.origin,
         "to": args.to,
+        # the pick-up stations asked about, so a station without offers keeps its feed
+        "stations": [
+            {"name": stations[i]["name"], "cc": stations[i]["city"]["country"]}
+            for i in sorted(origin_ids(args, stations))
+        ],
     }
     if summary(started):
         sys.exit(

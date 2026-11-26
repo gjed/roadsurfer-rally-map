@@ -254,6 +254,7 @@ class ScanMetadataTest(unittest.TestCase):
                 "end": "2099-12-31",
                 "from": ["1"],
                 "to": None,
+                "stations": [{"name": "Munich", "cc": "DE"}],
             },
         )
         self.assertEqual(len(data["offers"]), 1)
@@ -871,6 +872,52 @@ class FeedsTest(unittest.TestCase):
         want = rally.station_slugs(stations)
         self.assertEqual(rally.station_slugs(stations[::-1]), want)
         self.assertEqual(len(set(want.values())), len(stations))
+
+    def test_station_without_offers_gets_an_empty_feed(self):
+        scan = {
+            "stations": [{"name": "Munich", "cc": "DE"}, {"name": "Nice", "cc": "FR"}]
+        }
+        feeds = self.write(scan=scan)
+        self.assertEqual(sorted(feeds), ["all.xml", "from-munich.xml", "from-nice.xml"])
+        self.assertEqual(len(self.entries(feeds["from-nice.xml"])), 0)
+        self.assertEqual(len(self.entries(feeds["from-munich.xml"])), len(self.offers))
+        self.assertEqual(
+            feeds["from-nice.xml"].findtext(f"{ATOM}title"),
+            "roadsurfer Rally offers from Nice, FR",
+        )
+
+    def test_slug_does_not_change_when_another_station_gets_offers(self):
+        scan = {
+            "stations": [{"name": "Nice", "cc": "FR"}, {"name": "Nice", "cc": "IT"}]
+        }
+        before = self.write([feed_offer(("Nice", "FR"), ("Turin", "IT"))], scan, "one")
+        after = self.write(
+            [
+                feed_offer(("Nice", "FR"), ("Turin", "IT")),
+                feed_offer(("Nice", "IT"), ("Turin", "IT")),
+            ],
+            scan,
+            "two",
+        )
+        self.assertEqual(
+            sorted(before), ["all.xml", "from-nice-fr.xml", "from-nice-it.xml"]
+        )
+        self.assertEqual(sorted(before), sorted(after))
+
+    def test_stations_of_the_offers_are_added_to_the_scan_list(self):
+        scan = {"stations": [{"name": "Nice", "cc": "FR"}]}
+        feeds = self.write([feed_offer(("Berlin", "DE"), ("Turin", "IT"))], scan)
+        self.assertEqual(sorted(feeds), ["all.xml", "from-berlin.xml", "from-nice.xml"])
+
+    def test_junk_station_list_is_ignored(self):
+        for junk in (
+            None,
+            "Nice",
+            5,
+            [None, 3, {"name": "x"}, {"name": 1, "cc": "DE"}],
+        ):
+            feeds = self.write(scan={"stations": junk})
+            self.assertEqual(sorted(feeds), ["all.xml", "from-munich.xml"])
 
     def test_slugs_are_unique_files(self):
         records = [
