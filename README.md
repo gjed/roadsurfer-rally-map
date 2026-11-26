@@ -124,6 +124,7 @@ object with the scan metadata:
 | `rate_limited` | HTTP 429 answers received                                   |
 | `start`, `end` | the `--start` and `--end` window                            |
 | `from`, `to`   | the `--from` and `--to` terms as given, `null` when not set |
+| `stations`     | the pick-up stations asked about, as `{"name", "cc"}`       |
 
 `--from-json` builds the page from that file without any network request:
 
@@ -308,7 +309,8 @@ the page, so a feed reader can tell you about a rally without opening the map:
 
 - <https://gjed.github.io/roadsurfer-rally-map/feeds/all.xml> lists every offer.
 - `feeds/from-<slug>.xml` lists the offers of one pick-up station, for example
-  `feeds/from-munich.xml`. A station without offers has no file.
+  `feeds/from-munich.xml`. A station without offers has a feed with no entries, so
+  its URL does not disappear.
 
 An entry is one offer window: the title reads
 `Munich, DE → Bordeaux, FR · Tue 24 Nov – Tue 1 Dec`, its link is the booking page, and
@@ -322,8 +324,10 @@ The slug is the station name in lowercase ASCII with hyphens: accents and `ß`, 
 `ø`, `ł`, `đ` are folded, every other run of characters becomes one hyphen
 (`Zürich Flughafen` is `zurich-flughafen`). When two pick-up stations would share a
 slug, both get their country code appended (`neustadt-de`, `neustadt-at`), and a slug
-that is still taken gets `-2`, `-3`, in the order of the sorted names. The map links
-`all.xml` from its `<head>`.
+that is still taken gets `-2`, `-3`, in the order of the sorted names. The stations are
+the scan's `stations` list plus those of the offers (a data file from before the list
+existed has only the latter), so a slug does not change when another station gets an
+offer. The map links `all.xml` from its `<head>`.
 
 `--feeds DIR` writes the same files locally, from a scan or from a data file, and keeps
 other files in `DIR`:
