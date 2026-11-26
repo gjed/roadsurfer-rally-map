@@ -28,7 +28,7 @@
     --route: #2F6DB8; --selected: #C2410C; --on-selected: #FFFFFF; --halo: #FFFFFF; --hop: #7C3AED;
     --station: #0E2A47; --station-fill: #FFFFFF;
     --route-op-min: .8; --route-op-max: .95; --chain-op-min: .8;
-    --note-bg: #FFF7ED; --note-fg: #7C2D12; --fresh: #16A34A; --brand: #F97316;
+    --note-bg: #FFF7ED; --note-fg: #7C2D12; --fresh: #16A34A; --brand: #F97316; --fav: #A16207; --new-bg: #15803D; --new-fg: #FFFFFF;
     --sea: #DCE4EA; --land: #EFEFEF;
     --switch-off: #8A929E; --switch-knob: #FFFFFF; --step-off: #B8BEC7;
     --scrim: rgba(15, 18, 24, .45); --scrim-chain: rgba(55, 63, 77, .94); --scrim-hint: rgba(255, 255, 255, .14); --scrim-fg: #FFFFFF;
@@ -48,7 +48,7 @@
     --route: #6FA8FF; --selected: #FF8A4C; --on-selected: #0F1115; --halo: #0F1115; --hop: #B794F6;
     --station: #E8EAED; --station-fill: #171A21;
     --route-op-min: .85; --route-op-max: .95; --chain-op-min: .85;
-    --note-bg: #2A1A10; --note-fg: #FDBA8C; --fresh: #22C55E;
+    --note-bg: #2A1A10; --note-fg: #FDBA8C; --fresh: #22C55E; --fav: #FACC15; --new-bg: #4ADE80; --new-fg: #0B1220;
     --sea: #222327; --land: #3F3F41;
     --switch-off: #6B7280; --switch-knob: #E8EAED; --step-off: #4A515D;
     --scrim: rgba(0, 0, 0, .7); --scrim-chain: rgba(5, 6, 8, .85); --scrim-hint: rgba(255, 255, 255, .1); --scrim-fg: #FFFFFF;
@@ -238,7 +238,6 @@
   .card.ch .d { font-size: 13px; color: var(--muted); }
   .card.hot, .card:focus-visible { background: var(--hover); box-shadow: inset 3px 0 0 var(--selected); }
   .card:focus-visible { outline-offset: -2px; }
-  @media (hover: hover) { .card:hover { background: var(--hover); } }
   .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
   .badges span { padding: 2px 8px; border-radius: 6px; background: var(--seg); font-size: 12px; font-weight: 600; }
   .badges span.lt { font-weight: 400; }
@@ -305,7 +304,7 @@
   .inner, .tbox { position: relative; }
   .tbox { flex: 0 1 auto; min-height: 0; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
   .tbox.plain { background: none; border: 0; border-radius: 0; }
-  .tt { width: 100%; min-width: 860px; border-collapse: collapse; }
+  .tt { width: 100%; min-width: 904px; border-collapse: collapse; }
   .tt thead th { position: sticky; top: 0; z-index: 1; padding: 12px 16px; background: var(--th-bg); box-shadow: inset 0 -1px var(--line); text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
   .tt thead th button { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
   .tt thead th[aria-sort="ascending"] button, .tt thead th[aria-sort="descending"] button { color: var(--ink); }
@@ -335,6 +334,43 @@
   .ccard > .btn2 { align-self: center; }
   .ccard:has(button[aria-current="true"]) { border-color: var(--selected); box-shadow: inset 3px 0 var(--selected); }
   .foot { margin: 0; font-size: 12px; color: var(--muted); }
+
+  /* favourites: the star buttons (.fav icon only, .favt with its word), the New badge, the Favourites chip, the station controls */
+  .fav { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+  .fav[aria-pressed="true"] { color: var(--fav); }
+  .fav[aria-pressed="true"] svg { fill: currentColor; }
+  .favt { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border: 1px solid var(--field); border-radius: 16px; background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .favt svg { color: var(--muted); }
+  .favt[aria-pressed="true"] { border-color: var(--fav); }
+  .favt[aria-pressed="true"] svg { color: var(--fav); fill: currentColor; }
+  @media (hover: hover) { .fav:hover, .favt:hover { background: var(--hover); } .fav:not([aria-pressed="true"]):hover { color: var(--ink); } }
+  @media (pointer: coarse) { .fav { width: 44px; height: 44px; } }
+  .newb, .nb { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 18px; border-radius: 9px; background: var(--new-bg); color: var(--new-fg); font-size: 11px; font-weight: 700; line-height: 1; letter-spacing: .02em; white-space: nowrap; }
+  .newb { padding: 0 6px; margin-right: 6px; vertical-align: 1px; }
+  .nb { min-width: 18px; padding: 0 5px; }
+  .favc .chip svg { color: var(--muted); }
+  .favc.on .chip { padding-right: 12px; }
+  .favc.on .chip svg { color: var(--fav); fill: currentColor; }
+  .cards > li { position: relative; }
+  @media (hover: hover) { .cards > li:hover .card { background: var(--hover); } }
+  .cards .fav { position: absolute; right: 11px; bottom: 3px; }
+  .cards .fav.cf { top: 8px; bottom: auto; }
+  .card .when { padding-right: 28px; }
+  .card.ch { padding-right: 52px; }
+  .cards > li.gh { border-bottom: 0; }
+  .cards .gh h3 { display: flex; align-items: center; gap: 6px; margin: 0; padding: 14px 20px 6px; background: var(--surface-2); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .cards .gh h3 span { font-weight: 400; }
+  .cards .gh svg, .tt .gh svg { color: var(--fav); fill: currentColor; vertical-align: -2px; }
+  .dtop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 12px 0 16px; }
+  .dtop .back { margin: 0; }
+  .stx { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+  .shead .stx .favt { position: relative; height: 36px; }
+  .shead .stx .favt::before { content: ""; position: absolute; inset: -4px 0; }
+  .tt td.ft { width: 44px; padding: 6px 0 6px 12px; }
+  .tt td.ds .newb { margin: 0 0 0 8px; }
+  .ccard .sh { display: flex; align-items: flex-start; gap: 8px; }
+  .ccard .sh h3 { flex: 1; min-width: 0; }
+  .ccard .sh .fav { margin: -8px -6px 0 auto; }
 
   /* map */
   .leaflet-container { font: 12px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
@@ -488,7 +524,7 @@
     .tt td.from { order: 4; flex-basis: 100%; margin-top: 4px; }
     .tt td.to { order: 5; flex-basis: 100%; }
     .tt td.pr { order: 6; flex-basis: 100%; }
-    .tt td.act { order: 7; flex-basis: 100%; display: flex; gap: 8px; margin-top: 8px; padding: 0; text-align: left; }
+    .tt td.act { order: 8; flex: 1 1 0; min-width: 0; display: flex; gap: 8px; margin-top: 8px; padding: 0; text-align: left; }
     .tt td.act > * { flex: 1; height: 44px; }
     .tt td.act > .btn { flex: 2; }
     .tt td.act .btn2 { margin-right: 0; }
@@ -530,6 +566,22 @@
     .prow .sortl { flex: none; min-width: 0; flex-direction: row; align-items: center; gap: 6px; font-size: 13px; }
     .prow .sortl select { flex: 1; min-width: 0; height: 36px; }
     .prow .sortl:last-child { flex: none; }
+    /* favourites: 44 px targets, the chip row starts with Filters and Favourites, a trip card ends with its star and Map and Book */
+    .fav { width: 44px; height: 44px; }
+    .favt { height: 44px; padding: 0 14px 0 10px; border-radius: 22px; font-size: 14px; }
+    .cards .fav { right: 3px; bottom: 0; }
+    .cards .fav.cf { top: 2px; bottom: auto; }
+    .card .when { padding-right: 32px; }
+    .card.ch { padding-right: 52px; }
+    .cards .gh h3 { padding: 12px 16px 6px; }
+    #side .dtop { margin-top: 0; }
+    .shead .stx { grid-column: 1 / -1; }
+    .fbw { order: -2; }
+    .favc { order: -1; }
+    .tt td.ft { order: 7; width: auto; margin-top: 8px; padding: 0; align-self: center; }
+    .tt td.act > .btn2 { flex: 1 0 auto; }
+    .tt tbody tr { position: relative; }
+    .tt td.ds .newb { position: absolute; top: -9px; right: 14px; margin: 0; }
   }
   /* the narrowest phones: the bar gives up some air before the title has to wrap */
   @media (max-width: 399px) {
@@ -566,6 +618,7 @@
     <span class="chipw" id="gkm"><button class="chip" id="c-km" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-km"><svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.5 7.5h12M4 4.5l-2.5 3 2.5 3M11 4.5l2.5 3-2.5 3"/></svg><span class="k">Distance</span><span class="v">Any</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button><button class="x" data-clear="gkm" aria-label="Clear distance filter"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></span>
     <span class="chipw" id="gfrom"><button class="chip" id="c-from" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-from"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="4.5"/></svg><span class="k">Pick-up</span><span class="v">Anywhere</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button><button class="x" data-clear="gfrom" aria-label="Clear pick-up filter"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></span>
     <span class="chipw" id="gto"><button class="chip" id="c-to" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-to"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="currentColor"/></svg><span class="k">Return</span><span class="v">Anywhere</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button><button class="x" data-clear="gto" aria-label="Clear return filter"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></span>
+    <span class="chipw favc" id="gfav" hidden><button class="chip" id="c-fav" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M8 1.7L9.76 6.17 14.56 6.47 10.85 9.53 12.06 14.18 8 11.6 3.94 14.18 5.15 9.53 1.44 6.47 6.24 6.17z"/></svg><span class="k" data-t="fav.chip">Favourites</span><span class="nb" id="favnew" aria-hidden="true" hidden></span><span class="sr" id="favsr"></span></button></span>
     <span class="sep" id="csep" aria-hidden="true" hidden></span>
     <span class="chipw" id="cchip" hidden><button class="chip" id="c-chain" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-chain"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 4h7M12 4h2M2 12h2M7 12h7M9 2.5v3M5 10.5v3"/></svg><span class="k" data-t="chip.chainoptions">Chain options</span><span class="v"></span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg></button></span>
     <fieldset id="gleg" class="on" hidden><legend class="sr" data-t="chip.leg">Chain uses</legend><span class="k" aria-hidden="true" data-t="chip.leg">Chain uses</span><span class="v" id="legname"></span><button class="x" id="legx" aria-label="Remove the leg filter" data-t-aria-label="chip.leg.remove"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></fieldset>
@@ -606,6 +659,7 @@
     <h2 id="h-from">Pick-up</h2>
     <label><span data-t="pop.country">Country</span><select id="fcc"></select></label>
     <label><span data-t="pop.station">Station</span><select id="fst"></select></label>
+    <div class="stx" id="f-from" hidden><button type="button" class="favt" data-fav="station" data-key="" aria-pressed="false"></button></div>
   </div>
   <div class="pf"><button class="ghost" data-clear="gfrom" data-t="pop.clear">Clear</button><span class="grow"></span><button class="btn" data-done data-t="pop.done">Done</button></div>
 </div>
@@ -619,7 +673,7 @@
 </div>
 <div class="pop" id="p-filt" role="dialog" aria-labelledby="h-filt" hidden>
   <div class="shh"><h2 id="h-filt" data-t="filters.title">Filters</h2><button class="shx" data-done aria-label="Close filters" data-t-aria-label="filters.close"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
-  <div class="fbody"><section class="fsec" data-pop="p-chain" hidden><h2 data-t="chip.chainoptions">Chain options</h2></section><section class="fsec" data-pop="p-date"></section><section class="fsec" data-pop="p-km"></section><section class="fsec" data-pop="p-from"></section><section class="fsec" data-pop="p-to"></section><p class="fupd" id="fupd"></p></div>
+  <div class="fbody"><section class="fsec" id="fsec-fav"><h2 data-t="fav.chip">Favourites</h2><label class="orow"><span class="t"><span data-t="fav.only">Only favourites</span><small id="fav-new"></small></span><input type="checkbox" role="switch" class="sw" id="fav-sw"></label></section><section class="fsec" data-pop="p-chain" hidden><h2 data-t="chip.chainoptions">Chain options</h2></section><section class="fsec" data-pop="p-date"></section><section class="fsec" data-pop="p-km"></section><section class="fsec" data-pop="p-from"></section><section class="fsec" data-pop="p-to"></section><p class="fupd" id="fupd"></p></div>
   <div class="pf"><button class="ghost" id="freset">Reset</button><button class="btn" id="fshow" data-done>Show trips</button></div>
 </div>
 <div class="pop" id="p-chain" role="dialog" aria-labelledby="h-chain" aria-describedby="chint" hidden>
@@ -929,7 +983,27 @@ const STRINGS = {
     "group.header.from": "From {place}",
     "trips.sub.help": "Pick up and return any day inside a window, up to {n} nights",
     "foot.road": "Distances are road distances from OSRM; a leading ~ marks an estimate. Offers as of the last scan — the booking page has the last word.",
-    "foot.est": "Distances with a leading ~ are estimates: the straight line × 1.3. Offers as of the last scan — the booking page has the last word."
+    "foot.est": "Distances with a leading ~ are estimates: the straight line × 1.3. Offers as of the last scan — the booking page has the last word.",
+    "fav.chip": "Favourites",
+    "fav.only": "Only favourites",
+    "fav.add": "Add to favourites",
+    "fav.remove": "Remove from favourites",
+    "fav.new": "New",
+    "fav.new.n.one": "{n} new",
+    "fav.new.n.other": "{n} new",
+    "fav.new.since": "New since the scan of {date}, {time} UTC",
+    "fav.new.visit": "New since your last visit",
+    "fav.list.rest": "All routes",
+    "fav.empty.trips": "No favourite routes or stations yet. Star ☆ one and it shows here.",
+    "fav.empty.chains": "No favourite chains yet. Star ☆ one and it shows here.",
+    "fav.empty.chains.fit": "None of your favourite chains fits these options.",
+    "fav.empty.show": "Show all",
+    "fav.label": "Favourite",
+    "fav.aria": "Favourite: {item}",
+    "fav.chip.sr.one": " · {n} new since your last visit",
+    "fav.chip.sr.other": " · {n} new since your last visit",
+    "fav.hint": "Star ☆ a route, station or chain to see it here.",
+    "fav.empty.none": "None of your favourites have trips with these filters."
   },
   "de": {
     "app.tag": "Einweg-Wohnmobilüberführungen · inoffiziell",
@@ -1199,7 +1273,27 @@ const STRINGS = {
     "group.header.from": "Ab {place}",
     "trips.sub.help": "Abholung und Rückgabe an beliebigen Tagen innerhalb eines Zeitfensters, bis zu {n} Nächte",
     "foot.road": "Entfernungen sind Straßenentfernungen von OSRM; ein vorangestelltes ~ kennzeichnet eine Schätzung. Angebote laut letztem Scan — maßgeblich ist die Buchungsseite.",
-    "foot.est": "Entfernungen mit vorangestelltem ~ sind Schätzungen: Luftlinie × 1,3. Angebote laut letztem Scan — maßgeblich ist die Buchungsseite."
+    "foot.est": "Entfernungen mit vorangestelltem ~ sind Schätzungen: Luftlinie × 1,3. Angebote laut letztem Scan — maßgeblich ist die Buchungsseite.",
+    "fav.chip": "Favoriten",
+    "fav.only": "Nur Favoriten",
+    "fav.add": "Zu Favoriten hinzufügen",
+    "fav.remove": "Aus Favoriten entfernen",
+    "fav.new": "Neu",
+    "fav.new.n.one": "{n} neu",
+    "fav.new.n.other": "{n} neu",
+    "fav.new.since": "Neu seit dem Scan vom {date}, {time} UTC",
+    "fav.new.visit": "Neu seit deinem letzten Besuch",
+    "fav.list.rest": "Alle Routen",
+    "fav.empty.trips": "Noch keine Lieblingsrouten oder -stationen. Markiere eine mit ☆, dann erscheint sie hier.",
+    "fav.empty.chains": "Noch keine Lieblingsketten. Markiere eine mit ☆, dann erscheint sie hier.",
+    "fav.empty.chains.fit": "Keine deiner Lieblingsketten passt zu diesen Optionen.",
+    "fav.empty.show": "Alle anzeigen",
+    "fav.label": "Favorit",
+    "fav.aria": "Favorit: {item}",
+    "fav.chip.sr.one": " · {n} neu seit deinem letzten Besuch",
+    "fav.chip.sr.other": " · {n} neu seit deinem letzten Besuch",
+    "fav.hint": "Markiere eine Route, Station oder Kette mit ☆, um sie hier zu sehen.",
+    "fav.empty.none": "Keine deiner Favoriten hat Fahrten mit diesen Filtern."
   },
   "fr": {
     "app.tag": "Convoyages de camping-cars en aller simple · non officiel",
@@ -1469,7 +1563,27 @@ const STRINGS = {
     "group.header.from": "Depuis {place}",
     "trips.sub.help": "Retrait et retour n'importe quel jour dans une fenêtre, jusqu'à {n} nuits",
     "foot.road": "Les distances sont des distances routières d'OSRM ; un ~ en tête signale une estimation. Offres d'après le dernier relevé — la page de réservation fait foi.",
-    "foot.est": "Les distances précédées d'un ~ sont des estimations : la ligne droite × 1,3. Offres d'après le dernier relevé — la page de réservation fait foi."
+    "foot.est": "Les distances précédées d'un ~ sont des estimations : la ligne droite × 1,3. Offres d'après le dernier relevé — la page de réservation fait foi.",
+    "fav.chip": "Favoris",
+    "fav.only": "Seulement les favoris",
+    "fav.add": "Ajouter aux favoris",
+    "fav.remove": "Retirer des favoris",
+    "fav.new": "Nouveau",
+    "fav.new.n.one": "{n} nouveau",
+    "fav.new.n.other": "{n} nouveaux",
+    "fav.new.since": "Nouveau depuis le relevé du {date}, {time} UTC",
+    "fav.new.visit": "Nouveau depuis votre dernière visite",
+    "fav.list.rest": "Tous les itinéraires",
+    "fav.empty.trips": "Aucun itinéraire ni station en favori pour l'instant. Marquez-en un avec ☆, il apparaîtra ici.",
+    "fav.empty.chains": "Aucune chaîne en favori pour l'instant. Marquez-en une avec ☆, elle apparaîtra ici.",
+    "fav.empty.chains.fit": "Aucune de vos chaînes favorites ne correspond à ces options.",
+    "fav.empty.show": "Tout afficher",
+    "fav.label": "Favori",
+    "fav.aria": "Favori : {item}",
+    "fav.chip.sr.one": " · {n} nouveau depuis votre dernière visite",
+    "fav.chip.sr.other": " · {n} nouveaux depuis votre dernière visite",
+    "fav.hint": "Marquez un itinéraire, une station ou une chaîne avec ☆ pour la voir ici.",
+    "fav.empty.none": "Aucun de vos favoris n'a de trajets avec ces filtres."
   },
   "es": {
     "app.tag": "Traslados de autocaravanas de ida · no oficial",
@@ -1739,7 +1853,27 @@ const STRINGS = {
     "group.header.from": "Desde {place}",
     "trips.sub.help": "Recogida y devolución cualquier día dentro de una ventana, hasta {n} noches",
     "foot.road": "Las distancias son por carretera según OSRM; un ~ al principio indica una estimación. Ofertas según la última consulta: la página de reservas tiene la última palabra.",
-    "foot.est": "Las distancias con ~ al principio son estimaciones: la línea recta × 1,3. Ofertas según la última consulta: la página de reservas tiene la última palabra."
+    "foot.est": "Las distancias con ~ al principio son estimaciones: la línea recta × 1,3. Ofertas según la última consulta: la página de reservas tiene la última palabra.",
+    "fav.chip": "Favoritos",
+    "fav.only": "Solo favoritos",
+    "fav.add": "Añadir a favoritos",
+    "fav.remove": "Quitar de favoritos",
+    "fav.new": "Nuevo",
+    "fav.new.n.one": "{n} nuevo",
+    "fav.new.n.other": "{n} nuevos",
+    "fav.new.since": "Nuevo desde la consulta del {date}, {time} UTC",
+    "fav.new.visit": "Nuevo desde tu última visita",
+    "fav.list.rest": "Todas las rutas",
+    "fav.empty.trips": "Aún no hay rutas ni estaciones favoritas. Marca una con ☆ y aparecerá aquí.",
+    "fav.empty.chains": "Aún no hay cadenas favoritas. Marca una con ☆ y aparecerá aquí.",
+    "fav.empty.chains.fit": "Ninguna de tus cadenas favoritas encaja con estas opciones.",
+    "fav.empty.show": "Mostrar todo",
+    "fav.label": "Favorito",
+    "fav.aria": "Favorito: {item}",
+    "fav.chip.sr.one": " · {n} nuevo desde tu última visita",
+    "fav.chip.sr.other": " · {n} nuevos desde tu última visita",
+    "fav.hint": "Marca una ruta, una estación o una cadena con ☆ para verla aquí.",
+    "fav.empty.none": "Ninguno de tus favoritos tiene viajes con estos filtros."
   },
   "it": {
     "app.tag": "Trasferimenti di camper in sola andata · non ufficiale",
@@ -2009,7 +2143,27 @@ const STRINGS = {
     "group.header.from": "Da {place}",
     "trips.sub.help": "Ritiro e riconsegna in qualsiasi giorno all'interno di una finestra, fino a {n} notti",
     "foot.road": "Le distanze sono su strada, calcolate da OSRM; una ~ iniziale indica una stima. Offerte dell'ultima scansione — l'ultima parola spetta alla pagina di prenotazione.",
-    "foot.est": "Le distanze precedute da ~ sono stime: la linea d'aria × 1,3. Offerte dell'ultima scansione — l'ultima parola spetta alla pagina di prenotazione."
+    "foot.est": "Le distanze precedute da ~ sono stime: la linea d'aria × 1,3. Offerte dell'ultima scansione — l'ultima parola spetta alla pagina di prenotazione.",
+    "fav.chip": "Preferiti",
+    "fav.only": "Solo preferiti",
+    "fav.add": "Aggiungi ai preferiti",
+    "fav.remove": "Rimuovi dai preferiti",
+    "fav.new": "Nuovo",
+    "fav.new.n.one": "{n} nuovo",
+    "fav.new.n.other": "{n} nuovi",
+    "fav.new.since": "Nuovo dalla scansione del {date}, {time} UTC",
+    "fav.new.visit": "Nuovo dalla tua ultima visita",
+    "fav.list.rest": "Tutti i percorsi",
+    "fav.empty.trips": "Ancora nessun percorso o stazione preferita. Aggiungi ☆ a uno e comparirà qui.",
+    "fav.empty.chains": "Ancora nessuna catena preferita. Aggiungi ☆ a una e comparirà qui.",
+    "fav.empty.chains.fit": "Nessuna delle tue catene preferite corrisponde a queste opzioni.",
+    "fav.empty.show": "Mostra tutto",
+    "fav.label": "Preferito",
+    "fav.aria": "Preferito: {item}",
+    "fav.chip.sr.one": " · {n} nuovo dalla tua ultima visita",
+    "fav.chip.sr.other": " · {n} nuovi dalla tua ultima visita",
+    "fav.hint": "Aggiungi ☆ a un percorso, una stazione o una catena per vederla qui.",
+    "fav.empty.none": "Nessuno dei tuoi preferiti ha viaggi con questi filtri."
   },
   "nl": {
     "app.tag": "Eenrichtings-camperoverbrengingen · onofficieel",
@@ -2279,7 +2433,27 @@ const STRINGS = {
     "group.header.from": "Vanaf {place}",
     "trips.sub.help": "Ophalen en inleveren op elke dag binnen een tijdvenster, tot {n} nachten",
     "foot.road": "Afstanden zijn wegafstanden van OSRM; een ~ ervoor markeert een schatting. Aanbod volgens de laatste scan — de boekingspagina heeft het laatste woord.",
-    "foot.est": "Afstanden met een ~ ervoor zijn schattingen: hemelsbreed × 1,3. Aanbod volgens de laatste scan — de boekingspagina heeft het laatste woord."
+    "foot.est": "Afstanden met een ~ ervoor zijn schattingen: hemelsbreed × 1,3. Aanbod volgens de laatste scan — de boekingspagina heeft het laatste woord.",
+    "fav.chip": "Favorieten",
+    "fav.only": "Alleen favorieten",
+    "fav.add": "Aan favorieten toevoegen",
+    "fav.remove": "Uit favorieten verwijderen",
+    "fav.new": "Nieuw",
+    "fav.new.n.one": "{n} nieuw",
+    "fav.new.n.other": "{n} nieuw",
+    "fav.new.since": "Nieuw sinds de scan van {date}, {time} UTC",
+    "fav.new.visit": "Nieuw sinds je laatste bezoek",
+    "fav.list.rest": "Alle routes",
+    "fav.empty.trips": "Nog geen favoriete routes of stations. Markeer er een met ☆ en hij verschijnt hier.",
+    "fav.empty.chains": "Nog geen favoriete ketens. Markeer er een met ☆ en hij verschijnt hier.",
+    "fav.empty.chains.fit": "Geen van je favoriete ketens past bij deze opties.",
+    "fav.empty.show": "Alles tonen",
+    "fav.label": "Favoriet",
+    "fav.aria": "Favoriet: {item}",
+    "fav.chip.sr.one": " · {n} nieuw sinds je laatste bezoek",
+    "fav.chip.sr.other": " · {n} nieuw sinds je laatste bezoek",
+    "fav.hint": "Markeer een route, station of keten met ☆ om die hier te zien.",
+    "fav.empty.none": "Geen van je favorieten heeft ritten met deze filters."
   },
   "pt": {
     "app.tag": "Transferências de autocaravanas só de ida · não oficial",
@@ -2549,7 +2723,27 @@ const STRINGS = {
     "group.header.from": "A partir de {place}",
     "trips.sub.help": "Retirada e devolução em qualquer dia dentro de uma janela, até {n} noites",
     "foot.road": "As distâncias são por estrada, calculadas pelo OSRM; um ~ no início indica uma estimativa. Ofertas segundo a última verificação — a página de reservas tem a palavra final.",
-    "foot.est": "As distâncias com ~ no início são estimativas: a linha reta × 1,3. Ofertas segundo a última verificação — a página de reservas tem a palavra final."
+    "foot.est": "As distâncias com ~ no início são estimativas: a linha reta × 1,3. Ofertas segundo a última verificação — a página de reservas tem a palavra final.",
+    "fav.chip": "Favoritos",
+    "fav.only": "Só favoritos",
+    "fav.add": "Adicionar aos favoritos",
+    "fav.remove": "Remover dos favoritos",
+    "fav.new": "Novo",
+    "fav.new.n.one": "{n} novo",
+    "fav.new.n.other": "{n} novos",
+    "fav.new.since": "Novo desde a verificação de {date}, {time} UTC",
+    "fav.new.visit": "Novo desde a sua última visita",
+    "fav.list.rest": "Todas as rotas",
+    "fav.empty.trips": "Ainda não há rotas nem estações favoritas. Marque uma com ☆ e aparecerá aqui.",
+    "fav.empty.chains": "Ainda não há cadeias favoritas. Marque uma com ☆ e aparecerá aqui.",
+    "fav.empty.chains.fit": "Nenhuma das suas cadeias favoritas corresponde a estas opções.",
+    "fav.empty.show": "Mostrar tudo",
+    "fav.label": "Favorito",
+    "fav.aria": "Favorito: {item}",
+    "fav.chip.sr.one": " · {n} novo desde a sua última visita",
+    "fav.chip.sr.other": " · {n} novos desde a sua última visita",
+    "fav.hint": "Marque uma rota, uma estação ou uma cadeia com ☆ para a ver aqui.",
+    "fav.empty.none": "Nenhum dos seus favoritos tem viagens com estes filtros."
   }
 };
 /*END STRINGS*/
@@ -2750,6 +2944,8 @@ const CHEVR = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true
 // hollow and filled markers, in the text colour unless given a colour
 const RING = (c = 'currentColor', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="${r}" stroke-width="2" style="fill:var(--surface);stroke:${c}"/></svg>`;
 const DOT = (c = 'currentColor', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="${r}" style="fill:${c}"/></svg>`;
+const STAR = '<svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M8 1.7L9.76 6.17 14.56 6.47 10.85 9.53 12.06 14.18 8 11.6 3.94 14.18 5.15 9.53 1.44 6.47 6.24 6.17z"/></svg>';
+const starIcon = n => STAR.replace('width="18" height="18"', `width="${n}" height="${n}"`);  // the filled one of a group heading
 // ---- chains: pure computation, no DOM and no request --------------------------------------------
 // A record is a WINDOW (start..end): the booking page accepts any pick-up and return inside it, up to
 // 7 nights, and prices it flat. A leg is therefore a pick-up day p and a return day q with start <= p < q <= end,
@@ -2899,6 +3095,130 @@ function renderUpdated() {
   $('updated').title = t('updated.tip', { at: SCAN.finished_at, offers: t('count.offers', { n: n('offers') }), requests: t('count.requests', { n: n('requests') }), failed: t('count.failed', { n: n('failed') }) });
 }
 
+// ---- favourites: stars kept in this browser, and the windows that are new on them -----------------------------------
+// Keys: a route is routeKey(), a station its place() (Name, CC) and a chain the route keys of its legs joined by '|' (the key
+// findChains gives it, with no dates). Stored as {v: 1, route|station|chain: {key: {seen: [route|start|end, ...], scan}}}.
+// The three kinds are Maps in memory, so a key like __proto__ is only a key.
+const FAV_KEY = 'rally-map:fav', FAV_KINDS = ['route', 'station', 'chain'];
+const FAV = { route: new Map(), station: new Map(), chain: new Map() };
+const SCAN_AT = SCAN && typeof SCAN.finished_at === 'string' ? SCAN.finished_at : '';
+const TODAY = iso(Date.now());
+const offerKey = r => routeKey(r) + '|' + r.start + '|' + r.end;
+const live = r => r.end >= TODAY;  // a window that has ended is neither new nor stored
+const STATION_WINS = new Map();
+for (const r of DATA) STATION_WINS.set(place(r.from), (STATION_WINS.get(place(r.from)) || []).concat(r));
+// the windows an item covers: its route, the routes of its legs, or the routes that leave its station
+const windowsOf = (kind, key) => (kind === 'route' ? ROUTES.has(key) ? ROUTES.get(key).trips : [] : kind === 'station' ? STATION_WINS.get(key) || []
+  : key.split('|').flatMap(k => ROUTES.has(k) ? ROUTES.get(k).trips : [])).filter(live);
+const isFav = (kind, key) => FAV[kind].has(key);
+const favRoute = g => isFav('route', g.key) || isFav('station', place(g.from));
+const favOffer = r => isFav('route', routeKey(r)) || isFav('station', place(r.from));
+// a value of a version this page does not know is left alone: it is neither read nor written
+let favLocked = false, favOnly = false;  // favOnly: the Favourites filter, which is neither stored nor in the URL
+function favSave() {
+  if (favLocked) return;
+  const out = { v: 1 };
+  for (const k of FAV_KINDS) out[k] = Object.fromEntries([...FAV[k]].map(([key, e]) => [key, { seen: [...e.seen], scan: e.scan }]));
+  try { localStorage.setItem(FAV_KEY, JSON.stringify(out)); } catch (e) {}
+}
+function favLoad() {
+  for (const k of FAV_KINDS) FAV[k].clear();
+  favLocked = false;
+  let raw;
+  try { raw = JSON.parse(localStorage.getItem(FAV_KEY)); } catch (e) { return; }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return;
+  if (raw.v !== 1) { favLocked = true; return; }
+  let pruned = false;
+  for (const kind of FAV_KINDS) {
+    if (!raw[kind] || typeof raw[kind] !== 'object') continue;
+    for (const [key, e] of Object.entries(raw[kind])) {
+      // a window of the item that has ended drops out; an item without a list has seen what the page shows now
+      const had = e && Array.isArray(e.seen) ? e.seen.filter(s => typeof s === 'string') : null;
+      const keep = had ? had.filter(s => s.slice(s.lastIndexOf('|') + 1) >= TODAY) : windowsOf(kind, key).map(offerKey);
+      pruned = pruned || !had || keep.length !== had.length;
+      FAV[kind].set(key, { seen: new Set(keep), scan: e && typeof e.scan === 'string' ? e.scan : '' });
+    }
+  }
+  if (pruned) favSave();
+}
+favLoad();
+// NEW: the windows that are new on some starred item, each with the scan its item last saw (empty: none known)
+let NEW = new Map();
+function favNew() {
+  NEW = new Map();
+  for (const kind of FAV_KINDS) for (const [key, e] of FAV[kind]) {
+    for (const r of windowsOf(kind, key)) if (!e.seen.has(offerKey(r)) && !NEW.get(offerKey(r))) NEW.set(offerKey(r), e.scan);
+  }
+}
+favNew();
+const isNew = r => NEW.has(offerKey(r));
+const newIn = recs => recs.filter(isNew).length;
+// the badge: its title says since when, from the scan of the item or else its last visit
+const newBadge = r => {
+  const at = Date.parse(NEW.get(offerKey(r)));
+  const tip = isNaN(at) ? t('fav.new.visit') : t('fav.new.since', { date: dm(iso(at)), time: new Date(at).toISOString().slice(11, 16) });
+  return `<span class="newb" title="${esc(tip)}">${esc(t('fav.new'))}</span>`;
+};
+const newCount = n => `<span class="newb" title="${esc(t('fav.new.visit'))}">${esc(t('fav.new.n', { n }))}</span>`;
+function setFav(kind, key, on) {
+  if (on) FAV[kind].set(key, { seen: new Set(windowsOf(kind, key).map(offerKey)), scan: SCAN_AT });
+  else FAV[kind].delete(key);
+  favSave();
+}
+// windows that are on screen are seen, in every starred item that has them
+function markSeen(recs) {
+  const keys = new Set(recs.filter(live).map(offerKey));
+  let changed = false;
+  for (const kind of FAV_KINDS) for (const [key, e] of FAV[kind]) {
+    for (const r of windowsOf(kind, key)) {
+      if (keys.has(offerKey(r)) && !e.seen.has(offerKey(r))) { e.seen.add(offerKey(r)); e.scan = SCAN_AT; changed = true; }
+    }
+  }
+  if (changed) favSave();
+  return changed;
+}
+// opening a route, a chain or a station: after the page was drawn, so the badges show once
+function autoSeen() {
+  const recs = [], open = S.view === 'map';
+  if (open && !chainMode && S.route && ROUTES.has(S.route)) recs.push(...ROUTES.get(S.route).trips);
+  const c = open && chainMode && S.chain && chains.find(x => x.key === S.chain);
+  if (c) for (const l of c.legs) recs.push(...ROUTES.get(routeKey(l.r)).trips);
+  for (const id of ['fst']) if (eff[id] && STATIONS.has(eff[id])) recs.push(...(STATION_WINS.get(place(STATIONS.get(eff[id]))) || []));
+  return recs.length && markSeen(recs);
+}
+// .fav is the star alone, .favt has its word; the name is the same in both and never changes with the state
+const favAria = item => t('fav.aria', { item });
+const favBtn = (kind, key, item, cls) => `<button type="button" class="${cls}" data-fav="${kind}" data-key="${esc(key)}" aria-pressed="${isFav(kind, key)}" aria-label="${esc(favAria(item))}"${cls === 'fav' ? ` title="${esc(t(isFav(kind, key) ? 'fav.remove' : 'fav.add'))}"` : ''}>${STAR}${cls === 'favt' ? `<span>${esc(t('fav.label'))}</span>` : ''}</button>`;
+const routeFav = (key, a, b, cls = 'fav') => favBtn('route', key, t('aria.route', { from: place(a), to: place(b) }), cls);
+const chainFav = (c, cls = 'fav') => favBtn('chain', c.key, chainLabel(c), cls);
+const stationFav = st => favBtn('station', place(st), place(st), 'favt');
+// the controls of the station header of the lists: the favourite button
+const stationControls = st => `<div class="stx">${stationFav(st)}</div>`;
+// the buttons that are on the page: their pressed state, and the Favourites chip and the sheet's switch
+function syncFav() {
+  for (const b of document.querySelectorAll('[data-fav]')) {
+    if (!b.dataset.key) continue;
+    const on = isFav(b.dataset.fav, b.dataset.key);
+    b.setAttribute('aria-pressed', on);
+    if (b.classList.contains('fav')) b.title = t(on ? 'fav.remove' : 'fav.add');
+  }
+  const stars = FAV.route.size + FAV.station.size + FAV.chain.size, n = NEW.size;
+  $('gfav').hidden = !stars && !favOnly;  // nothing to filter by yet
+  $('favnew').hidden = !n;
+  $('favnew').textContent = fmtN(n);
+  $('favsr').textContent = n ? t('fav.chip.sr', { n }) : '';
+  $('fav-sw').disabled = !stars && !favOnly;
+  $('fav-new').textContent = stars ? (n ? t('fav.new.n', { n }) : '') : t('fav.hint');
+  $('fav-new').hidden = !$('fav-new').textContent;
+}
+// the chosen pick-up station in the Pick-up panel: its favourite button
+function stationActs() {
+  const st = eff.fst && STATIONS.get(eff.fst), key = st ? place(st) : '', row = $('f-from'), b = row.querySelector('.favt');
+  row.hidden = !st;
+  b.dataset.key = key;
+  b.setAttribute('aria-label', st ? favAria(key) : '');
+}
+
 // OSRM routes on OpenStreetMap data: credit them in the attribution when a routed distance is shown
 if (DATA.some(r => !dist(r).est)) {
   map.attributionControl.addAttribution('Road distances: <a href="https://project-osrm.org/" target="_blank" rel="noopener">OSRM</a>, data \u00a9 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors');
@@ -2946,6 +3266,10 @@ function markActive() {
     if (g === 'gchain') $('cchip').classList.toggle('on', on);  // the options' chip
     n += on;
   }
+  $('gfav').classList.toggle('on', favOnly);
+  $('c-fav').setAttribute('aria-pressed', favOnly);
+  $('fav-sw').checked = favOnly;
+  n += favOnly;
   const leg = chainMode && legFilter;
   if (leg) n++;
   $('gleg').hidden = !leg;
@@ -2980,10 +3304,12 @@ function updateChips() {
   const on = { any: f === RESET.from && e === RESET.to && !k, 0: quickRange(0).join() === f + ',' + e, 1: quickRange(1).join() === f + ',' + e };
   for (const b of document.querySelectorAll('[data-quick]')) b.setAttribute('aria-pressed', !!on[b.dataset.quick]);
   $('cchip').querySelector('.v').textContent = chainSummary();
+  stationActs();
 }
 
 // skip: a station filter to ignore, '*' for all of them
 function passes(r, skip) {
+  if (favOnly && !favOffer(r)) return false;
   if (day(r.start) < day($('from').value) || day(r.start) > day($('to').value)) return false;
   const km = dist(r).km;
   if (km < +$('kmin').value || ($('kmax').value !== '' && km > +$('kmax').value)) return false;
@@ -3009,7 +3335,7 @@ const uses = (c, key) => c.legs.some((l, i) => routeKey(l.r) === key || (i && !c
 const isHop = key => key.startsWith('hop ');
 const legTitle = key => key.replace(/^hop /, '').split('>').map(esc).join(` ${ARROW} `);
 // the leg filter limits the chains like the pick-up and return filters, so their dropdown counts follow it
-const endsPass = (c, skip) => { for (const k in ENDS) if (k !== skip && eff[k] && ENDS[k](c) !== eff[k]) return false; return !legFilter || uses(c, legFilter); };
+const endsPass = (c, skip) => { for (const k in ENDS) if (k !== skip && eff[k] && ENDS[k](c) !== eff[k]) return false; return (!favOnly || isFav('chain', c.key)) && (!legFilter || uses(c, legFilter)); };
 let chainMemo = { key: '', list: [], ms: 0, from: 0 };  // from: the offers the chains are built from  // the chains for the current chain settings, filters and dates
 // the chain options as findChains reads them; an empty or odd number means "no limit" or the default
 const whole = (id, lo, hi) => { const v = Math.floor(+$(id).value); return $(id).value === '' || !isFinite(v) ? NaN : Math.min(hi, Math.max(lo, v)); };
@@ -3105,8 +3431,9 @@ const chainTry = () => {
   return [legFilter && 'try.leg', !$('cs').checked && 'try.same', o.gmax < 7 && 'try.rest', o.conn < 250 && 'try.hop', o.lmax === 2 && 'try.legs3',
     (o.dmin || o.dmax < Infinity || o.drive < Infinity || o.round) && 'try.limits'].filter(Boolean).slice(0, 2).map(k => t(k)).join(', ');
 };
-const emptyMsg = () => !DATA.length ? t('empty.none') : chainMode ? (chainTry() ? t('empty.chains.try', { hints: chainTry() }) : t('empty.chains')) : t('empty.trips');
-const noneHtml = () => `<div class="none"><p>${esc(emptyMsg())}</p>${DATA.length ? `<button class="btn2 sm reset-all">${esc(t('empty.reset'))}</button>` : ''}</div>`;
+const hasStars = () => chainMode ? FAV.chain.size > 0 : FAV.route.size + FAV.station.size > 0;
+const emptyMsg = () => !DATA.length ? t('empty.none') : favOnly && !hasStars() ? t(chainMode ? 'fav.empty.chains' : 'fav.empty.trips') : favOnly ? t(chainMode ? 'fav.empty.chains.fit' : 'fav.empty.none') : chainMode ? (chainTry() ? t('empty.chains.try', { hints: chainTry() }) : t('empty.chains')) : t('empty.trips');
+const noneHtml = () => `<div class="none"><p>${esc(emptyMsg())}</p>${favOnly && !hasStars() ? `<button class="btn2 sm fav-off">${esc(t('fav.empty.show'))}</button>` : DATA.length ? `<button class="btn2 sm reset-all">${esc(t('empty.reset'))}</button>` : ''}</div>`;
 // Rallies | Chains in the results sheet and the Trips header: on a phone the app bar has no room for it
 const modeSeg = () => `<div class="seg pmode" role="group" aria-label="${esc(t('mode.group'))}"><button data-mode="0" aria-pressed="${!chainMode}">${esc(t('mode.rallies'))}</button><button data-mode="1" aria-pressed="${chainMode}">${esc(t('mode.chains'))}</button></div>`;
 const TRIP_ORDERS = [['start', 'sort.start'], ['-start', 'sort.start.desc'], ['end', 'sort.end'], ['-end', 'sort.end.desc'], ['km', 'sort.km'], ['-km', 'sort.km.desc']];
@@ -3298,26 +3625,31 @@ function routeCards() {
   const st = eff.fst && STATIONS.get(eff.fst);
   const first = shown.map(r => r.start).sort()[0], last = shown.map(r => r.end).sort().pop();
   const sub = st ? dot(nRoutes(list.length), nTrips(shown.length)) : dot(nTrips(shown.length), first && dmRange(first, last));
-  const head = `<div class="shead"><div><h2>${esc(st ? t('route.from', { place: place(st) }) : nRoutes(list.length))}</h2><p>${esc(sub)}</p></div>${list.length ? orderSelect('rsort', ROUTE_ORDERS, S.rsort) : ''}${modeSeg()}</div>`;
+  const head = `<div class="shead"><div><h2>${esc(st ? t('route.from', { place: place(st) }) : nRoutes(list.length))}</h2><p>${esc(sub)}</p>${st ? stationControls(st) : ''}</div>${list.length ? orderSelect('rsort', ROUTE_ORDERS, S.rsort) : ''}${modeSeg()}</div>`;
   if (!list.length) return head + noneHtml();
-  return head + '<ul class="cards">' + list.map(g => {
-    const N = g.trips.length;
-    return `<li><button class="card" data-route="${esc(g.key)}" aria-label="${esc(t('card.aria', { from: place(g.from), to: place(g.to), km: kmText(g), trips: nTrips(N), date: short(g.first) }))}">` +
+  const card = g => {
+    const N = g.trips.length, fresh = newIn(g.trips);
+    return `<li><button class="card" data-route="${esc(g.key)}" aria-label="${esc([t('card.aria', { from: place(g.from), to: place(g.to), km: kmText(g), trips: nTrips(N), date: short(g.first) }), fresh && t('fav.new.n', { n: fresh })].filter(Boolean).join(', '))}">` +
       `${RING()}<span class="nm">${esc(place(g.from))}</span><span class="km">${kmHtml(g.km, g.est)}</span>` +
       `${DOT()}<span class="nm">${esc(place(g.to))}</span><span class="n">${esc(nTrips(N))}</span>` +
-      `<span class="when">${esc(t('card.when', { first: short(g.first), last: dm(g.last) }))}</span></button></li>`;
-  }).join('') + '</ul>';
+      `<span class="when">${fresh ? newCount(fresh) : ''}${esc(t('card.when', { first: short(g.first), last: dm(g.last) }))}</span></button>${routeFav(g.key, g.from, g.to)}</li>`;
+  };
+  // the favourites move to the top under their own header while the filter is off, each part in the sort order
+  const favs = favOnly ? [] : list.filter(favRoute), rest = list.filter(g => !favs.includes(g));
+  if (!favs.length) return head + '<ul class="cards">' + list.map(card).join('') + '</ul>';
+  const gh = (star, text, n) => `<li class="gh"><h3>${star ? starIcon(12) : ''}${esc(text)} <span>\u00b7 ${esc(nRoutes(n))}</span></h3></li>`;
+  return head + '<ul class="cards">' + gh(true, t('fav.chip'), favs.length) + favs.map(card).join('') + (rest.length ? gh(false, t('fav.list.rest'), rest.length) + rest.map(card).join('') : '') + '</ul>';
 }
 
 function routeDetail(g) {
   const wins = routeWins(g), longest = Math.max(...wins.map(nightsOf));
   const next = [...ROUTES.values()].filter(x => x.from.name === g.to.name && x.last >= g.first).sort((a, b) => a.first.localeCompare(b.first) || a.km - b.km);
   const also = [...ROUTES.values()].filter(x => x.from.name === g.from.name && x.key !== g.key).sort((a, b) => F.coll.compare(a.to.name, b.to.name));
-  return `<div class="detail"><button class="back" data-act="back">${BACK}${esc(eff.fst ? t('route.back.from', { station: eff.fst }) : t('route.back.all'))}</button>` +
+  return `<div class="detail"><div class="dtop"><button class="back" data-act="back">${BACK}${esc(eff.fst ? t('route.back.from', { station: eff.fst }) : t('route.back.all'))}</button>${routeFav(g.key, g.from, g.to, 'favt')}</div>` +
     `<div class="dhead"><h2 class="rt" id="dh" tabindex="-1">${RING('var(--selected)', 5)}<span>${esc(place(g.from))}</span><span class="vl" aria-hidden="true"></span><span><span class="sr"> ${esc(t('arrow.to'))} </span></span>${DOT('var(--selected)', 5.5)}<span>${esc(place(g.to))}</span></h2>` +
     `<dl class="stats"><div><dt>${esc(t('route.stat.road'))}</dt><dd>${kmHtml(g.km, g.est)}</dd></div><div><dt>${esc(t('route.stat.windows'))}</dt><dd>${fmtN(wins.length)}</dd></div><div><dt>${esc(t('route.stat.stay'))}</dt><dd>${esc(nNights(longest))}</dd></div></dl></div>` +
     `<section class="sec" aria-labelledby="h-win"><h3 id="h-win">${esc(t('route.windows'))}</h3><p class="help">${esc(t('route.windows.help', { n: NIGHTS }))}</p><ul class="wins">` +
-    wins.map(r => `<li><div class="w"><div class="d num">${nw(short(r.start))} ${ARROW} ${nw(short(r.end))}</div><div class="m">${esc(dot(t('route.win.upto', { n: nightsOf(r) }), r.price))}</div></div>` +
+    wins.map(r => `<li><div class="w"><div class="d num">${nw(short(r.start))} ${ARROW} ${nw(short(r.end))}</div><div class="m">${isNew(r) ? newBadge(r) : ''}${esc(dot(t('route.win.upto', { n: nightsOf(r) }), r.price))}</div></div>` +
       `<a class="btn" href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="${esc(t('book.aria', { from: place(g.from), to: place(g.to), date: short(r.start) }))}">${esc(t('book.button'))}${EXT}</a></li>`).join('') + '</ul></section>' +
     `<section class="sec" aria-labelledby="h-next"><h3 id="h-next">${esc(t('route.next', { station: g.to.name }))}</h3>` +
     (next.length ? `<p class="help">${esc(t('route.next.help'))}</p><ul class="nexts">` +
@@ -3332,15 +3664,15 @@ function chainCards() {
   const n = chains.length, st = eff.fst && STATIONS.get(eff.fst);
   const sub = dot(n > CHAIN_ROWS && t('chain.sub.first', { n: CHAIN_ROWS }), t(legFilter ? 'chain.sub.pick' : 'chain.sub.default'));
   const title = legFilter ? t(isHop(legFilter) ? 'chain.uses.hop' : 'chain.uses.leg', { n }) : st ? t('chain.from', { station: st.name }) : nChains(n);
-  const head = `<div class="shead"><div><h2 id="ch" tabindex="-1">${esc(title)}</h2><p>${esc(st && !legFilter ? dot(nChains(n), sub) : sub)}</p></div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}${modeSeg()}</div>`;
+  const head = `<div class="shead"><div><h2 id="ch" tabindex="-1">${esc(title)}</h2><p>${esc(st && !legFilter ? dot(nChains(n), sub) : sub)}</p>${st ? stationControls(st) : ''}</div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}${modeSeg()}</div>`;
   if (!n) return head + noneHtml();
   return head + '<ul class="cards">' + chains.slice(0, CHAIN_ROWS).map(c => `<li><button class="card ch" data-chain="${esc(c.key)}"><span class="t">${chainTitle(c)}</span>` +
-    `<span class="d num">${sdRange(c.start, c.end)}</span>${chainBadges(c)}</button></li>`).join('') + '</ul>' +
+    `<span class="d num">${sdRange(c.start, c.end)}</span>${chainBadges(c)}</button>${chainFav(c, 'fav cf')}</li>`).join('') + '</ul>' +
     (n > CHAIN_ROWS ? `<p class="note">${esc(t('chain.note.map', { n: CHAIN_ROWS, total: fmtN(n) }))}</p>` : '');
 }
 
 function chainDetail(c) {
-  return `<div class="detail"><button class="back" data-act="back">${BACK}${legFilter ? th('chain.back.leg', { leg: legTitle(legFilter) }) : esc(t('chain.back.all'))}</button>` +
+  return `<div class="detail"><div class="dtop"><button class="back" data-act="back">${BACK}${legFilter ? th('chain.back.leg', { leg: legTitle(legFilter) }) : esc(t('chain.back.all'))}</button>${chainFav(c, 'favt')}</div>` +
     `<div class="dhead"><h2 id="dh" tabindex="-1">${chainTitle(c)}</h2><dl class="stats"><div><dt>${esc(t('chain.stat.road'))}</dt><dd>${esc(nDays(c.days))}</dd></div>` +
     `<div><dt>${esc(t('chain.stat.driven'))}</dt><dd>${kmHtml(c.drive, chainEst(c))}</dd></div><div><dt>${esc(t('chain.stat.rest'))}</dt><dd>${fmtN(c.rest)}</dd></div></dl></div>` +
     `<ol class="legs">${c.legs.map((l, i) => `<li>${i ? (c.hops[i - 1].same ? `<div class="ho">${handOver(c, i)}</div>`
@@ -3360,7 +3692,7 @@ function renderSide() {
 
 // ---- Trips page ---------------------------------------------------------------------------------
 const foot = () => `<p class="foot">${esc(t(DATA.some(r => !dist(r).est) ? 'foot.road' : 'foot.est'))}</p>`;
-const tripRow = r => `<tr><td class="ds" title="${esc(r.start)}">${esc(short(r.start))}</td><td class="de" title="${esc(r.end)}">${esc(short(r.end))}</td><td class="nt">${esc(nNights(nightsOf(r)))}</td>` +
+const tripRow = r => `<tr><td class="ft">${routeFav(routeKey(r), r.from, r.to)}</td><td class="ds" title="${esc(r.start)}">${esc(short(r.start))}${isNew(r) ? newBadge(r) : ''}</td><td class="de" title="${esc(r.end)}">${esc(short(r.end))}</td><td class="nt">${esc(nNights(nightsOf(r)))}</td>` +
   `<td class="from"><span class="st">${RING(undefined, 4)}${esc(place(r.from))}</span></td><td class="to"><span class="st">${DOT(undefined, 4)}${esc(place(r.to))}</span></td>` +
   `<td class="km r"><span class="kv">${kmCell(r)}</span><span class="kn"> \u00b7 ${esc(nNights(nightsOf(r)))}</span></td>${hasPrice ? `<td class="pr">${r.price ? esc(r.price) : ''}</td>` : ''}` +
   `<td class="act"><button class="btn2 sm" data-route="${esc(routeKey(r))}" aria-label="${esc(t('trip.map.aria', { from: place(r.from), to: place(r.to) }))}">${MAPI}${esc(t('btn.map'))}</button>` +
@@ -3379,18 +3711,26 @@ function tripsTable() {
   if (!shown.length) return head + `<div class="tbox">${noneHtml()}</div>` + foot();
   const hd = (k, key, cls) => `<th${cls ? ` class="${cls}"` : ''} aria-sort="${k === s.key ? (s.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button data-sort="${k}">${esc(t(key))}${k === s.key ? `<span aria-hidden="true"> ${s.dir > 0 ? '\u2191' : '\u2193'}</span>` : ''}</button></th>`;
   let body;
-  if (S.group === 'none') body = `<tbody>${shown.map(tripRow).join('')}</tbody>`;
-  else {
-    // one tbody per group, in the order of the sorted rows, under a rowgroup header with its count
+  // a group header: the favourites' carry a filled star
+  const gh = h => `<tr class="gh"><th colspan="${hasPrice ? 9 : 8}" scope="rowgroup">${h}</th></tr>`;
+  const mark = `${starIcon(14)}<span class="sr">${esc(t('fav.label'))}</span> `;
+  if (S.group === 'none') {
+    // the favourites first under their own header while the filter is off, then the rest
+    const favs = favOnly ? [] : shown.filter(favOffer), set = new Set(favs), rest = shown.filter(r => !set.has(r));
+    body = !favs.length ? `<tbody>${shown.map(tripRow).join('')}</tbody>`
+      : `<tbody>${gh(`${starIcon(14)}${esc(t('fav.chip'))} <span>\u00b7 ${esc(nTrips(favs.length))}</span>`)}${favs.map(tripRow).join('')}</tbody>` + (rest.length ? `<tbody>${rest.map(tripRow).join('')}</tbody>` : '');
+  } else {
+    // one tbody per group, in the order of the sorted rows (the groups with a favourite first), under a rowgroup header with its count
     const key = S.group === 'route' ? routeKey : r => r.from.name, groups = new Map();
     for (const r of shown) { if (!groups.has(key(r))) groups.set(key(r), []); groups.get(key(r)).push(r); }
-    body = [...groups.values()].map(g => {
+    const all = [...groups.values()], starred = g => g.some(favOffer);
+    body = [...all.filter(starred), ...all.filter(g => !starred(g))].map(g => {
       const r = g[0], h = S.group === 'route' ? `${esc(place(r.from))} ${ARROW} ${esc(place(r.to))} <span>\u00b7 ${kmCell(r)} \u00b7 ${esc(nTrips(g.length))}</span>`
         : `${esc(t('group.header.from', { place: place(r.from) }))} <span>\u00b7 ${esc(nTrips(g.length))}</span>`;
-      return `<tbody><tr class="gh"><th colspan="${hasPrice ? 8 : 7}" scope="rowgroup">${h}</th></tr>${g.map(tripRow).join('')}</tbody>`;
+      return `<tbody>${gh((starred(g) ? mark : '') + h)}${g.map(tripRow).join('')}</tbody>`;
     }).join('');
   }
-  return head + `<div class="tbox"><table class="tt"><thead><tr>${hd('start', 'th.start')}${hd('end', 'th.end')}<th>${esc(t('th.nights'))}</th><th>${esc(t('th.pickup'))}</th><th>${esc(t('th.return'))}</th>${hd('km', 'th.distance', 'r')}` +
+  return head + `<div class="tbox"><table class="tt"><thead><tr><th><span class="sr">${esc(t('fav.label'))}</span></th>${hd('start', 'th.start')}${hd('end', 'th.end')}<th>${esc(t('th.nights'))}</th><th>${esc(t('th.pickup'))}</th><th>${esc(t('th.return'))}</th>${hd('km', 'th.distance', 'r')}` +
     `${hasPrice ? `<th>${esc(t('th.price'))}</th>` : ''}<th><span class="sr">${esc(t('th.actions'))}</span></th></tr></thead>${body}</table></div>` + foot();
 }
 
@@ -3400,7 +3740,7 @@ function tripsChains() {
     `<div class="thead"><div><h2>${title}</h2>` +
     `<p>${esc(t('chain.sub.list'))}</p></div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}</div>`;
   if (!n) return head + `<div class="tbox">${noneHtml()}</div>` + foot();
-  return head + '<div class="tbox plain"><ul class="ccards">' + chains.slice(0, CHAIN_ROWS).map(c => `<li class="ccard" data-card="${esc(c.key)}"><div class="sum"><h3>${chainTitle(c)}</h3>` +
+  return head + '<div class="tbox plain"><ul class="ccards">' + chains.slice(0, CHAIN_ROWS).map(c => `<li class="ccard" data-card="${esc(c.key)}"><div class="sum"><div class="sh"><h3>${chainTitle(c)}</h3>${chainFav(c)}</div>` +
     `<p class="num">${sdRange(c.start, c.end)}</p>${chainBadges(c)}</div><ol>` +
     c.legs.map((l, i) => `<li><span class="no" aria-hidden="true">${i + 1}</span><span><b>${esc(l.r.from.name)} ${ARROW} ${esc(l.r.to.name)}</b> ` +
       `<span class="dt num">\u00b7 ${nw(sd(l.p))} ${ARROW} ${nw(sd(l.q))} \u00b7 ${kmCell(l.r)}</span>${i ? `<span class="hn${c.hops[i - 1].same ? '' : ' hop'}">${handOver(c, i)}</span>` : ''}</span>` +
@@ -3427,6 +3767,7 @@ function applyView() {
 }
 
 function render() {
+  favNew();
   fillSelects();
   layer.clearLayers();
   hover.clearLayers();
@@ -3455,7 +3796,7 @@ function render() {
     const on = eff.fst === name, click = g.dep > 0;
     // arrival only: the pick-up dropdown has no such option, so the click does nothing
     const click_ = click && t(chainMode ? (on ? 'tip.click.chain.on' : 'tip.click.chain.off') : (on ? 'tip.click.trips.on' : 'tip.click.trips.off'));
-    const tip = [place(g.s), ...(chainMode ? [t('count.chains.starting', { n: g.dep }), t('count.chains.ending', { n: g.arr })] : [t('count.departures', { n: g.dep }), t('count.arrivals', { n: g.arr })]), click_].filter(Boolean).map(esc).join(' \u00b7 ');
+    const tip = [(isFav('station', place(g.s)) ? '\u2605 ' : '') + place(g.s), ...(chainMode ? [t('count.chains.starting', { n: g.dep }), t('count.chains.ending', { n: g.arr })] : [t('count.departures', { n: g.dep }), t('count.arrivals', { n: g.arr })]), click_].filter(Boolean).map(esc).join(' \u00b7 ');
     L.circleMarker(ll(g.s), { pane: 'stations', radius: on ? 7 : 5.5, weight: 2.5, ...paint({ color: 'station', fillColor: on ? 'station' : 'station-fill' }), fillOpacity: 1, className: click ? 'stn' : 'stn noclick' }).addTo(layer)
       .bindTooltip(tip, { direction: 'top', offset: [0, -8] })
       .on('click', () => { if (click) toggle(name); });
@@ -3480,6 +3821,9 @@ function render() {
   pill();
   if (!popOpen) homeChips();  // not under an open panel: it would leave its chip
   placePop();
+  // what was shown is now seen: the badges drawn above go with the next render
+  if (autoSeen()) favNew();
+  syncFav();
   commit(false);
 }
 
@@ -3556,7 +3900,7 @@ function readHash() {
   SORT.trips = { key: ts.replace('-', ''), dir: ts[0] === '-' ? -1 : 1 };
   const cs = pick(get('csort'), CHAIN_ORDERS.map(o => o[0]), '-days');
   SORT.chains = { key: cs.replace('-', ''), dir: cs[0] === '-' ? -1 : 1 };
-  S.group = pick(get('group'), ['none', 'route', 'from'], 'none');
+  S.group = pick(get('group'), GROUP_BY.map(g => g[0]), 'none');
   applyMode();
 }
 
@@ -3748,6 +4092,7 @@ const CLEAR = {
   gfrom: () => { sel.fcc = sel.fst = ''; },
   gto: () => { sel.tcc = sel.tst = ''; },
   gchain: () => { clearTimeout(typing); setChainOptions({ cn: '2', cs: true, cg: '0', ck: '0', cdmin: '', cdmax: '', cdrive: '', cr: false }); },
+  gfav: () => { favOnly = false; },  // the filter, never the stars
 };
 document.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => {
   CLEAR[b.dataset.clear]();
@@ -3790,7 +4135,7 @@ function placePop() {
 // the filter sheet holds the bodies of the other panels while it is open, so every control keeps its id and handlers
 let lent = [];  // [panel, body] while the filter sheet holds them
 function lend() {
-  for (const sec of $('p-filt').querySelectorAll('.fsec')) {
+  for (const sec of $('p-filt').querySelectorAll('.fsec[data-pop]')) {
     const pop = $(sec.dataset.pop), body = pop.id === 'p-chain' ? $('gchain') : pop.querySelector('.pb');
     sec.hidden = pop.id === 'p-chain' && !chainMode;
     if (!sec.hidden) { sec.append(body); lent.push([pop, body]); }
@@ -3808,7 +4153,7 @@ function openPop(chip, opener) {
   pop.hidden = false;
   chip.setAttribute('aria-expanded', 'true');
   // the phone sheets change the page only with Show: closing them otherwise puts the state back
-  popOpen = { chip, pop, opener: opener || chip, was: phone() && (pop.id === 'p-filt' || pop.id === 'p-chain') ? hashOf(S.view) : null };
+  popOpen = { chip, pop, opener: opener || chip, fav: favOnly, was: phone() && (pop.id === 'p-filt' || pop.id === 'p-chain') ? hashOf(S.view) : null };
   placePop();
   // the first control, not the sheet's close button
   const f = pop.id === 'p-disp' ? pop.querySelector('[data-lang][aria-pressed="true"]') : [...pop.querySelectorAll('button, input, select')].find(x => x.offsetParent && !x.disabled && !x.classList.contains('shx'));
@@ -3817,13 +4162,14 @@ function openPop(chip, opener) {
 // keep: the changes stay (Show, Done); otherwise a phone sheet puts back the state it opened with
 function closePop(focus, keep) {
   if (!popOpen) return;
-  const { chip, pop, was, opener } = popOpen;
+  const { chip, pop, was, opener, fav } = popOpen;
   pop.hidden = true;
   chip.setAttribute('aria-expanded', 'false');
   popOpen = null;
   if (pop.id === 'p-filt') giveBack();
-  if (was && !keep && was !== hashOf(S.view)) {
+  if (was && !keep && (was !== hashOf(S.view) || fav !== favOnly)) {
     clearTimeout(typing);
+    favOnly = fav;  // the favourites filter is not in the hash: put it back too
     history.replaceState(null, '', was);
     readHash();
     render();
@@ -3831,7 +4177,7 @@ function closePop(focus, keep) {
   homeChips();
   if (focus) focusBack(opener.offsetParent ? opener : [...document.querySelectorAll('.pmode [aria-pressed="true"]')].find(b => b.offsetParent) || chip);
 }
-document.querySelectorAll('.chip').forEach(c => c.onclick = () => c.getAttribute('aria-expanded') === 'true' ? closePop(true) : openPop(c));
+document.querySelectorAll('.chip[aria-controls]').forEach(c => c.onclick = () => c.getAttribute('aria-expanded') === 'true' ? closePop(true) : openPop(c));
 // the sheets' x closes without applying, Show and Done apply
 document.querySelectorAll('[data-done]').forEach(b => b.onclick = () => closePop(true, !b.classList.contains('shx')));
 $('freset').onclick = () => {
@@ -3937,6 +4283,8 @@ snapTo('peek');
 function onListClick(e) {
   const t = e.target, by = s => t.closest(s);
   let b;
+  if (by('[data-fav]')) return;  // a star: the handler below takes it
+  if (by('.fav-off')) { favOnly = false; render(); return focusBack($('c-fav')); }
   if ((b = by('[data-mode]'))) return setMode(b.dataset.mode === '1');
   if ((b = by('[data-route]'))) return openRoute(b.dataset.route);
   if ((b = by('[data-chain]'))) return openChain(b.dataset.chain);
@@ -3972,9 +4320,45 @@ function onListChange(e) {
   $(id).focus();  // the select was redrawn
 }
 for (const el of [$('side'), $('tlist')]) { el.onclick = onListClick; el.onchange = onListChange; }
+// ---- stars -------------------------------------------------------------------------------------------
+// Draws the page again and puts back what that drops: the scroll positions of the lists and the chip row, and the focus on the
+// star (or the control) that had it
+function keepView(draw) {
+  const box = $('tlist').querySelector('.tbox'), a = document.activeElement;
+  const keep = { side: $('side').scrollTop, trips: $('tripsview').scrollTop, box: box && [box.scrollLeft, box.scrollTop], chips: $('chips').scrollLeft };
+  const home = a && a.dataset && a.dataset.fav && a.closest('#side, #tlist');
+  const star = home && { fav: a.dataset.fav, key: a.dataset.key, home, at: [...home.querySelectorAll('[data-fav]')].indexOf(a) };
+  draw();
+  $('side').scrollTop = keep.side;
+  $('tripsview').scrollTop = keep.trips;
+  $('chips').scrollLeft = keep.chips;
+  const nb = $('tlist').querySelector('.tbox');
+  if (nb && keep.box) [nb.scrollLeft, nb.scrollTop] = keep.box;
+  if (star) {
+    const all = [...document.getElementById(star.home.id).querySelectorAll('[data-fav]')];
+    // the item may be gone (un-starred under the filter): the star of the next item, else the list heading
+    const to = all.find(x => x.dataset.fav === star.fav && x.dataset.key === star.key) || all[Math.min(star.at, all.length - 1)] || star.home.querySelector('h2');
+    if (!to.matches('button')) to.tabIndex = -1;
+    to.focus({ preventScroll: true });
+  }
+}
+// a star changes in place where it can; a list that its state shapes is drawn again
+function toggleFav(b) {
+  const kind = b.dataset.fav, key = b.dataset.key;
+  setFav(kind, key, !isFav(kind, key));
+  const detail = S.view === 'map' && (chainMode ? S.chain : S.route);
+  if (detail && !favOnly && kind !== 'station') { favNew(); syncFav(); return; }
+  keepView(render);
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-fav]'); if (b && b.dataset.key) toggleFav(b); });
+$('c-fav').onclick = () => { favOnly = !favOnly; render(); };
+$('fav-sw').onchange = () => { favOnly = $('fav-sw').checked; render(); };
+// another tab changed the favourites: take them over, so a write from here never brings back what it removed
+addEventListener('storage', e => { if (e.key === FAV_KEY || e.key === null) { favLoad(); keepView(render); } });
+document.querySelectorAll('.favt:empty').forEach(b => { b.innerHTML = STAR + '<span data-t="fav.label"></span>'; });
 // a card under the pointer or keyboard focus highlights its route or chain on the map
 const hoverAt = el => {
-  const b = el && el.closest && el.closest('.card, .nx, .also button');
+  const li = el && el.closest && el.closest('.cards > li'), b = li ? li.querySelector('.card') : el && el.closest && el.closest('.nx, .also button');
   const k = b ? b.dataset.route || b.dataset.chain : null;
   if (chainMode) hoverChain(k); else hoverRoute(k, false);
 };
@@ -4043,20 +4427,15 @@ function syncDisplay() {
 }
 // A language picked in the menu: kept in storage and in the hash. The text is rebuilt from the state, which does not change
 function changeLang(code) {
-  const box = $('tlist').querySelector('.tbox');
-  const keep = { side: $('side').scrollTop, trips: $('tripsview').scrollTop, box: box && [box.scrollLeft, box.scrollTop], chips: $('chips').scrollLeft };
   langInHash = true;
   try { localStorage.setItem(LANG_KEY, code); } catch (e) {}
-  setLang(code);
-  applyMode();
-  weekText(weekKind);
-  setChainOptions({});
-  render();
-  $('side').scrollTop = keep.side;
-  $('tripsview').scrollTop = keep.trips;
-  $('chips').scrollLeft = keep.chips;
-  const nb = $('tlist').querySelector('.tbox');
-  if (nb && keep.box) [nb.scrollLeft, nb.scrollTop] = keep.box;
+  keepView(() => {
+    setLang(code);
+    applyMode();
+    weekText(weekKind);
+    setChainOptions({});
+    render();
+  });
 }
 
 applyTheme();
