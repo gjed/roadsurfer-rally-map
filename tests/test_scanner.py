@@ -10,6 +10,7 @@ import tempfile
 import unittest
 import urllib.error
 import urllib.parse
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from types import SimpleNamespace
 from typing import ClassVar
@@ -633,6 +634,24 @@ class RoadScanTest(unittest.TestCase):
         self.assertFalse((self.dir / "o.json").exists())
         self.assertFalse((self.dir / "road-distances.json").exists())
 
+    def test_blocked_scan_writes_no_feeds(self):
+        table = mock.patch.object(rally, "road_table")
+        with table as roads, self.assertRaises(SystemExit):
+            get = mock.patch.object(rally, "get", side_effect=self.scan_get)
+            counts = mock.patch.multiple(rally, REQUESTS=100, FAILED=50)
+            with get, counts:
+                self.main("--from", "1", "--feeds", str(self.dir / "feeds"))
+        roads.assert_not_called()
+        self.assertFalse((self.dir / "feeds").exists())
+
+    def test_scan_with_feeds_routes_and_writes_them(self):
+        roads = self.scan("--feeds", str(self.dir / "feeds"), REQUESTS=0, FAILED=0)
+        roads.assert_called_once()
+        feed = ET.parse(self.dir / "feeds" / "all.xml").getroot()
+        entry = feed.find(f"{ATOM}entry")
+        self.assertIn("Distance 0 km", entry.findtext(f"{ATOM}summary"))
+        self.assertTrue((self.dir / "feeds" / "from-munich.xml").exists())
+
     def test_scan_without_output_does_not_route(self):
         self.scan(REQUESTS=0, FAILED=0).assert_not_called()
 
@@ -640,6 +659,261 @@ class RoadScanTest(unittest.TestCase):
         roads = self.scan("--json-out", str(self.dir / "o.json"), REQUESTS=0, FAILED=0)
         roads.assert_called_once()
         self.assertTrue((self.dir / "c.json").exists())
+
+
+ATOM = "{http://www.w3.org/2005/Atom}"
+
+
+def feed_offer(frm, to, start="2026-11-24", end="2026-12-01", **extra):
+    """A record; frm and to are (name, cc) pairs."""
+    a, b = (
+        {"name": n, "cc": cc, "latitude": 50, "longitude": 9} for n, cc in (frm, to)
+    )
+    link = f"https://booking.example/?{frm[0]}-{to[0]}-{start}"
+    return {
+        "start": start,
+        "end": end,
+        "price": "",
+        "link": link,
+        "from": a,
+        "to": b,
+        **extra,
+    }
+
+
+class FeedsTest(unittest.TestCase):
+    """--feeds: Atom files written from the records, offline."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.dir = Path(tmp.name)
+        self.offers = json.loads(FIXTURE.read_text(encoding="utf-8"))["offers"]
+
+    def write(self, records=None, scan=None, name="feeds"):
+        with contextlib.redirect_stdout(io.StringIO()):
+            rally.write_feeds(
+                self.offers if records is None else records, self.dir / name, scan
+            )
+        return {
+            f.name: ET.parse(f).getroot()
+            for f in sorted((self.dir / name).glob("*.xml"))
+        }
+
+    def entries(self, feed):
+        return feed.findall(f"{ATOM}entry")
+
+    def ids(self, feeds):
+        return {
+            n: [e.findtext(f"{ATOM}id") for e in self.entries(f)]
+            for n, f in feeds.items()
+        }
+
+    def test_fixture_feeds_parse_and_count(self):
+        feeds = self.write()
+        self.assertEqual(sorted(feeds), ["all.xml", "from-munich.xml"])
+        for feed in feeds.values():
+            self.assertEqual(feed.tag, f"{ATOM}feed")
+            self.assertEqual(len(self.entries(feed)), len(self.offers))
+
+    def test_entries_per_station(self):
+        records = [
+            feed_offer(("Munich", "DE"), ("Turin", "IT")),
+            feed_offer(("Munich", "DE"), ("Bilbao", "ES")),
+            feed_offer(("Berlin", "DE"), ("Turin", "IT")),
+        ]
+        feeds = self.write(records)
+        self.assertEqual(
+            sorted(feeds), ["all.xml", "from-berlin.xml", "from-munich.xml"]
+        )
+        self.assertEqual(
+            {n: len(self.entries(f)) for n, f in feeds.items()},
+            {"all.xml": 3, "from-berlin.xml": 1, "from-munich.xml": 2},
+        )
+
+    def test_required_atom_elements(self):
+        feeds = self.write(scan=SCAN)
+        for name, feed in feeds.items():
+            url = rally.FEEDS_URL + name
+            self.assertEqual(feed.findtext(f"{ATOM}id"), url)
+            self.assertTrue(feed.findtext(f"{ATOM}title"))
+            self.assertEqual(feed.findtext(f"{ATOM}updated"), SCAN["finished_at"])
+            self.assertIsNotNone(feed.find(f"{ATOM}author/{ATOM}name"))
+            links = {
+                link.get("rel"): link.get("href")
+                for link in feed.findall(f"{ATOM}link")
+            }
+            self.assertEqual(links, {"self": url, "alternate": rally.SITE_URL})
+            for e in self.entries(feed):
+                self.assertTrue(e.findtext(f"{ATOM}id").startswith("tag:"))
+                self.assertTrue(e.findtext(f"{ATOM}title"))
+                self.assertEqual(e.findtext(f"{ATOM}updated"), SCAN["finished_at"])
+
+    def test_updated_without_scan_is_the_render_time(self):
+        for scan in (None, {}, {"finished_at": "yesterday"}, {"finished_at": 5}):
+            feeds = self.write(scan=scan)
+            self.assertRegex(
+                feeds["all.xml"].findtext(f"{ATOM}updated"),
+                r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$",
+            )
+
+    def test_ids_unique_and_stable_across_renders(self):
+        records = self.offers + [feed_offer(("Berlin", "DE"), ("Turin", "IT"))]
+        first = self.ids(self.write(records, name="one"))
+        second = self.ids(self.write(records, SCAN, name="two"))
+        self.assertEqual(first, second)
+        for ids in first.values():
+            self.assertEqual(len(ids), len(set(ids)))
+
+    def test_id_follows_route_and_window(self):
+        a = feed_offer(("Munich", "DE"), ("Turin", "IT"))
+        b = feed_offer(("Munich", "DE"), ("Turin", "IT"), "2026-11-25", "2026-12-02")
+        c = feed_offer(("Munich", "DE"), ("Bilbao", "ES"))
+        ids = self.ids(self.write([a, b, c]))["all.xml"]
+        self.assertEqual(len(set(ids)), 3)
+        self.assertEqual(
+            ids[0],
+            "tag:gjed.github.io,2026-11-26:rally:Munich%2CDE:Turin%2CIT:2026-11-24:2026-12-01",
+        )
+
+    def test_links_are_the_booking_links(self):
+        entries = self.entries(self.write()["all.xml"])
+        links = [e.find(f"{ATOM}link") for e in entries]
+        self.assertEqual(
+            [x.get("href") for x in links], [o["link"] for o in self.offers]
+        )
+        self.assertEqual({x.get("rel") for x in links}, {"alternate"})
+
+    def test_title_and_summary(self):
+        entry = self.entries(self.write()["all.xml"])[0]
+        self.assertEqual(
+            entry.findtext(f"{ATOM}title"),
+            "Munich, DE → Bordeaux, FR · Tue 24 Nov – Tue 1 Dec",
+        )
+
+    def summary(self, **extra):
+        record = {**feed_offer(("A", "DE"), ("B", "FR")), **extra}
+        return self.entries(self.write([record])["all.xml"])[0].findtext(
+            f"{ATOM}summary"
+        )
+
+    def test_summary_distance_and_price(self):
+        self.assertEqual(
+            self.summary(km=1230, km_estimated=True, price="Camper €129.01"),
+            "2026-11-24 to 2026-12-01 · Distance ~1,230 km · Price Camper €129.01",
+        )
+        self.assertIn("Distance 980 km", self.summary(km=980, km_estimated=False))
+        for none in ("", "n/a"):
+            self.assertNotIn(
+                "Price", self.summary(km=1, km_estimated=False, price=none)
+            )
+
+    def test_record_without_km_gets_the_page_estimate(self):
+        record = feed_offer(("A", "DE"), ("B", "FR"))
+        want = rally.estimate_km(record["from"], record["to"])
+        self.assertIn(f"Distance ~{want:,} km", self.summary())
+
+    def test_escaping(self):
+        name = 'Ben & Jerry\'s "Hub" <North>'
+        records = [
+            feed_offer((name, "DE"), ("Turin", "IT")),
+            feed_offer(("Turin", "IT"), (name, "DE")),
+        ]
+        feeds = self.write(records)
+        for feed in feeds.values():
+            titles = [e.findtext(f"{ATOM}title") for e in self.entries(feed)]
+            self.assertTrue(any(name in t for t in titles))
+        station = feeds["from-ben-jerry-s-hub-north.xml"]
+        self.assertEqual(
+            station.findtext(f"{ATOM}title"), f"roadsurfer Rally offers from {name}, DE"
+        )
+        raw = (self.dir / "feeds" / "all.xml").read_text(encoding="utf-8")
+        self.assertNotIn("<North>", raw)
+
+    def test_slugify(self):
+        for name, slug in (
+            ("Munich", "munich"),
+            ("Zürich Flughafen", "zurich-flughafen"),
+            ("Málaga", "malaga"),
+            ("Frankfurt (Main) Airport", "frankfurt-main-airport"),
+            ("Straße Øst Łódź", "strasse-ost-lodz"),
+            ("  St. Pölten  ", "st-polten"),
+            ("Café du Nord / Gare", "cafe-du-nord-gare"),
+            ("ÆØ", "aeo"),
+            ("東京", "station"),
+            ("!!!", "station"),
+        ):
+            self.assertEqual(rally.slugify(name), slug, name)
+
+    def test_slugs_of_duplicate_names(self):
+        slugs = rally.station_slugs(
+            {
+                ("Neustadt", "DE"),
+                ("Neustadt", "AT"),
+                ("Foo", "DE"),
+                ("Foo!", "DE"),
+                ("Rome", "IT"),
+            }
+        )
+        self.assertEqual(
+            slugs,
+            {
+                ("Neustadt", "DE"): "neustadt-de",
+                ("Neustadt", "AT"): "neustadt-at",
+                ("Foo", "DE"): "foo-de",
+                ("Foo!", "DE"): "foo-de-2",
+                ("Rome", "IT"): "rome",
+            },
+        )
+
+    def test_slugs_do_not_depend_on_order(self):
+        stations = [("Café", "FR"), ("Cafe", "FR"), ("Cafe", "ES"), ("Cafe!", "ES")]
+        want = rally.station_slugs(stations)
+        self.assertEqual(rally.station_slugs(stations[::-1]), want)
+        self.assertEqual(len(set(want.values())), len(stations))
+
+    def test_slugs_are_unique_files(self):
+        records = [
+            feed_offer((n, "DE"), ("Turin", "IT"))
+            for n in ("Foo", "Foo!", "Zürich", "Zurich")
+        ]
+        feeds = self.write(records)
+        self.assertEqual(len(feeds), 5)
+        self.assertEqual(
+            sum(len(self.entries(f)) for n, f in feeds.items() if n != "all.xml"), 4
+        )
+
+    def run_cli(self, *argv):
+        cmd = [sys.executable, str(SCRIPT), "--from-json", str(FIXTURE), *argv]
+        return subprocess.run(cmd, capture_output=True, text=True, check=False)
+
+    def test_cli_feeds_without_map(self):
+        out = self.dir / "feeds"
+        r = self.run_cli("--feeds", str(out))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("feeds (2 files, 6 offers)", r.stdout)
+        self.assertEqual(
+            sorted(p.name for p in out.iterdir()), ["all.xml", "from-munich.xml"]
+        )
+        self.assertFalse((self.dir / "index.html").exists())
+
+    def test_cli_feeds_with_map(self):
+        r = self.run_cli(
+            "--feeds", str(self.dir / "f"), "--map", str(self.dir / "i.html")
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue((self.dir / "i.html").exists())
+        self.assertTrue((self.dir / "f" / "all.xml").exists())
+
+    def test_cli_release_still_needs_map(self):
+        r = self.run_cli("--feeds", str(self.dir / "f"), "--release", "v1.0.0")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertFalse((self.dir / "f").exists())
+
+    def test_from_json_without_map_or_feeds_is_rejected(self):
+        r = self.run_cli()
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("--map or --feeds", r.stderr)
 
 
 if __name__ == "__main__":

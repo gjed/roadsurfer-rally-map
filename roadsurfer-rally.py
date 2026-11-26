@@ -18,10 +18,14 @@ import http.client
 import json
 import math
 import random
+import re
 import sys
 import time
+import unicodedata
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
+from collections import defaultdict
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -39,6 +43,18 @@ ROUTING_CHUNK = 50  # destinations per table request (the demo server allows 99)
 ROUTING_STOP = 3  # consecutive failed routing requests that end routing for the run
 ROAD_CACHE = "road-distances.json"
 USER_AGENT = "roadsurfer-rally-map (+https://github.com/gjed/roadsurfer-rally-map)"
+
+# Atom feeds (--feeds): the page they are published with, and the fixed tag: URI
+# authority and date of the entry ids. Changing either changes every id.
+SITE_URL = "https://gjed.github.io/roadsurfer-rally-map/"
+FEEDS_URL = SITE_URL + "feeds/"
+TAG_PREFIX = "tag:gjed.github.io,2026-11-26:rally:"
+ATOM = "http://www.w3.org/2005/Atom"
+DAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")  # not strftime: locale-free
+MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun")
+MONTHS += ("Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+FOLD = str.maketrans({"ß": "ss", "æ": "ae", "œ": "oe", "ø": "o", "ł": "l", "đ": "d"})
+SCAN_TIME = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
 
 
 def get(path, alias, params=None):
@@ -323,6 +339,103 @@ def render(records, path, scan=None, release=None):
     print(f"map ({len(records)} offers): {Path(path).resolve().as_uri()}")
 
 
+def slugify(name):
+    """ASCII, lowercase, hyphens: `Zürich Flughafen` becomes `zurich-flughafen`."""
+    text = unicodedata.normalize("NFKD", name.lower())
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", "-", text.translate(FOLD)).strip("-") or "station"
+
+
+def station_slugs(stations):
+    """{(name, cc): slug}. Stations with the same base slug get `-<cc>`; a slug still
+    taken gets `-2`, `-3`, ... in sorted order. Depends only on the set of stations."""
+    base = {s: slugify(s[0]) for s in stations}
+    shared = defaultdict(int)
+    for slug in base.values():
+        shared[slug] += 1
+    slugs = {}
+    for s in sorted(stations):
+        slug = base[s] if shared[base[s]] == 1 else f"{base[s]}-{s[1].lower()}"
+        free, n = slug, 2
+        while free in slugs.values():
+            free, n = f"{slug}-{n}", n + 1
+        slugs[s] = free
+    return slugs
+
+
+def short_date(iso):
+    d = date.fromisoformat(iso)
+    return f"{DAYS[d.weekday()]} {d.day} {MONTHS[d.month - 1]}"
+
+
+def place(station):
+    return f"{station['name']}, {station['cc']}"
+
+
+def km_text(r):
+    km, estimated = r.get("km"), r.get("km_estimated")
+    if km is None:  # a record from before road distances: the page's estimate
+        km, estimated = estimate_km(r["from"], r["to"]), True
+    return f"{'~' if estimated else ''}{km:,} km"
+
+
+def atom_entry(feed, r, updated):
+    entry = ET.SubElement(feed, "entry")
+    enc = urllib.parse.quote
+    ids = (enc(f"{r[k]['name']},{r[k]['cc']}", safe="") for k in ("from", "to"))
+    ET.SubElement(entry, "id").text = TAG_PREFIX + ":".join(
+        (*ids, r["start"], r["end"])
+    )
+    ET.SubElement(entry, "title").text = (
+        f"{place(r['from'])} → {place(r['to'])} · "
+        f"{short_date(r['start'])} – {short_date(r['end'])}"
+    )
+    ET.SubElement(entry, "link", rel="alternate", href=r["link"])
+    ET.SubElement(entry, "updated").text = updated
+    parts = [f"{r['start']} to {r['end']}", f"Distance {km_text(r)}"]
+    if r.get("price") and r["price"] != "n/a":
+        parts.append(f"Price {r['price']}")
+    ET.SubElement(entry, "summary").text = " · ".join(parts)
+
+
+def atom_feed(name, title, records, updated):
+    url = FEEDS_URL + name
+    feed = ET.Element("feed", xmlns=ATOM)
+    ET.SubElement(feed, "id").text = url
+    ET.SubElement(feed, "title").text = title
+    ET.SubElement(feed, "link", rel="self", type="application/atom+xml", href=url)
+    ET.SubElement(feed, "link", rel="alternate", type="text/html", href=SITE_URL)
+    author = ET.SubElement(feed, "author")
+    ET.SubElement(author, "name").text = "roadsurfer-rally-map"
+    ET.SubElement(author, "uri").text = SITE_URL
+    ET.SubElement(feed, "updated").text = updated
+    for r in records:
+        atom_entry(feed, r, updated)
+    return ET.ElementTree(feed)
+
+
+def write_feeds(records, directory, scan=None):
+    """Write all.xml and one from-<slug>.xml per pick-up station into the directory."""
+    finished = (scan or {}).get("finished_at")
+    if not (isinstance(finished, str) and SCAN_TIME.match(finished)):
+        finished = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    by_station = defaultdict(list)
+    for r in records:
+        by_station[(r["from"]["name"], r["from"]["cc"])].append(r)
+    feeds = {"all.xml": ("roadsurfer Rally offers", records)}
+    for st, slug in station_slugs(by_station).items():
+        title = f"roadsurfer Rally offers from {st[0]}, {st[1]}"
+        feeds[f"from-{slug}.xml"] = (title, by_station[st])
+    out = Path(directory)
+    out.mkdir(parents=True, exist_ok=True)
+    for name, (title, recs) in feeds.items():
+        tree = atom_feed(name, title, recs, finished)
+        tree.write(out / name, encoding="utf-8", xml_declaration=True)
+    print(
+        f"feeds ({len(feeds)} files, {len(records)} offers): {out.resolve().as_uri()}"
+    )
+
+
 def summary(started):
     """Print the request counts and duration; return True if the scan is blocked."""
     secs = round(time.monotonic() - started)
@@ -363,9 +476,14 @@ def main():
         help='write the scan as {"scan": {...}, "offers": [...]}',
     )
     p.add_argument(
+        "--feeds",
+        metavar="DIR",
+        help="write Atom feeds of the offers: all.xml and one from-<station>.xml each",
+    )
+    p.add_argument(
         "--from-json",
         metavar="FILE.json",
-        help="render --map from a --json-out file, without network access",
+        help="render --map and --feeds from a --json-out file, without network access",
     )
     p.add_argument(
         "--delay",
@@ -398,8 +516,8 @@ def main():
         p.error("--release requires --map")
 
     if args.from_json:
-        if not args.map:
-            p.error("--from-json requires --map")
+        if not (args.map or args.feeds):
+            p.error("--from-json requires --map or --feeds")
         scan_opts = (args.list, args.json_out, args.prices)
         if any(scan_opts) or args.origin is not None or args.to is not None:
             p.error(
@@ -412,11 +530,15 @@ def main():
             sys.exit(f"Could not read --from-json {args.from_json}: {e!r}")
         # files written before the scan metadata existed have no "scan" key
         scan = data.get("scan")
-        render(offers, args.map, scan if isinstance(scan, dict) else None, args.release)
+        scan = scan if isinstance(scan, dict) else None
+        if args.map:
+            render(offers, args.map, scan, args.release)
+        if args.feeds:
+            write_feeds(offers, args.feeds, scan)
         return
 
-    if args.list and (args.map or args.json_out):
-        p.error("--list only lists stations: drop --map/--json-out")
+    if args.list and (args.map or args.json_out or args.feeds):
+        p.error("--list only lists stations: drop --map/--json-out/--feeds")
 
     started = time.monotonic()
     stations = {s["id"]: s for s in get("/rally/stations", "rally.startStations") or []}
@@ -450,7 +572,7 @@ def main():
             f"Scan blocked: {FAILED} of {REQUESTS} requests failed "
             f"(more than {MAX_FAILED:.0%}); not writing any file"
         )
-    if args.json_out or args.map:
+    if args.json_out or args.map or args.feeds:
         add_road_km(records, args.road_cache, args.routing_url)
     if args.json_out:
         out = json.dumps(
@@ -460,6 +582,8 @@ def main():
         print(f"data ({len(records)} offers): {Path(args.json_out).resolve()}")
     if args.map:
         render(records, args.map, scan, args.release)
+    if args.feeds:
+        write_feeds(records, args.feeds, scan)
 
 
 if __name__ == "__main__":
