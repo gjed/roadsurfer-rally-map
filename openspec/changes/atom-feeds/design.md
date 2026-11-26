@@ -12,8 +12,10 @@
   hyphens; an empty result is `station`. Stations whose base slugs are equal all get
   `-<cc>` (lowercase country code) appended. If a slug is still taken, it takes `-2`,
   `-3`, … in the order of the sorted `(name, country code)` pairs. The result depends
-  only on the set of pick-up stations in the offers, so the map (which embeds all
-  offers) computes the same file names.
+  only on the set of pick-up stations the scan knows (its `stations` list plus those of
+  the offers), not on which of them have offers, so a URL a reader subscribed to does
+  not change when another station gets an offer. The map computes the same names from
+  the `scan` object and the offers it embeds.
 - **Entry id.** `tag:gjed.github.io,2026-11-26:rally:<from>:<to>:<start>:<end>`, where
   `<from>` and `<to>` are `name,CC` percent-encoded. It does not depend on the slug
   rule, so a new duplicate station never changes the id of an old entry. A renamed
@@ -30,8 +32,14 @@
   not by the locale, so the output is the same on every machine.
 - **Site URL.** A constant in the script. A fork publishes feeds that name this
   project's Pages URL; making it an option is not worth a flag until someone needs it.
-- **Stations without offers.** They have no file; the scanner does not remove files of
-  earlier runs from `DIR`. CI starts from an empty directory.
+- **Stations without offers.** They get a feed with no entries, so a subscribed URL
+  never 404s and a station with no offer today can still be subscribed to. The scan
+  records the pick-up stations it asked about in `scan.stations`; a data file without
+  it falls back to the stations of the offers. The scanner does not remove files of
+  earlier runs from `DIR`; CI starts from an empty directory.
+- **Entry `updated`.** It stays the scan time, as the issue specifies. The scanner keeps
+  no state, so it cannot know when a window first appeared; feed readers go by the
+  entry `id`.
 - **Order of writes.** Feeds are written after the page and the data file, after the
   blocked-scan check and the road distance step, like the other outputs.
 - **`--from-json` without `--map`.** Allowed when `--feeds` is given, so the feeds can

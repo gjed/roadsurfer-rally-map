@@ -29,8 +29,8 @@ feed parses as XML.
 
 The build check SHALL run unit tests of the scanner's pure helpers: station
 resolution, booking-link building, page rendering with escaping of `</`, feed
-rendering (parsing, entry counts, stable and unique ids, links, slugs and escaping),
-the date-window filter with the API client replaced, and the `--from-json` error paths.
+rendering (parsing, ids, links, slugs, escaping), the date-window filter with the API
+client replaced, and the `--from-json` error paths.
 A separate check SHALL install Python 3.8, the minimum supported version, and on it
 byte-compile the scanner, run `--help`, run the unit tests and render the fixture
 and its feeds without network access.

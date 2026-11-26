@@ -22,8 +22,7 @@ generated `feeds/` directory next to it, and nothing else from the repository.
 
 When `release.yml` publishes a release, it SHALL render the page and the feeds with
 `--from-json` from the newest unexpired `offers` artifact of a `scan.yml` run on
-`main`, whether or not that run's deploy job has finished, with the new release tag,
-assemble the Pages artifact as `scan.yml` does, and deploy it from a
+`main`, with the new release tag, assemble the Pages artifact as `scan.yml` does, and deploy it from a
 job that needs the release job, runs only when a release was published, has
 `pages: write` and `id-token: write`, and uses the concurrency group `pages` without
 cancelling a run in progress.
@@ -61,7 +60,7 @@ was blocked SHALL NOT be deployed.
 - **THEN** the deployed page and the deployed feeds are rendered from the same
   `offers.json`
 
-#### Scenario: Blocked scan
+#### Scenario: Blocked scan keeps the feeds
 
 - **WHEN** the scanner exits non-zero
 - **THEN** the deploy job does not run and the published feeds stay unchanged
