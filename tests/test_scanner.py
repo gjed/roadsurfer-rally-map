@@ -915,6 +915,14 @@ class FeedsTest(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         self.assertIn("--map or --feeds", r.stderr)
 
+    def test_template_links_the_feed(self):
+        tpl = (ROOT / "rally-map.template.html").read_text(encoding="utf-8")
+        self.assertIn(
+            '<link rel="alternate" type="application/atom+xml" '
+            'title="roadsurfer Rally offers" href="feeds/all.xml">',
+            tpl,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
