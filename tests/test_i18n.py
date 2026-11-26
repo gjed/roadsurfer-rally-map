@@ -126,6 +126,15 @@ class CatalogTest(unittest.TestCase):
             for key in sorted(set(self.en) - set(messages)):
                 warnings.warn(f"{lang}: no translation of {key}, English is shown")
 
+    def test_favourites_are_in_every_language(self):
+        """The favourites ship translated: no fallback to English for these keys."""
+        keys = {k for k in self.en if k.startswith("fav.")}
+        self.assertIn("fav.new.n.other", keys)
+        for lang, messages in self.strings.items():
+            for key in sorted(keys):
+                with self.subTest(lang=lang, key=key):
+                    self.assertIn(key, messages)
+
     def test_template_keys_exist(self):
         """A key the template names is a key English has (a typo would show the key)."""
         source = TEMPLATE.read_text(encoding="utf-8")
