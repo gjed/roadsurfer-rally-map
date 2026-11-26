@@ -331,12 +331,20 @@ def embed(value):
 
 
 def render(records, path, scan=None, release=None):
-    """Write the map page with the records, scan metadata and release tag (or null)."""
+    """Write the map page with the records, scan metadata, the station feeds and the
+    release tag (or null)."""
     tpl = (
         Path(__file__).with_name("rally-map.template.html").read_text(encoding="utf-8")
     )
     page = tpl.replace("/*DATA*/[]", embed(records))
     page = page.replace("/*SCAN*/null", embed(scan))
+    # [name, cc, slug] of the stations write_feeds writes a feed for: the page links
+    # feeds/from-<slug>.xml and never works out a slug itself
+    slugs = station_slugs(feed_stations(records, scan))
+    page = page.replace(
+        "/*FEEDS*/null",
+        embed([[n, cc, slug] for (n, cc), slug in sorted(slugs.items())]),
+    )
     Path(path).write_text(
         page.replace("/*RELEASE*/null", embed(release)), encoding="utf-8"
     )
@@ -431,6 +439,17 @@ def scan_stations(scan):
     }
 
 
+def feed_stations(records, scan=None):
+    """{(name, cc): its records} for every pick-up station that gets a feed: the scan's
+    list and those of the records. A station without offers has an empty list."""
+    by_station = defaultdict(list)
+    for st in scan_stations(scan):
+        by_station.setdefault(st, [])
+    for r in records:
+        by_station[(r["from"]["name"], r["from"]["cc"])].append(r)
+    return by_station
+
+
 def write_feeds(records, directory, scan=None):
     """Write all.xml and one from-<slug>.xml per pick-up station into the directory.
     The stations are the scan's list and those of the records: a station without
@@ -438,11 +457,7 @@ def write_feeds(records, directory, scan=None):
     finished = (scan or {}).get("finished_at")
     if not (isinstance(finished, str) and SCAN_TIME.match(finished)):
         finished = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    by_station = defaultdict(list)
-    for st in scan_stations(scan):
-        by_station.setdefault(st, [])
-    for r in records:
-        by_station[(r["from"]["name"], r["from"]["cc"])].append(r)
+    by_station = feed_stations(records, scan)
     feeds = {"all.xml": ("roadsurfer Rally offers", records)}
     for st, slug in station_slugs(by_station).items():
         title = f"roadsurfer Rally offers from {st[0]}, {st[1]}"

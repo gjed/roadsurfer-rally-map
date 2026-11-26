@@ -19,8 +19,8 @@ roadsurfer.
 
 ```text
 roadsurfer-rally.py         scanner, JSON writer, map renderer and Atom feed writer
-rally-map.template.html     map page template; render() fills /*DATA*/[], /*SCAN*/null
-                            and /*RELEASE*/null
+rally-map.template.html     map page template; render() fills /*DATA*/[], /*SCAN*/null,
+                            /*FEEDS*/null and /*RELEASE*/null
 tests/                      offline unittest suite and fixtures/offers.json
 feeds/                      generated Atom feeds (all.xml, from-<slug>.xml); git-ignored
 vendor/leaflet/             unmodified upstream Leaflet
