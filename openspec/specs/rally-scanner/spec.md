@@ -595,7 +595,7 @@ line SHALL NOT stay highlighted after a tap on a touch screen unless the tap ope
 
 A route line SHALL have the weight `min(1.5 + trips * .8, 5)` px and the opacity
 `min(floor + (trips - 1) * .1, ceiling)`, the floor and ceiling being the theme's
-`--route-op-min` and `--route-op-max` (.8 and .95 in light, .75 and .9 in dark), so that
+`--route-op-min` and `--route-op-max` (.8 and .95 in light, .85 and .95 in dark), so that
 busy routes stand out and a single trip is still 3:1 against the land of the tiles.
 
 #### Scenario: Single and busy routes
@@ -1036,7 +1036,7 @@ the list shows.
 
 In chain mode the map SHALL draw each leg of the listed chains once, as a solid arc
 with the weight of the number of chains that use it and the opacity
-`min(floor + (chains - 1) * .05, ceiling)` (`--chain-op-min`, `--route-op-max`), and each
+`min(floor + (chains - 1) * .02, ceiling)` (`--chain-op-min`, `--route-op-max`), and each
 connection to another station as a dotted straight line in a second colour on a casing. Station
 markers SHALL show
 how many chains start and end there, and clicking one that has chains starting there
@@ -1651,6 +1651,14 @@ tiles shown in that theme.
 - **WHEN** the visible text of the map, the Trips view, the panels and the sheets is
   measured in each theme
 - **THEN** each text is at least 4.5:1 against its background
+
+#### Scenario: Accepted exceptions
+
+- **WHEN** a one-trip line is measured on the sea of the Light Gray tiles, or the border
+  of a chip or pill (`--field`) on its surface
+- **THEN** they are 2.6:1 and 1.5:1 (light) or 1.7:1 (dark), below 3:1, and are accepted:
+  the light route colour is 3.4:1 on that sea even at full opacity, and a chip or pill is
+  named by its text
 
 ### Requirement: Map controls in the theme
 
