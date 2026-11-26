@@ -6,10 +6,9 @@
 
 With `--feeds DIR`, the scanner SHALL create `DIR` if needed and write UTF-8 Atom
 (RFC 4287) files with the standard library only: `all.xml` with one entry per offer
-record, and for every pick-up station of the records `from-<slug>.xml` with the entries
-of that station's offers, in the order of the records. A station is a name plus a
-country code. The scanner SHALL print the number of files and offers, and SHALL NOT
-remove other files from `DIR`.
+record, and `from-<slug>.xml` with the entries of one pick-up station's offers, in the
+order of the records. It SHALL print the number of files and offers and leave other
+files in `DIR` alone.
 
 #### Scenario: Feeds from a data file
 
@@ -22,6 +21,22 @@ remove other files from `DIR`.
 
 - **WHEN** a station is named `Ben & Jerry's "Hub" <North>`
 - **THEN** the feeds parse and the entry title holds the name unchanged
+
+### Requirement: Feeds of stations without offers
+
+The stations with a feed SHALL be those in the scan's `stations` list and those of the
+records, each a name plus a country code. A station without offers SHALL get a feed
+with no entries.
+
+#### Scenario: Station without offers
+
+- **WHEN** the scan's `stations` list has Nice, FR and no record starts there
+- **THEN** `from-nice.xml` is written with no entries
+
+#### Scenario: Data file without a station list
+
+- **WHEN** the data file has no `scan.stations`
+- **THEN** the stations are those of the records
 
 ### Requirement: Feed metadata
 
@@ -119,11 +134,12 @@ result is `station`.
 
 ### Requirement: Feed file name collisions
 
-When several pick-up stations of the records have the same base slug, the slug of each
+When several pick-up stations have the same base slug, the slug of each
 SHALL be the base slug, a hyphen and its lowercase country code. A slug that is still
 taken SHALL get `-2`, `-3`, and so on, assigned in the order of the stations sorted by
-name and country code. The slugs SHALL depend only on the set of pick-up stations in the
-records, so that other code can build the same file names from the same offers.
+name and country code. The slugs SHALL depend only on the set of pick-up stations the
+scan knows, not on which of them have offers, so that a feed's URL does not change when
+another station gets an offer.
 
 #### Scenario: Same name in two countries
 
@@ -132,10 +148,28 @@ records, so that other code can build the same file names from the same offers.
 
 #### Scenario: Same slug in one country
 
-- **WHEN** pick-up stations named `Foo` and `Foo!`, both in DE, are in the records
+- **WHEN** pick-up stations named `Foo` and `Foo!`, both in DE, are known
 - **THEN** the feeds are `from-foo-de.xml`, for `Foo`, and `from-foo-de-2.xml`
 
 ## MODIFIED Requirements
+
+### Requirement: Scan data file
+
+With `--json-out FILE`, the scanner SHALL write a UTF-8 JSON object whose `offers` key
+holds the same offer records that `--map` embeds in the page, each with `km` and
+`km_estimated`, and whose `scan` key holds the scan metadata: `finished_at` (UTC, ISO
+8601), `offers`, `requests`, `failed`, `rate_limited`, `start`, `end`, `from`, `to` and
+`stations`, the pick-up stations asked about as `{"name", "cc"}` objects. Readers SHALL
+tolerate other top-level keys, records without `km` and a `scan` without `stations`.
+
+#### Scenario: Scan to a data file
+
+- **WHEN** the user runs `python3 roadsurfer-rally.py --from 1 --json-out offers.json`
+- **THEN** `offers.json` holds an object whose `offers` list has one record per listed
+  offer, each with `km` and `km_estimated`, and whose `scan` object has the finish time
+  such as `2026-11-18T03:12:05Z`, the number of offers, the request, failed and HTTP
+  429 counts the summary prints, the `--start` and `--end` window, `from` set to
+  `["1"]`, `to` set to `null` and `stations` listing station 1
 
 ### Requirement: Offline rendering
 

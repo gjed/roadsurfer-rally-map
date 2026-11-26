@@ -10,7 +10,9 @@ does the notifying. Issue #61 asks for Atom feeds published next to the page.
 
 - A new scanner option `--feeds DIR` writes `DIR/all.xml`, with every offer, and one
   `DIR/from-<slug>.xml` per pick-up station, with that station's offers. It works with
-  a scan and with `--from-json`, and uses the standard library only.
+  a scan and with `--from-json`, and uses the standard library only. A station with no
+  offers keeps a feed with no entries; the scan records its pick-up stations in
+  `scan.stations` for that.
 - One entry is one offer window. Its `<id>` is a `tag:` URI built from the route and the
   window, so a reader shows only windows it has not seen: "new offer" needs no state
   from the previous scan. `<updated>` is the scan time.
@@ -30,7 +32,7 @@ feeds, any history of earlier scans, and a language choice for the feed text.
 
 ### Modified Capabilities
 
-- `rally-scanner`: the `--feeds` option and the feed format; `--from-json` takes
+- `rally-scanner`: the `--feeds` option, the feed format and `scan.stations`; `--from-json` takes
   `--feeds` as well as `--map`; routing and the blocked-scan rule cover `--feeds`.
 - `site-publishing`: the Pages artifact and the release deploy carry `feeds/`.
 - `pr-check`: the fixture render also writes the feeds, and the page check parses them.
