@@ -46,7 +46,7 @@
     --hover: #1E2430; --hover-on: #22345A;
     --route: #6FA8FF; --selected: #FF8A4C; --on-selected: #0F1115; --halo: #0F1115; --hop: #B794F6;
     --station: #E8EAED; --station-fill: #171A21;
-    --route-op-min: .75; --route-op-max: .9; --chain-op-min: .75;
+    --route-op-min: .85; --route-op-max: .95; --chain-op-min: .85;
     --note-bg: #2A1A10; --note-fg: #FDBA8C; --fresh: #22C55E;
     --sea: #222327; --land: #3F3F41;
     --switch-off: #6B7280; --switch-knob: #E8EAED; --step-off: #4A515D;
@@ -661,9 +661,10 @@ const weight = n => Math.min(1.5 + n * .8, 5);
 // the opacity ramp keeps the trip count but starts at a floor that keeps a one-trip line at 3:1 on the tiles of the theme
 const opacity = n => Math.min(+T['route-op-min'] + (n - 1) * .1, +T['route-op-max']);
 const rampOf = f => ({ ramp: f, opacity: f() });  // a layer keeps its ramp, to take the theme's floor again
-// chain mode draws up to 200 chains: thinner and fainter, so the overview stays readable
-const chainWeight = n => Math.min(1 + n * .3, 4);
-const chainOpacity = n => Math.min(+T['chain-op-min'] + (n - 1) * .05, +T['route-op-max']);
+// chain mode draws up to 200 chains: thinner lines, so the overview stays readable. The opacity floor keeps a single leg at
+// 3:1 on the tiles; the weight, and the opacity up to about 8 chains, carry the count
+const chainWeight = n => Math.min(1 + n * .2, 3);  // reaches its cap at 10 chains, the legend's "10 or more"
+const chainOpacity = n => Math.min(+T['chain-op-min'] + (n - 1) * .02, +T['route-op-max']);
 const fit = L.control({ position: 'topright' });
 fit.onAdd = () => {
   const d = L.DomUtil.create('div', 'leaflet-bar fitbar');
