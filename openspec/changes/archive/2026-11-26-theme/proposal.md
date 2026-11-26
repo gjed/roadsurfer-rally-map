@@ -27,10 +27,12 @@ redesign brief, section 10).
 - Zoom, fit, attribution and tooltips follow the theme. In dark, shadows become 1 px
   borders.
 - Contrast is measured against the real tiles of both sets; the dark route, selected and
-  hop colours are kept because they pass 3:1.
+  hop colours are kept because they pass 3:1. The opacity ramp of the route and chain
+  lines gets a floor per theme (`--route-op-min`, `--route-op-max`, `--chain-op-min`), so a
+  one-trip line is 3:1 on the land of its tiles; the trip count still sets the opacity.
 
 Out of scope: a language selector and the extraction of strings (the later `i18n` part),
-changes to the tile provider or to the route weight and opacity ramp.
+changes to the tile provider or to the route weights.
 
 ## Capabilities
 

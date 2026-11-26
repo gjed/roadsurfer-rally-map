@@ -594,13 +594,14 @@ line SHALL NOT stay highlighted after a tap on a touch screen unless the tap ope
 ### Requirement: Route line weight
 
 A route line SHALL have the weight `min(1.5 + trips * .8, 5)` px and the opacity
-`min(.4 + trips * .1, .85)`, so that busy routes stand out and single trips stay
-faint.
+`min(floor + (trips - 1) * .1, ceiling)`, the floor and ceiling being the theme's
+`--route-op-min` and `--route-op-max` (.8 and .95 in light, .75 and .9 in dark), so that
+busy routes stand out and a single trip is still 3:1 against the land of the tiles.
 
 #### Scenario: Single and busy routes
 
 - **WHEN** the page draws a route with 1 trip and a route with 5 or more trips
-- **THEN** the first line is 2.3 px wide at opacity .5, the second 5 px wide at .85
+- **THEN** the first line is 2.3 px wide at the floor, the second 5 px wide at the ceiling
 
 ### Requirement: Initial map view
 
@@ -1034,8 +1035,9 @@ the list shows.
 ### Requirement: Chain map lines
 
 In chain mode the map SHALL draw each leg of the listed chains once, as a solid arc
-with the weight and opacity of the number of chains that use it, and each connection to
-another station as a dotted straight line in a second colour on a white casing. Station
+with the weight of the number of chains that use it and the opacity
+`min(floor + (chains - 1) * .05, ceiling)` (`--chain-op-min`, `--route-op-max`), and each
+connection to another station as a dotted straight line in a second colour on a casing. Station
 markers SHALL show
 how many chains start and end there, and clicking one that has chains starting there
 SHALL toggle the pick-up filter.

@@ -47,6 +47,34 @@ line SHALL NOT stay highlighted after a tap on a touch screen unless the tap ope
 - **WHEN** the user taps a route and then taps another route
 - **THEN** only the route that is open is highlighted
 
+### Requirement: Route line weight
+
+A route line SHALL have the weight `min(1.5 + trips * .8, 5)` px and the opacity
+`min(floor + (trips - 1) * .1, ceiling)`, the floor and ceiling being the theme's
+`--route-op-min` and `--route-op-max` (.8 and .95 in light, .75 and .9 in dark), so that
+busy routes stand out and a single trip is still 3:1 against the land of the tiles.
+
+#### Scenario: Single and busy routes
+
+- **WHEN** the page draws a route with 1 trip and a route with 5 or more trips
+- **THEN** the first line is 2.3 px wide at the floor, the second 5 px wide at the ceiling
+
+### Requirement: Chain map lines
+
+In chain mode the map SHALL draw each leg of the listed chains once, as a solid arc
+with the weight of the number of chains that use it and the opacity
+`min(floor + (chains - 1) * .05, ceiling)` (`--chain-op-min`, `--route-op-max`), and each
+connection to another station as a dotted straight line in a second colour on a casing. Station
+markers SHALL show
+how many chains start and end there, and clicking one that has chains starting there
+SHALL toggle the pick-up filter.
+
+#### Scenario: Connections drawn dotted
+
+- **WHEN** chain mode lists a chain with a 40 km connection
+- **THEN** its two legs are solid arcs and the connection between the two stations is a
+  dotted line
+
 ## ADDED Requirements
 
 ### Requirement: Colour themes
