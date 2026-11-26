@@ -88,6 +88,14 @@ order (for example `#trips?from=Munich&sort=km`), so a reload or a shared link s
 the same page. Opening a route or switching views adds a history entry; changing a
 filter does not.
 
+Mark a route, a pick-up station or a chain as a favourite with the star on its card, its
+detail or a Trips row, or with `Favourite` under `From <station>`. The `Favourites` chip
+then shows only those (a route also counts when it leaves a favourite station) and
+floats them to the top of the lists. Favourites live in this browser's `localStorage`,
+never in the address bar, and a station that the API renames loses its star. A window
+that appeared on a favourite since you last looked gets a `New` badge, and the chip
+counts them; opening the item clears them.
+
 Distances are road distances in km. A distance that could not be routed is an
 estimate, shown with a leading `~` that the legend explains; see "Road distances".
 
@@ -333,7 +341,8 @@ slug, both get their country code appended (`neustadt-de`, `neustadt-at`), and a
 that is still taken gets `-2`, `-3`, in the order of the sorted names. The stations are
 the scan's `stations` list plus those of the offers (a data file from before the list
 existed has only the latter), so a slug does not change when another station gets an
-offer. The map links `all.xml` from its `<head>`.
+offer. The map links `all.xml` from its `<head>` and shows an `RSS feed` link to the file of
+the chosen pick-up station, from the station table `--map` embeds.
 
 `--feeds DIR` writes the same files locally, from a scan or from a data file, and keeps
 other files in `DIR`:

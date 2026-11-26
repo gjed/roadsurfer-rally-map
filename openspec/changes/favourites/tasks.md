@@ -17,6 +17,6 @@
 
 ## 3. Documentation and validation
 
-- [ ] 3.1 README note on favourites and the station feed link
+- [x] 3.1 README note on favourites and the station feed link
 - [ ] 3.2 `make lint test map`, `openspec validate favourites --strict`
 - [ ] 3.3 Browser check at 1440×900, 390×844 and 360×740, light and dark, English and German: stars from every place, persistence, the filter and its count, new windows from a second synthetic scan, throwing storage, the empty state, the feed links, state kept on starring, accessible names
