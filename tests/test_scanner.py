@@ -952,6 +952,49 @@ class FeedsTest(unittest.TestCase):
         self.assertTrue((self.dir / "i.html").exists())
         self.assertTrue((self.dir / "f" / "all.xml").exists())
 
+    def table_of(self, html):
+        return json.loads(page_data(html, "FEEDS"))
+
+    def test_cli_page_names_the_files_the_feeds_wrote(self):
+        out, page = self.dir / "f", self.dir / "i.html"
+        r = self.run_cli("--feeds", str(out), "--map", str(page))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        table = self.table_of(page.read_text(encoding="utf-8"))
+        self.assertEqual(table, [["Munich", "DE", "munich"]])
+        for _name, _cc, slug in table:
+            self.assertTrue((out / f"from-{slug}.xml").is_file(), slug)
+
+    def test_page_feed_names_match_the_files(self):
+        """Duplicate names, idle stations and odd names: one source for both."""
+        records = [
+            feed_offer(("Neustadt", "DE"), ("Turin", "IT")),
+            feed_offer(("Neustadt", "AT"), ("Turin", "IT")),
+            feed_offer(("Zürich Flughafen", "CH"), ("Turin", "IT")),
+            feed_offer(("Foo", "DE"), ("Turin", "IT")),
+            feed_offer(("Foo!", "DE"), ("Turin", "IT")),
+        ]
+        scan = {"stations": [{"name": "Nice", "cc": "FR"}, {"name": "x"}]}
+        page = self.dir / "i.html"
+        with contextlib.redirect_stdout(io.StringIO()):
+            rally.render(records, page, scan)
+            rally.write_feeds(records, self.dir / "f", scan)
+        table = self.table_of(page.read_text(encoding="utf-8"))
+        slugs = {(name, cc): slug for name, cc, slug in table}
+        self.assertEqual(slugs[("Neustadt", "DE")], "neustadt-de")
+        self.assertEqual(slugs[("Neustadt", "AT")], "neustadt-at")
+        self.assertEqual(slugs[("Zürich Flughafen", "CH")], "zurich-flughafen")
+        self.assertEqual(slugs[("Foo!", "DE")], "foo-de-2")
+        self.assertIn(("Nice", "FR"), slugs)
+        self.assertEqual(len(slugs), 6)
+        files = {p.name for p in (self.dir / "f").glob("from-*.xml")}
+        self.assertEqual(files, {f"from-{slug}.xml" for slug in slugs.values()})
+
+    def test_page_without_stations_has_an_empty_table(self):
+        page = self.dir / "i.html"
+        with contextlib.redirect_stdout(io.StringIO()):
+            rally.render([], page)
+        self.assertEqual(self.table_of(page.read_text(encoding="utf-8")), [])
+
     def test_cli_release_still_needs_map(self):
         r = self.run_cli("--feeds", str(self.dir / "f"), "--release", "v1.0.0")
         self.assertNotEqual(r.returncode, 0)

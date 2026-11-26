@@ -2,8 +2,8 @@
 
 ## 1. Feed table in the page
 
-- [ ] 1.1 `feed_stations()` gives the stations and their records for `write_feeds()` and `render()`; `render()` embeds `[name, cc, slug]` for them in `/*FEEDS*/null`
-- [ ] 1.2 Unit test: render the fixture with `--map` and `--feeds`; every embedded slug has its file; a duplicate-name station gets the file of its own country
+- [x] 1.1 `feed_stations()` gives the stations and their records for `write_feeds()` and `render()`; `render()` embeds `[name, cc, slug]` for them in `/*FEEDS*/null`
+- [x] 1.2 Unit test: render the fixture with `--map` and `--feeds`; every embedded slug has its file; a duplicate-name station gets the file of its own country
 
 ## 2. Favourites
 
