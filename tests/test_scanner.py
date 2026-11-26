@@ -602,7 +602,7 @@ class RoadScanTest(unittest.TestCase):
         self.assertIn("aria-current", html)
         # the tooltip and the legend say that a click filters
         self.assertIn("Click to only show", html)
-        self.assertIn("Station \\u2014 click to filter", html)
+        self.assertIn("Station \u2014 click to filter", html)
 
     def scan_get(self, path, alias, params=None):
         if path == "/rally/stations":
