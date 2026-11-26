@@ -30,6 +30,12 @@ by relative path, so write the `--map` file in the repo root, next to `vendor/`.
 map tiles still come from Esri, so viewing the page needs an internet connection. A
 full scan makes about 850 sequential requests and takes several minutes.
 
+The page is in English, German, French, Spanish, Italian, Dutch and Portuguese. It opens
+in the language of the browser, falling back to English, and the `Display` button at the
+end of the top bar changes it. The choice is kept in the browser and in the page address
+(`#map?lang=de`), so a shared link keeps it. Dates, numbers, distances and country names
+follow the language; station names stay as the API gives them.
+
 The page has two views, `Map` and `Trips`, and shows either `Single rallies` or
 `Chains` (see "Chains"); both switches are in the bar at the top, next to
 `Updated 18 Nov, 03:12 UTC`, the time the data was scanned. Hovering that time shows
