@@ -156,11 +156,11 @@ another station gets an offer.
 ### Requirement: Scan data file
 
 With `--json-out FILE`, the scanner SHALL write a UTF-8 JSON object whose `offers` key
-holds the same offer records that `--map` embeds in the page, each with `km` and
-`km_estimated`, and whose `scan` key holds the scan metadata: `finished_at` (UTC, ISO
-8601), `offers`, `requests`, `failed`, `rate_limited`, `start`, `end`, `from`, `to` and
-`stations`, the pick-up stations asked about as `{"name", "cc"}` objects. Readers SHALL
-tolerate other top-level keys, records without `km` and a `scan` without `stations`.
+holds the offer records that `--map` embeds, each with `km` and `km_estimated`, and
+whose `scan` key holds the scan metadata: `finished_at` (UTC, ISO 8601), `offers`,
+`requests`, `failed`, `rate_limited`, `start`, `end`, `from`, `to` and `stations` (the
+pick-up stations asked about, as `{"name", "cc"}`). Readers SHALL tolerate other
+top-level keys, records without `km` and a `scan` without `stations`.
 
 #### Scenario: Scan to a data file
 
