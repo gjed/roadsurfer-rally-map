@@ -12,7 +12,7 @@
 - [x] 2.3 `Favourites` chip, phone sheet switch, filter in `passes()` and `endsPass()`, `Filters · n`, `Clear all`/`Reset`, empty states
 - [x] 2.4 `Favourites` header rows in the route list, favourites first in Trips
 - [x] 2.5 New windows: seen sets per item, `New` badges and counts, the chip count, marking seen on open
-- [ ] 2.6 `RSS feed` link in the station heading and the Pick-up panel, hidden without an entry; the station tooltip shows the state
+- [x] 2.6 `RSS feed` link in the station heading and the Pick-up panel, hidden without an entry; the station tooltip shows the state
 - [x] 2.7 Catalog: every new text in the seven languages
 
 ## 3. Documentation and validation

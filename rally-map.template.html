@@ -364,8 +364,11 @@
   .dtop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 12px 0 16px; }
   .dtop .back { margin: 0; }
   .stx { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
-  .shead .stx .favt { position: relative; height: 36px; }
-  .shead .stx .favt::before { content: ""; position: absolute; inset: -4px 0; }
+  .shead .stx .favt, .shead .stx .feed { position: relative; height: 36px; }
+  .shead .stx .favt::before, .shead .stx .feed::before { content: ""; position: absolute; inset: -4px 0; }
+  .feed { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; box-sizing: border-box; padding: 0 10px; border-radius: 16px; color: var(--accent); font-size: 13px; font-weight: 600; text-decoration: none; }
+  @media (hover: hover) { .feed:hover { background: var(--hover); } }
+  .pop small.fnote { margin: 0; font-size: 12px; color: var(--muted); }
   .tt td.ft { width: 44px; padding: 6px 0 6px 12px; }
   .tt td.ds .newb { margin: 0 0 0 8px; }
   .ccard .sh { display: flex; align-items: flex-start; gap: 8px; }
@@ -659,7 +662,8 @@
     <h2 id="h-from">Pick-up</h2>
     <label><span data-t="pop.country">Country</span><select id="fcc"></select></label>
     <label><span data-t="pop.station">Station</span><select id="fst"></select></label>
-    <div class="stx" id="f-from" hidden><button type="button" class="favt" data-fav="station" data-key="" aria-pressed="false"></button></div>
+    <div class="stx" id="f-from" hidden><button type="button" class="favt" data-fav="station" data-key="" aria-pressed="false"></button><a class="feed" type="application/atom+xml" target="_blank" rel="noopener" aria-describedby="fd-panel" hidden><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="3.5" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M2 7.5a6.5 6.5 0 0 1 6.5 6.5M2 2.5a11.5 11.5 0 0 1 11.5 11.5"/></svg><span data-t="fav.feed">RSS feed</span></a></div>
+    <small class="fnote" id="fd-panel" hidden></small>
   </div>
   <div class="pf"><button class="ghost" data-clear="gfrom" data-t="pop.clear">Clear</button><span class="grow"></span><button class="btn" data-done data-t="pop.done">Done</button></div>
 </div>
@@ -998,11 +1002,13 @@ const STRINGS = {
     "fav.empty.chains": "No favourite chains yet. Star ☆ one and it shows here.",
     "fav.empty.chains.fit": "None of your favourite chains fits these options.",
     "fav.empty.show": "Show all",
+    "fav.feed": "RSS feed",
     "fav.label": "Favourite",
     "fav.aria": "Favourite: {item}",
     "fav.chip.sr.one": " · {n} new since your last visit",
     "fav.chip.sr.other": " · {n} new since your last visit",
     "fav.hint": "Star ☆ a route, station or chain to see it here.",
+    "fav.feed.tip": "New rallies from {place}, for a feed reader app.",
     "fav.empty.none": "None of your favourites have trips with these filters."
   },
   "de": {
@@ -1288,11 +1294,13 @@ const STRINGS = {
     "fav.empty.chains": "Noch keine Lieblingsketten. Markiere eine mit ☆, dann erscheint sie hier.",
     "fav.empty.chains.fit": "Keine deiner Lieblingsketten passt zu diesen Optionen.",
     "fav.empty.show": "Alle anzeigen",
+    "fav.feed": "RSS-Feed",
     "fav.label": "Favorit",
     "fav.aria": "Favorit: {item}",
     "fav.chip.sr.one": " · {n} neu seit deinem letzten Besuch",
     "fav.chip.sr.other": " · {n} neu seit deinem letzten Besuch",
     "fav.hint": "Markiere eine Route, Station oder Kette mit ☆, um sie hier zu sehen.",
+    "fav.feed.tip": "Neue Rallyes ab {place}, für eine Feed-Reader-App.",
     "fav.empty.none": "Keine deiner Favoriten hat Fahrten mit diesen Filtern."
   },
   "fr": {
@@ -1578,11 +1586,13 @@ const STRINGS = {
     "fav.empty.chains": "Aucune chaîne en favori pour l'instant. Marquez-en une avec ☆, elle apparaîtra ici.",
     "fav.empty.chains.fit": "Aucune de vos chaînes favorites ne correspond à ces options.",
     "fav.empty.show": "Tout afficher",
+    "fav.feed": "Flux RSS",
     "fav.label": "Favori",
     "fav.aria": "Favori : {item}",
     "fav.chip.sr.one": " · {n} nouveau depuis votre dernière visite",
     "fav.chip.sr.other": " · {n} nouveaux depuis votre dernière visite",
     "fav.hint": "Marquez un itinéraire, une station ou une chaîne avec ☆ pour la voir ici.",
+    "fav.feed.tip": "Nouvelles rallyes au départ de {place}, pour une application de lecture de flux.",
     "fav.empty.none": "Aucun de vos favoris n'a de trajets avec ces filtres."
   },
   "es": {
@@ -1868,11 +1878,13 @@ const STRINGS = {
     "fav.empty.chains": "Aún no hay cadenas favoritas. Marca una con ☆ y aparecerá aquí.",
     "fav.empty.chains.fit": "Ninguna de tus cadenas favoritas encaja con estas opciones.",
     "fav.empty.show": "Mostrar todo",
+    "fav.feed": "Feed RSS",
     "fav.label": "Favorito",
     "fav.aria": "Favorito: {item}",
     "fav.chip.sr.one": " · {n} nuevo desde tu última visita",
     "fav.chip.sr.other": " · {n} nuevos desde tu última visita",
     "fav.hint": "Marca una ruta, una estación o una cadena con ☆ para verla aquí.",
+    "fav.feed.tip": "Rallies nuevas desde {place}, para una aplicación lectora de feeds.",
     "fav.empty.none": "Ninguno de tus favoritos tiene viajes con estos filtros."
   },
   "it": {
@@ -2158,11 +2170,13 @@ const STRINGS = {
     "fav.empty.chains": "Ancora nessuna catena preferita. Aggiungi ☆ a una e comparirà qui.",
     "fav.empty.chains.fit": "Nessuna delle tue catene preferite corrisponde a queste opzioni.",
     "fav.empty.show": "Mostra tutto",
+    "fav.feed": "Feed RSS",
     "fav.label": "Preferito",
     "fav.aria": "Preferito: {item}",
     "fav.chip.sr.one": " · {n} nuovo dalla tua ultima visita",
     "fav.chip.sr.other": " · {n} nuovi dalla tua ultima visita",
     "fav.hint": "Aggiungi ☆ a un percorso, una stazione o una catena per vederla qui.",
+    "fav.feed.tip": "Nuove rally da {place}, per un'app di lettura di feed.",
     "fav.empty.none": "Nessuno dei tuoi preferiti ha viaggi con questi filtri."
   },
   "nl": {
@@ -2448,11 +2462,13 @@ const STRINGS = {
     "fav.empty.chains": "Nog geen favoriete ketens. Markeer er een met ☆ en hij verschijnt hier.",
     "fav.empty.chains.fit": "Geen van je favoriete ketens past bij deze opties.",
     "fav.empty.show": "Alles tonen",
+    "fav.feed": "RSS-feed",
     "fav.label": "Favoriet",
     "fav.aria": "Favoriet: {item}",
     "fav.chip.sr.one": " · {n} nieuw sinds je laatste bezoek",
     "fav.chip.sr.other": " · {n} nieuw sinds je laatste bezoek",
     "fav.hint": "Markeer een route, station of keten met ☆ om die hier te zien.",
+    "fav.feed.tip": "Nieuwe rally's vanaf {place}, voor een feedreader-app.",
     "fav.empty.none": "Geen van je favorieten heeft ritten met deze filters."
   },
   "pt": {
@@ -2738,11 +2754,13 @@ const STRINGS = {
     "fav.empty.chains": "Ainda não há cadeias favoritas. Marque uma com ☆ e aparecerá aqui.",
     "fav.empty.chains.fit": "Nenhuma das suas cadeias favoritas corresponde a estas opções.",
     "fav.empty.show": "Mostrar tudo",
+    "fav.feed": "Feed RSS",
     "fav.label": "Favorito",
     "fav.aria": "Favorito: {item}",
     "fav.chip.sr.one": " · {n} novo desde a sua última visita",
     "fav.chip.sr.other": " · {n} novos desde a sua última visita",
     "fav.hint": "Marque uma rota, uma estação ou uma cadeia com ☆ para a ver aqui.",
+    "fav.feed.tip": "Novas rallies a partir de {place}, para uma aplicação de leitura de feeds.",
     "fav.empty.none": "Nenhum dos seus favoritos tem viagens com estes filtros."
   }
 };
@@ -3192,8 +3210,14 @@ const favBtn = (kind, key, item, cls) => `<button type="button" class="${cls}" d
 const routeFav = (key, a, b, cls = 'fav') => favBtn('route', key, t('aria.route', { from: place(a), to: place(b) }), cls);
 const chainFav = (c, cls = 'fav') => favBtn('chain', c.key, chainLabel(c), cls);
 const stationFav = st => favBtn('station', place(st), place(st), 'favt');
-// the controls of the station header of the lists: the favourite button
-const stationControls = st => `<div class="stx">${stationFav(st)}</div>`;
+// the feed of a pick-up station: the page links the file the scanner wrote, by the slug the scanner gave it
+const FEED = new Map((Array.isArray(FEEDS) ? FEEDS : []).filter(f => Array.isArray(f) && f.length === 3).map(([n, cc, slug]) => [n + ', ' + cc, slug]));
+const feedUrl = st => FEED.has(place(st)) ? 'feeds/from-' + encodeURIComponent(FEED.get(place(st))) + '.xml' : '';
+const FEEDI = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="3.5" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M2 7.5a6.5 6.5 0 0 1 6.5 6.5M2 2.5a11.5 11.5 0 0 1 11.5 11.5"/></svg>';
+const feedTip = st => t('fav.feed.tip', { place: place(st) });
+const feedLink = (st, id) => feedUrl(st) ? `<a class="feed" href="${esc(feedUrl(st))}" type="application/atom+xml" target="_blank" rel="noopener" title="${esc(feedTip(st))}" aria-describedby="${id}">${FEEDI}<span>${esc(t('fav.feed'))}</span></a><span class="sr" id="${id}">${esc(feedTip(st))}</span>` : '';
+// the controls of the station header of the lists: the favourite button and the feed
+const stationControls = st => `<div class="stx">${stationFav(st)}${feedLink(st, 'fd-head')}</div>`;
 // the buttons that are on the page: their pressed state, and the Favourites chip and the sheet's switch
 function syncFav() {
   for (const b of document.querySelectorAll('[data-fav]')) {
@@ -3211,12 +3235,15 @@ function syncFav() {
   $('fav-new').textContent = stars ? (n ? t('fav.new.n', { n }) : '') : t('fav.hint');
   $('fav-new').hidden = !$('fav-new').textContent;
 }
-// the chosen pick-up station in the Pick-up panel: its favourite button
+// the chosen pick-up station in the Pick-up panel: its favourite button and its feed, with a line that says what the feed is
 function stationActs() {
-  const st = eff.fst && STATIONS.get(eff.fst), key = st ? place(st) : '', row = $('f-from'), b = row.querySelector('.favt');
+  const st = eff.fst && STATIONS.get(eff.fst), key = st ? place(st) : '', row = $('f-from');
+  const b = row.querySelector('.favt'), a = row.querySelector('.feed'), note = $('fd-panel'), url = st ? feedUrl(st) : '';
   row.hidden = !st;
   b.dataset.key = key;
   b.setAttribute('aria-label', st ? favAria(key) : '');
+  a.hidden = note.hidden = !url;
+  if (url) { a.href = url; a.title = note.textContent = feedTip(st); }
 }
 
 // OSRM routes on OpenStreetMap data: credit them in the attribution when a routed distance is shown
