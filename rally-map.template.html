@@ -20,36 +20,39 @@
   :root, :root[data-theme=light] {
     color-scheme: light;
     --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F6F7F8; --ink: #15181E; --muted: #5B6270;
-    --line: #E3E5E8; --line2: #EEF0F2; --field: #CFD3D9; --seg: #F1F3F5; --seg-on: #FFFFFF; --seg-grp: #E9ECEF; --thead: #FAFBFC;
-    --accent: #1D5FB8; --accent-h: #174C93; --on-accent: #FFFFFF; --chip-on-bg: #E8F0FB; --chip-on-fg: #174C93;
-    --hover: #F3F5F7; --hover-card: #F3F6FA; --hover-on: #DCE8F8; --hover-x: rgba(29, 95, 184, .14);
-    --route: #2F6DB8; --selected: #C2410C; --on-selected: #FFFFFF; --sel-bg: #FFF4ED; --halo: #FFFFFF; --hop: #7C3AED; --hop-text: #6D28D9;
+    --line: #E3E5E8; --line2: #EEF0F2; --field: #CFD3D9; --ctl-line: #CFD3D9;
+    --seg: #F1F3F5; --seg-on: #FFFFFF; --seg-grp: #E9ECEF; --th-bg: #FAFBFC;
+    --accent: #1D5FB8; --accent-hover: #174C93; --on-accent: #FFFFFF; --chip-on-bg: #E8F0FB; --chip-on-fg: #174C93;
+    --hover: #F3F5F7; --hover-on: #DCE8F8;
+    --route: #2F6DB8; --selected: #C2410C; --on-selected: #FFFFFF; --halo: #FFFFFF; --hop: #7C3AED;
     --station: #0E2A47; --station-fill: #FFFFFF;
-    --note-bg: #FFF7ED; --note-fg: #7C2D12; --fresh: #16A34A; --stale: #9AA1AC;
-    --sea: #DCE4EA; --attr-bg: rgba(255, 255, 255, .8); --attr-link: #005F87;
-    --sw-off: #8A929E; --sw-knob: #FFFFFF; --step-off: #B8BEC7; --grip: #9AA1AC;
-    --logo-bg: #15181E; --logo-fg: #FFFFFF; --logo-dot: #F97316; --logo-line: transparent;
+    --route-op-min: .8; --route-op-max: .95; --chain-op-min: .8;
+    --note-bg: #FFF7ED; --note-fg: #7C2D12; --fresh: #16A34A; --brand: #F97316;
+    --sea: #DCE4EA; --land: #EFEFEF;
+    --switch-off: #8A929E; --switch-knob: #FFFFFF; --step-off: #B8BEC7;
     --scrim: rgba(15, 18, 24, .45); --scrim-chain: rgba(55, 63, 77, .94); --scrim-hint: rgba(255, 255, 255, .14); --scrim-fg: #FFFFFF;
     --sh-seg: 0 1px 2px rgba(16, 24, 40, .12); --sh-ctl: 0 1px 3px rgba(16, 24, 40, .2); --sh-md: 0 4px 12px rgba(16, 24, 40, .18);
-    --sh-pop: 0 12px 32px rgba(16, 24, 40, .18); --sh-sheet: 0 -6px 24px rgba(16, 24, 40, .16);
+    --sh-pop: 0 12px 32px rgba(16, 24, 40, .18); --sh-sheet: 0 -6px 24px rgba(16, 24, 40, .16); --sh-map-sheet: 0 -6px 24px rgba(16, 24, 40, .16);
     --sh-knob: 0 1px 2px rgba(0, 0, 0, .25); --sh-badge: 0 0 0 2px var(--halo), 0 2px 6px rgba(0, 0, 0, .25);
   }
-  /* in dark a shadow barely shows: a 1 px border takes its place, and a panel that has a border keeps just that */
+  /* in dark a shadow barely shows. Off the map a 1 px border takes its place (none where the panel has one); over the map a
+     border and a soft shadow, since a bare line does not separate a control from the dark land */
   :root[data-theme=dark] {
     color-scheme: dark;
     --bg: #0F1115; --surface: #171A21; --surface-2: #1D2129; --ink: #E8EAED; --muted: #A1A8B3;
-    --line: #2A2F38; --line2: #20252D; --field: #3A404B; --seg: #1D2129; --seg-on: #333A46; --seg-grp: #262B34; --thead: #1B1F27;
-    --accent: #5B9BFF; --accent-h: #86B4FF; --on-accent: #0B1220; --chip-on-bg: #1B2A44; --chip-on-fg: #B9D3FF;
-    --hover: #232832; --hover-card: #1F2530; --hover-on: #223A60; --hover-x: rgba(91, 155, 255, .22);
-    --route: #6FA8FF; --selected: #FF8A4C; --on-selected: #0F1115; --sel-bg: #2A1A10; --halo: #0F1115; --hop: #B794F6; --hop-text: #B794F6;
+    --line: #2A2F38; --line2: #23272F; --field: #3A404B; --ctl-line: #636B78;
+    --seg: #0F1115; --seg-on: #2A2F38; --seg-grp: #0F1115; --th-bg: #1D2129;
+    --accent: #5B9BFF; --accent-hover: #8AB8FF; --on-accent: #0B1220; --chip-on-bg: #1B2A44; --chip-on-fg: #B9D3FF;
+    --hover: #1E2430; --hover-on: #22345A;
+    --route: #6FA8FF; --selected: #FF8A4C; --on-selected: #0F1115; --halo: #0F1115; --hop: #B794F6;
     --station: #E8EAED; --station-fill: #171A21;
-    --note-bg: #2A1A10; --note-fg: #FDBA8C; --fresh: #22C55E; --stale: #6B7280;
-    --sea: #1B2027; --attr-bg: rgba(15, 17, 21, .8); --attr-link: #8CC4E8;
-    --sw-off: #6B7482; --sw-knob: #E8EAED; --step-off: #4B5260; --grip: #4B5260;
-    --logo-bg: #1D2129; --logo-fg: #E8EAED; --logo-dot: #FF8A4C; --logo-line: #3A404B;
-    --scrim: rgba(0, 0, 0, .6); --scrim-chain: rgba(4, 5, 7, .92); --scrim-hint: rgba(255, 255, 255, .1); --scrim-fg: #FFFFFF;
-    --sh-seg: 0 0 0 1px var(--line); --sh-ctl: 0 0 0 1px var(--line); --sh-md: 0 0 0 1px var(--line);
-    --sh-pop: none; --sh-sheet: 0 0 0 1px var(--line);
+    --route-op-min: .75; --route-op-max: .9; --chain-op-min: .75;
+    --note-bg: #2A1A10; --note-fg: #FDBA8C; --fresh: #22C55E;
+    --sea: #222327; --land: #3F3F41;
+    --switch-off: #6B7280; --switch-knob: #E8EAED; --step-off: #4A515D;
+    --scrim: rgba(0, 0, 0, .7); --scrim-chain: rgba(5, 6, 8, .85); --scrim-hint: rgba(255, 255, 255, .1); --scrim-fg: #FFFFFF;
+    --sh-seg: 0 0 0 1px var(--line); --sh-ctl: 0 0 0 1px #2F3540, 0 2px 8px rgba(0, 0, 0, .45); --sh-md: 0 0 0 1px #2F3540, 0 2px 8px rgba(0, 0, 0, .45);
+    --sh-pop: none; --sh-sheet: 0 0 0 1px var(--line); --sh-map-sheet: 0 0 0 1px #2F3540, 0 -2px 8px rgba(0, 0, 0, .45);
     --sh-knob: none; --sh-badge: 0 0 0 2px var(--halo);
   }
   [hidden] { display: none !important; }
@@ -57,7 +60,7 @@
   body { display: flex; flex-direction: column; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); }
   button, input, select { font: inherit; color: inherit; }
   a { color: var(--accent); }
-  @media (hover: hover) { a:hover { color: var(--accent-h); } }
+  @media (hover: hover) { a:hover { color: var(--accent-hover); } }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .num, table, .stats dd, .card .km { font-variant-numeric: tabular-nums; }
@@ -74,7 +77,7 @@
   .seg > [aria-current="page"], .seg > [aria-pressed="true"] { background: var(--seg-on); color: var(--ink); box-shadow: var(--sh-seg); }
   @media (hover: hover) { .seg > a:hover, .seg > button:hover { color: var(--ink); } }
   #updated { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; }
-  #updated .fresh { width: 8px; height: 8px; border-radius: 50%; background: var(--stale); }
+  #updated .fresh { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
   #updated .fresh.on { background: var(--fresh); }
 
   /* filter bar */
@@ -98,11 +101,11 @@
   #gleg { position: relative; display: flex; align-items: center; gap: 6px; height: 36px; box-sizing: border-box; min-width: 0; margin: 0; padding: 0 3px 0 12px; border: 1px solid var(--accent); border-radius: 18px; background: var(--chip-on-bg); color: var(--chip-on-fg); white-space: nowrap; }
   #gleg .v { font-weight: 600; }
   #gleg .x { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 14px; background: none; color: inherit; cursor: pointer; }
-  @media (hover: hover) { #gleg .x:hover { background: var(--hover-x); } }
+  @media (hover: hover) { #gleg .x:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); } }
   @media (hover: hover) {
     .chipw:hover { background: var(--hover); }
     .chipw.on:hover { background: var(--hover-on); }
-    .chipw .x:hover { background: var(--hover-x); }
+    .chipw .x:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); }
   }
   .sep { width: 1px; height: 24px; margin: 0 4px; background: var(--line); }
   /* as tall as a chip: a chip that wraps next to it does not make its row taller, so the map does not move */
@@ -115,7 +118,7 @@
   .btn { border: 0; background: var(--accent); color: var(--on-accent); }
   a.btn { color: var(--on-accent); }
   .btn2 { border: 1px solid var(--field); background: var(--surface); color: var(--ink); }
-  @media (hover: hover) { .btn:hover, a.btn:hover { background: var(--accent-h); color: var(--on-accent); } .btn2:hover { background: var(--hover); } }
+  @media (hover: hover) { .btn:hover, a.btn:hover { background: var(--accent-hover); color: var(--on-accent); } .btn2:hover { background: var(--hover); } }
   .sm { height: 34px; padding: 0 12px; }
 
   /* popovers under the chips */
@@ -129,7 +132,7 @@
   .pop .chk:has(input.on) { color: var(--chip-on-fg); font-weight: 600; }
   .pop .sd { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
   .pop .inl select { width: auto; }
-  .pop input:not([type="checkbox"]):not([type="range"]), .pop select { width: 100%; height: 36px; box-sizing: border-box; min-width: 0; padding: 0 8px; border: 1px solid var(--field); border-radius: 8px; background: var(--surface); font-size: 14px; color: var(--ink); }
+  .pop input:not([type="checkbox"]):not([type="range"]), .pop select { width: 100%; height: 36px; box-sizing: border-box; min-width: 0; padding: 0 8px; border: 1px solid var(--ctl-line); border-radius: 8px; background: var(--surface); font-size: 14px; color: var(--ink); }
   .pop .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
   .pop .quick { display: flex; flex-wrap: wrap; gap: 6px; }
   .pop .quick button { height: 32px; padding: 0 12px; border: 1px solid var(--field); border-radius: 16px; background: var(--surface); font-size: 13px; cursor: pointer; }
@@ -159,11 +162,11 @@
   .orow output { font-weight: 600; }
   label.orow { cursor: pointer; }
   /* a checkbox drawn as a switch; role="switch" makes it read as one */
-  .sw { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 44px; height: 26px; margin: 0; border-radius: 13px; background: var(--sw-off); cursor: pointer; transition: background-color .15s; }
-  .sw::before { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--sw-knob); box-shadow: var(--sh-knob); transition: transform .15s; }
+  .sw { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 44px; height: 26px; margin: 0; border-radius: 13px; background: var(--switch-off); cursor: pointer; transition: background-color .15s; }
+  .sw::before { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--switch-knob); box-shadow: var(--sh-knob); transition: transform .15s; }
   .sw:checked { background: var(--accent); }
-  .sw:checked::before { transform: translateX(18px); }
-  .step { flex: none; display: flex; align-items: center; border: 1px solid var(--field); border-radius: 10px; }
+  .sw:checked::before { transform: translateX(18px); background: var(--on-accent); }
+  .step { flex: none; display: flex; align-items: center; border: 1px solid var(--ctl-line); border-radius: 10px; }
   .step button { width: 36px; height: 34px; padding: 0; border: 0; background: none; font-size: 18px; line-height: 1; cursor: pointer; }
   .step button[aria-disabled="true"] { color: var(--step-off); cursor: default; }
   #p-chain .step input { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 0; background: none; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
@@ -181,18 +184,16 @@
   /* Display menu: one button at the end of the app bar; a popover on a desktop, a sheet on a phone. Each setting is a
      .dsec section, so a Language section can go above Theme */
   .dispw { display: flex; }
-  .dispbtn { display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--field); border-radius: 8px; background: var(--surface); font-weight: 600; cursor: pointer; }
-  @media (hover: hover) { .dispbtn:hover { background: var(--hover); } }
-  .dispbtn .dots { display: none; }
+  .dbtn { display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--field); border-radius: 8px; background: var(--surface); font-weight: 600; cursor: pointer; }
+  @media (hover: hover) { .dbtn:hover { background: var(--hover); } }
+  /* .dlang and .dsep are for the language code, which the i18n part adds: until then the button is just the theme icon */
+  .dbtn:not(:has(.dlang:not([hidden]))) { width: 36px; padding: 0; }
+  .dsep { width: 1px; height: 16px; background: var(--line); }
+  .dbtn .dots { display: none; }
   #p-disp { width: min(280px, calc(100vw - 16px)); }
   #p-disp .shh { display: none; }
-  #p-disp .pb { gap: 20px; }
-  .dsec .ct { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: var(--ink); }
-  .dsec p { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
-  .ringc { fill: var(--surface); stroke: var(--ink); }
-  .ringc.sel { stroke: var(--selected); }
-  .dotc { fill: var(--ink); }
-  .dotc.sel { fill: var(--selected); }
+  .dsec .seg3 button { display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .dsec small { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); }
 
   /* views */
   #main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -208,7 +209,7 @@
   .shead h2 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
   .shead p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
   .sortl { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
-  .sortl select { height: 32px; padding: 0 8px; border: 1px solid var(--field); border-radius: 8px; background: var(--surface); font-size: 13px; color: var(--ink); }
+  .sortl select { height: 32px; padding: 0 8px; border: 1px solid var(--ctl-line); border-radius: 8px; background: var(--surface); font-size: 13px; color: var(--ink); }
   .cards { list-style: none; margin: 0; padding: 0; }
   .cards > li { border-bottom: 1px solid var(--line2); }
   .card { width: 100%; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center; padding: 12px 20px; border: 0; background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; transition: background-color .12s; }
@@ -219,13 +220,13 @@
   .card.ch { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 14px 20px; }
   .card.ch .t { font-weight: 600; }
   .card.ch .d { font-size: 13px; color: var(--muted); }
-  .card.hot, .card:focus-visible { background: var(--hover-card); box-shadow: inset 3px 0 0 var(--selected); }
+  .card.hot, .card:focus-visible { background: var(--hover); box-shadow: inset 3px 0 0 var(--selected); }
   .card:focus-visible { outline-offset: -2px; }
-  @media (hover: hover) { .card:hover { background: var(--hover-card); } }
+  @media (hover: hover) { .card:hover { background: var(--hover); } }
   .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
   .badges span { padding: 2px 8px; border-radius: 6px; background: var(--seg); font-size: 12px; font-weight: 600; }
   .badges span.lt { font-weight: 400; }
-  .hopsep { color: var(--hop-text); font-weight: 700; }
+  .hopsep { color: var(--hop); font-weight: 700; }
   .none { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 24px 20px; }
   .none p { margin: 0; color: var(--muted); }
   .note { margin: 0; padding: 12px 20px; font-size: 12px; color: var(--muted); }
@@ -261,7 +262,7 @@
   .nx small { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
   .also { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .also button { height: 32px; padding: 0 12px; border: 1px solid var(--field); border-radius: 16px; background: var(--surface); font-size: 13px; cursor: pointer; }
-  @media (hover: hover) { .nx:hover, .also button:hover { background: var(--hover-card); } }
+  @media (hover: hover) { .nx:hover, .also button:hover { background: var(--hover); } }
   .more { margin-top: auto; padding: 12px 20px 20px; font-size: 13px; font-weight: 600; }
   .legs { list-style: none; margin: 0; padding: 16px 20px; display: flex; flex-direction: column; }
   .legs .leg { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
@@ -271,7 +272,7 @@
   .ho { margin-left: 13px; padding: 10px 0 10px 21px; border-left: 2px solid var(--line); font-size: 13px; color: var(--muted); }
   .ho.hop { border-left: 2px dotted var(--hop); }
   /* the leg or connection picked on the map */
-  .legs .leg.on { border: 2px solid var(--selected); padding: 11px; background: var(--sel-bg); }
+  .legs .leg.on { border: 2px solid var(--selected); padding: 11px; background: var(--note-bg); }
   .ho.on { color: var(--note-fg); font-weight: 600; }
   .warn { margin: 0 20px 20px; padding: 10px 12px; border-radius: 10px; background: var(--note-bg); color: var(--note-fg); font-size: 13px; }
 
@@ -289,7 +290,7 @@
   .tbox { flex: 0 1 auto; min-height: 0; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
   .tbox.plain { background: none; border: 0; border-radius: 0; }
   .tt { width: 100%; min-width: 860px; border-collapse: collapse; }
-  .tt thead th { position: sticky; top: 0; z-index: 1; padding: 12px 16px; background: var(--thead); box-shadow: inset 0 -1px var(--line); text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+  .tt thead th { position: sticky; top: 0; z-index: 1; padding: 12px 16px; background: var(--th-bg); box-shadow: inset 0 -1px var(--line); text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
   .tt thead th button { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
   .tt thead th[aria-sort="ascending"] button, .tt thead th[aria-sort="descending"] button { color: var(--ink); }
   .tt td { padding: 8px 16px; border-bottom: 1px solid var(--line2); white-space: nowrap; }
@@ -302,8 +303,8 @@
   .tt tbody th { padding: 14px 16px 8px; text-align: left; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; }
   .tt tbody th span { color: var(--muted); font-weight: 400; }
   .st { display: inline-flex; align-items: center; gap: 8px; }
-  @media (hover: hover) { .tt tbody tr:hover td { background: var(--hover-card); } }
-  .tt tbody tr:focus-within td { background: var(--hover-card); }
+  @media (hover: hover) { .tt tbody tr:hover td { background: var(--hover); } }
+  .tt tbody tr:focus-within td { background: var(--hover); }
   .ccards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
   .ccard { cursor: pointer; display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-start; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
   .ccard .sum { flex: 1 1 260px; min-width: 0; }
@@ -314,19 +315,19 @@
   .ccard .no { width: 24px; height: 24px; font-size: 12px; }
   .ccard .dt { color: var(--muted); font-size: 13px; }
   .ccard .hn { display: block; font-size: 12px; color: var(--muted); }
-  .ccard .hn.hop { color: var(--hop-text); }
+  .ccard .hn.hop { color: var(--hop); }
   .ccard > .btn2 { align-self: center; }
   .ccard:has(button[aria-current="true"]) { border-color: var(--selected); box-shadow: inset 3px 0 var(--selected); }
   .foot { margin: 0; font-size: 12px; color: var(--muted); }
 
   /* map */
   .leaflet-container { font: 12px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  .leaflet-container .leaflet-control-attribution { background: var(--attr-bg); color: var(--muted); }
-  .leaflet-container .leaflet-control-attribution a { color: var(--attr-link); }
+  .leaflet-container .leaflet-control-attribution { background: color-mix(in srgb, var(--surface) 80%, transparent); color: var(--muted); }
+  .leaflet-container .leaflet-control-attribution a { color: var(--accent); }
   .leaflet-bar a { background-color: var(--surface); border-bottom-color: var(--line); color: var(--ink); }
   .leaflet-bar a:hover, .leaflet-bar a:focus { background-color: var(--hover); }
   .leaflet-bar a.leaflet-disabled { background-color: var(--surface); color: var(--step-off); }
-  .leaflet-tooltip { border-color: var(--surface); background: var(--surface); color: var(--ink); box-shadow: var(--sh-ctl); }
+  .leaflet-tooltip { border-color: var(--line); background: var(--surface); color: var(--ink); box-shadow: var(--sh-ctl); }
   .leaflet-tooltip-top:before { border-top-color: var(--surface); }
   .leaflet-tooltip-bottom:before { border-bottom-color: var(--surface); }
   .leaflet-tooltip-left:before { border-left-color: var(--surface); }
@@ -356,6 +357,7 @@
   @media (max-width: 699px) {
     #appbar { gap: 8px 12px; padding: 8px 12px; }
     .brand .tag { display: none; }
+    .brand h1 { white-space: nowrap; }
     .brand svg { width: 26px; height: 26px; }
     .seg > a, .seg > button { padding: 6px 10px; }
     #updated { margin-left: 0; font-size: 12px; }
@@ -377,12 +379,12 @@
     #p-disp:not([hidden]) { top: auto !important; left: 0 !important; right: 0; bottom: 0; width: auto; max-height: calc(100% - 110px); display: flex; flex-direction: column; border: 0; border-radius: 20px 20px 0 0; box-shadow: var(--sh-sheet), 0 0 0 100vmax var(--scrim); font-size: 16px; animation: sheet-up .2s ease-out; }
     #p-disp .shh { display: flex; align-items: center; gap: 8px; padding: 10px 8px 10px 20px; border-bottom: 1px solid var(--line2); }
     #p-disp .shh h2 { flex: 1; margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
-    #p-disp .pb { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px calc(20px + env(safe-area-inset-bottom)); }
-    #p-disp .seg3 button { height: 44px; }
-    #p-disp .dsec p { font-size: 13px; }
-    .dispbtn { width: 44px; height: 44px; padding: 0; border-radius: 12px; }
-    .dispbtn .ti { display: none; }
-    .dispbtn .dots { display: block; }
+    #dbody { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+    .dsec .seg3 button { height: 44px; }
+    .dsec small { font-size: 13px; }
+    .dbtn, .dbtn:not(:has(.dlang:not([hidden]))) { width: 44px; height: 44px; padding: 0; border-radius: 12px; }
+    .dbtn .ti, .dbtn .dlang, .dbtn .dsep { display: none; }
+    .dbtn .dots { display: block; }
     /* a div scrolls the options: a fieldset does not reliably scroll as a flex item */
     #cbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
     .copt { gap: 20px; padding: 16px 20px; }
@@ -404,10 +406,10 @@
     /* the map fills the view; the results are a bottom sheet over it (peek, half, full) */
     #mapview { position: relative; display: block; }
     #mapwrap { position: absolute; inset: 0; }
-    #sheet { position: absolute; z-index: 1100; left: 0; right: 0; bottom: 0; height: var(--sh, 330px); display: flex; flex-direction: column; background: var(--surface); border-radius: 20px 20px 0 0; box-shadow: var(--sh-sheet); transition: height .25s ease-out; }
+    #sheet { position: absolute; z-index: 1100; left: 0; right: 0; bottom: 0; height: var(--sh, 330px); display: flex; flex-direction: column; background: var(--surface); border-top: 1px solid var(--line); border-radius: 20px 20px 0 0; box-shadow: var(--sh-map-sheet); transition: height .25s ease-out; }
     #sheet.drag { transition: none; }
     .grip { flex: none; display: flex; align-items: center; justify-content: center; width: 100%; height: 28px; padding: 0; border: 0; border-radius: 20px 20px 0 0; background: none; cursor: grab; touch-action: none; }
-    .grip span { width: 40px; height: 5px; border-radius: 3px; background: var(--grip); }
+    .grip span { width: 40px; height: 5px; border-radius: 3px; background: var(--muted); }
     .grip:focus-visible { outline-offset: -4px; }
     #side { flex: 1; min-height: 0; border: 0; overscroll-behavior: contain; }
     #side .shead { padding-top: 0; }
@@ -421,7 +423,7 @@
     /* one row of chips under the app bar: Filters, then the quick chips; the counts live in the sheet and the Trips heading */
     .fbw { display: block; }
     .fbtn { height: 36px; padding: 0 12px; border: 1px solid var(--ink); border-radius: 18px; background: var(--ink); color: var(--bg); font-weight: 600; }
-    .fbtn svg { color: var(--bg); }
+    .fbtn svg { color: inherit; }
     #count { position: absolute; width: 1px; height: 1px; min-height: 0; overflow: hidden; clip: rect(0 0 0 0); }
     #reset { display: none; }
     /* the filter sheet: full height, every filter, applied with Show */
@@ -448,7 +450,7 @@
     .thead h2 { font-size: 22px; }
     .tbox { overflow: visible; background: none; border: 0; border-radius: 0; }
     .tt { display: block; min-width: 0; }
-    .tt thead { display: block; position: sticky; top: 0; z-index: 1; margin-bottom: 8px; background: var(--thead); border: 1px solid var(--line); border-radius: 12px; }
+    .tt thead { display: block; position: sticky; top: 0; z-index: 1; margin-bottom: 8px; background: var(--th-bg); border: 1px solid var(--line); border-radius: 12px; }
     .tt thead tr { display: flex; gap: 16px; padding: 10px 12px; }
     .tt thead th { position: static; padding: 0; background: none; box-shadow: none; }
     .tt thead th:not([aria-sort]) { display: none; }
@@ -512,7 +514,7 @@
 <body>
 <header id="appbar">
   <div class="brand">
-    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" stroke-width="2" style="fill:var(--logo-bg);stroke:var(--logo-line)"/><path d="M8 22Q9 9 22 8" fill="none" stroke-width="2.5" stroke-linecap="round" style="stroke:var(--logo-fg)"/><circle cx="8" cy="22" r="3.5" stroke-width="2" style="fill:var(--logo-bg);stroke:var(--logo-fg)"/><circle cx="22" cy="8" r="3.5" style="fill:var(--logo-dot)"/></svg>
+    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" style="fill:var(--ink)"/><path d="M8 22Q9 9 22 8" fill="none" stroke-width="2.5" stroke-linecap="round" style="stroke:var(--bg)"/><circle cx="8" cy="22" r="3.5" stroke-width="2" style="fill:var(--ink);stroke:var(--bg)"/><circle cx="22" cy="8" r="3.5" style="fill:var(--brand)"/></svg>
     <div><h1><span class="sr">roadsurfer </span>Rally map</h1><span class="tag">One-way campervan relocations · unofficial</span></div>
   </div>
   <nav class="seg" aria-label="Views">
@@ -524,7 +526,7 @@
     <button id="m-chains" aria-pressed="false" title="Longer trips: 2–3 rallies back to back">Chains</button>
   </div>
   <span id="updated"></span>
-  <span class="dispw"><button class="dispbtn" id="dbtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-disp" aria-label="Display settings: theme system"><svg class="ti" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></svg><svg class="dots" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="currentColor"><circle cx="3.5" cy="9" r="1.6"/><circle cx="9" cy="9" r="1.6"/><circle cx="14.5" cy="9" r="1.6"/></svg></button></span>
+  <span class="dispw"><button class="dbtn" id="dbtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-disp" aria-label="Display settings: theme system"><span class="dlang" hidden></span><span class="dsep" aria-hidden="true" hidden></span><svg class="ti" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></svg><svg class="dots" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="currentColor"><circle cx="3.5" cy="9" r="1.6"/><circle cx="9" cy="9" r="1.6"/><circle cx="14.5" cy="9" r="1.6"/></svg></button></span>
 </header>
 <div id="fbar" role="group" aria-label="Filters">
   <div id="chips">
@@ -613,11 +615,11 @@
   <div class="pf"><button class="ghost" data-clear="gchain">Reset</button><span class="grow"></span><button class="btn" id="cshow" data-done>Show chains</button></div>
 </div>
 <div class="pop" id="p-disp" role="dialog" aria-labelledby="h-disp" hidden>
-  <div class="shh"><h2 id="h-disp">Display settings</h2><button class="shx" data-done aria-label="Close display settings"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
-  <div class="pb">
+  <div class="shh"><h2 id="h-disp">Display</h2><button class="shx" data-done aria-label="Close display settings"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
+  <div class="copt" id="dbody">
     <div class="dsec" role="group" aria-labelledby="l-theme"><span class="ct" id="l-theme">Theme</span>
-      <div class="seg3"><button data-themeopt="system">System</button><button data-themeopt="light">Light</button><button data-themeopt="dark">Dark</button></div>
-      <p>System follows your device setting.</p>
+      <div class="seg3" id="themeseg"></div>
+      <small>System follows your device setting.</small>
     </div>
   </div>
 </div>
@@ -629,7 +631,7 @@ const RELEASE = /*RELEASE*/null;
 // Leaflet takes colours, not var(): T holds the map's tokens as the CSS has them for the theme on screen. A layer keeps
 // the token names of its colours (options.tok), so a theme change restyles it in place
 const T = {};
-const readTheme = () => { const s = getComputedStyle(document.documentElement); for (const k of ['route', 'selected', 'halo', 'hop', 'station', 'station-fill']) T[k] = s.getPropertyValue('--' + k).trim(); };
+const readTheme = () => { const s = getComputedStyle(document.documentElement); for (const k of ['route', 'selected', 'halo', 'hop', 'station', 'station-fill', 'route-op-min', 'route-op-max', 'chain-op-min']) T[k] = s.getPropertyValue('--' + k).trim(); };
 const paint = tok => { const o = { tok }; for (const k in tok) o[k] = T[tok[k]]; return o; };
 readTheme();
 let chainMode = false;  // chain mode shows chains of rallies instead of single trips
@@ -656,10 +658,12 @@ const layer = L.featureGroup().addTo(map);   // the routes (or legs) and station
 const picked = L.featureGroup().addTo(map);  // the opened route or chain
 const hover = L.featureGroup().addTo(map);   // the route or chain under the pointer in the sidebar
 const weight = n => Math.min(1.5 + n * .8, 5);
-const opacity = n => Math.min(.4 + n * .1, .85);
+// the opacity ramp keeps the trip count but starts at a floor that keeps a one-trip line at 3:1 on the tiles of the theme
+const opacity = n => Math.min(+T['route-op-min'] + (n - 1) * .1, +T['route-op-max']);
+const rampOf = f => ({ ramp: f, opacity: f() });  // a layer keeps its ramp, to take the theme's floor again
 // chain mode draws up to 200 chains: thinner and fainter, so the overview stays readable
 const chainWeight = n => Math.min(1 + n * .3, 4);
-const chainOpacity = n => Math.min(.25 + n * .05, .7);
+const chainOpacity = n => Math.min(+T['chain-op-min'] + (n - 1) * .05, +T['route-op-max']);
 const fit = L.control({ position: 'topright' });
 fit.onAdd = () => {
   const d = L.DomUtil.create('div', 'leaflet-bar fitbar');
@@ -732,9 +736,9 @@ const EXT = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" 
 const MAPI = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M1 3l4-1.5 4 2 4-1.5v9l-4 1.5-4-2-4 1.5z"/></svg>';
 const BACK = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg>';
 const CHEVR = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>';
-// hollow and filled markers; cls 'sel' draws them in the selected colour (the CSS has the colours)
-const RING = (cls = '', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle class="ringc ${cls}" cx="7" cy="7" r="${r}" stroke-width="2"/></svg>`;
-const DOT = (cls = '', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle class="dotc ${cls}" cx="7" cy="7" r="${r}"/></svg>`;
+// hollow and filled markers, in the text colour unless given a colour
+const RING = (c = 'currentColor', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="${r}" stroke-width="2" style="fill:var(--surface);stroke:${c}"/></svg>`;
+const DOT = (c = 'currentColor', r = 4.5) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="${r}" style="fill:${c}"/></svg>`;
 // ---- chains: pure computation, no DOM and no request --------------------------------------------
 // A record is a WINDOW (start..end): the booking page accepts any pick-up and return inside it, up to
 // 7 nights, and prices it flat. A leg is therefore a pick-up day p and a return day q with start <= p < q <= end,
@@ -1153,7 +1157,7 @@ function drawTrips() {
     t.sort((x, y) => x.start.localeCompare(y.start));
     g.first = t[0].start;
     g.last = t.map(r => r.end).sort().pop();
-    L.polyline(arc(ll(g.from), ll(g.to)), { ...paint({ color: 'route' }), weight: weight(N), opacity: opacity(N), className: 'base' }).addTo(layer)
+    L.polyline(arc(ll(g.from), ll(g.to)), { ...paint({ color: 'route' }), weight: weight(N), ...rampOf(() => opacity(N)), className: 'base' }).addTo(layer)
       .bindTooltip(`${esc(place(g.from))} ${ARROW} ${esc(place(g.to))} \u00b7 ${kmText(g)} \u00b7 ${count(N, 'trip')}`, { sticky: true })
       .on('mouseover', () => hoverRoute(g.key, true))
       .on('mouseout', () => hoverRoute(null, true))
@@ -1186,7 +1190,7 @@ function drawChains() {
   const onMap = chains.length > CHAIN_ROWS ? ' on the map' : '';
   for (const [key, g] of [...legs].sort((x, y) => x[1].n - y[1].n)) {
     const pts = arc(ll(g.r.from), ll(g.r.to));
-    L.polyline(pts, { ...paint({ color: 'route' }), weight: chainWeight(g.n), opacity: chainOpacity(g.n), interactive: false, className: 'base' }).addTo(layer);
+    L.polyline(pts, { ...paint({ color: 'route' }), weight: chainWeight(g.n), ...rampOf(() => chainOpacity(g.n)), interactive: false, className: 'base' }).addTo(layer);
     hitLine(layer, pts).on('click', () => pickLeg(key))
       .bindTooltip(`Leg ${esc(place(g.r.from))} ${ARROW} ${esc(place(g.r.to))} \u00b7 ${kmText(dist(g.r))} \u00b7 in ${count(g.n, 'chain')}${onMap} \u00b7 click to list them`, { sticky: true });
   }
@@ -1217,6 +1221,8 @@ function drawSelection() {
   }
   picked.eachLayer(l => { const el = l.getElement && l.getElement(); if (el) el.setAttribute('tabindex', '-1'); });
 }
+// Invariant: whatever is drawn in the selected colour (the picked and hover layers) has the other lines dimmed, here. The
+// selected colour has the luminance of the route colour, so the dimming is what sets it apart.
 const dimMap = () => $('rmap').classList.toggle('dim', picked.getLayers().length + hover.getLayers().length > 0);
 
 let hot;  // the route or chain key drawn in the hover layer
@@ -1286,7 +1292,7 @@ function routeDetail(g) {
   const next = [...ROUTES.values()].filter(x => x.from.name === g.to.name && x.last >= g.first).sort((a, b) => a.first.localeCompare(b.first) || a.km - b.km);
   const also = [...ROUTES.values()].filter(x => x.from.name === g.from.name && x.key !== g.key).sort((a, b) => a.to.name.localeCompare(b.to.name));
   return `<div class="detail"><button class="back" data-act="back">${BACK}${esc(eff.fst ? `Routes from ${eff.fst}` : 'All routes')}</button>` +
-    `<div class="dhead"><h2 class="rt" id="dh" tabindex="-1">${RING('sel', 5)}<span>${esc(place(g.from))}</span><span class="vl" aria-hidden="true"></span><span><span class="sr"> to </span></span>${DOT('sel', 5.5)}<span>${esc(place(g.to))}</span></h2>` +
+    `<div class="dhead"><h2 class="rt" id="dh" tabindex="-1">${RING('var(--selected)', 5)}<span>${esc(place(g.from))}</span><span class="vl" aria-hidden="true"></span><span><span class="sr"> to </span></span>${DOT('var(--selected)', 5.5)}<span>${esc(place(g.to))}</span></h2>` +
     `<dl class="stats"><div><dt>By road</dt><dd>${kmHtml(g.km, g.est)} km</dd></div><div><dt>Windows</dt><dd>${wins.length}</dd></div><div><dt>Longest stay</dt><dd>${count(longest, 'night')}</dd></div></dl></div>` +
     `<section class="sec" aria-labelledby="h-win"><h3 id="h-win">Trip windows</h3><p class="help">Pick up and return on any days inside a window, up to ${NIGHTS} nights.</p><ul class="wins">` +
     wins.map(r => `<li><div class="w"><div class="d num">${esc(short(r.start))} ${ARROW} ${esc(short(r.end))}</div><div class="m">Up to ${count(nightsOf(r), 'night')}${r.price ? ` \u00b7 ${esc(r.price)}` : ''}</div></div>` +
@@ -1333,7 +1339,7 @@ function renderSide() {
 // ---- Trips page ---------------------------------------------------------------------------------
 const foot = () => `<p class="foot">${DATA.some(r => !dist(r).est) ? 'Distances are road distances from OSRM; a leading ~ marks an estimate.' : 'Distances with a leading ~ are estimates: the straight line \u00d7 1.3.'} Offers as of the last scan \u2014 the booking page has the last word.</p>`;
 const tripRow = r => `<tr><td class="ds" title="${esc(r.start)}">${esc(short(r.start))}</td><td class="de" title="${esc(r.end)}">${esc(short(r.end))}</td><td class="nt">${count(nightsOf(r), 'night')}</td>` +
-  `<td class="from"><span class="st">${RING('', 4)}${esc(place(r.from))}</span></td><td class="to"><span class="st">${DOT('', 4)}${esc(place(r.to))}</span></td>` +
+  `<td class="from"><span class="st">${RING(undefined, 4)}${esc(place(r.from))}</span></td><td class="to"><span class="st">${DOT(undefined, 4)}${esc(place(r.to))}</span></td>` +
   `<td class="km r"><span class="kv">${kmCell(r)} km</span><span class="kn"> \u00b7 ${count(nightsOf(r), 'night')}</span></td>${hasPrice ? `<td class="pr">${r.price ? esc(r.price) : ''}</td>` : ''}` +
   `<td class="act"><button class="btn2 sm" data-route="${esc(routeKey(r))}" aria-label="${esc(`Show ${place(r.from)} to ${place(r.to)} on the map`)}">${MAPI}Map</button>` +
   `<a class="btn sm" href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="${esc(`Book ${place(r.from)} to ${place(r.to)}, ${short(r.start)}`)}">Book${EXT}</a></td></tr>`;
@@ -1965,6 +1971,8 @@ const THEME_ICONS = {
   light: '<path d="M8 5a3 3 0 100 6 3 3 0 000-6zM8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/>',
   dark: '<path d="M13.5 9.5A6 6 0 016.5 2.5a6 6 0 107 7z"/>',
 };
+const THEME_LABELS = { system: 'System', light: 'Light', dark: 'Dark' };
+$('themeseg').innerHTML = Object.keys(THEME_LABELS).map(k => `<button data-themeopt="${k}"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${THEME_ICONS[k]}</svg>${THEME_LABELS[k]}</button>`).join('');
 let themeChoice;
 try { themeChoice = localStorage.getItem(THEME_KEY); } catch (e) {}
 if (!['system', 'light', 'dark'].includes(themeChoice)) themeChoice = 'system';
@@ -1974,7 +1982,8 @@ function applyTheme() {
   root.dataset.theme = dark ? 'dark' : 'light';
   if (changed) {
     readTheme();
-    for (const g of [layer, picked, hover]) g.eachLayer(l => { if (l.options.tok) l.setStyle(paint(l.options.tok)); });
+    for (const g of [layer, picked, hover]) g.eachLayer(l => { if (l.options.tok) l.setStyle(paint(l.options.tok)); if (l.options.ramp) l.setStyle({ opacity: l.options.ramp() }); });
+    legendList.innerHTML = legendItems();  // its samples carry the ramp
     baseTiles.setUrl(tileUrl('Base', root.dataset.theme));
     refTiles.setUrl(tileUrl('Reference', root.dataset.theme));
   }
