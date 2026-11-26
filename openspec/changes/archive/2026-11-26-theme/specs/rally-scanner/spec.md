@@ -25,9 +25,8 @@ in the dark theme, base and reference labels, up to zoom 16.
 
 ### Requirement: Route highlight
 
-A route SHALL be drawn in the selected colour (deep orange `#C2410C` in the light theme,
-`#FF8A4C` in the dark theme) on a halo (white in light, `#0F1115` in dark), above the other lines,
-which drop to a low opacity, while the pointer or keyboard focus is on its card, while
+A route SHALL be drawn in the selected colour (`#C2410C` in light, `#FF8A4C` in dark) on a
+halo in the page's background colour, above the other lines, which drop to a low opacity, while the pointer or keyboard focus is on its card, while
 the pointer is over its line, and while it is open. Pointing at a line SHALL also mark
 its card and scroll it into view. The highlight SHALL go when none of these holds. A
 line SHALL NOT stay highlighted after a tap on a touch screen unless the tap opened it.
@@ -116,7 +115,7 @@ The app bar SHALL end with a `Display` button showing the current theme as an ic
 `Display settings: theme <choice>`. Below 700 px it SHALL show `⋯`, 44 by 44 px, in
 place of the icon.
 
-#### Scenario: Phone
+#### Scenario: Display button on a phone
 
 - **WHEN** the page is opened 390 px wide
 - **THEN** the app bar ends with a `⋯` button named `Display settings: theme system`
