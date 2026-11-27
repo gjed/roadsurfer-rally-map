@@ -34,4 +34,4 @@ None.
 
 `roadsurfer-rally.py` (language-aware `get()`, a language pass after the station list,
 `names` on the records), `rally-map.template.html` (a label helper at every display
-site), `tests/` and the README "API notes". A scan makes six more requests.
+site), `tests/` and the README "API notes". A scan that writes a file makes six more requests.

@@ -2433,9 +2433,14 @@ only the languages whose name differs from the English `name`; `name` stays Engl
 
 #### Scenario: Six more requests
 
-- **WHEN** a scan runs
+- **WHEN** a scan runs with `--json-out`, `--map` or `--feeds`
 - **THEN** it sends six more requests than before, one `/api/{lang}/rally/stations`
   request per language other than English
+
+#### Scenario: Console-only scan
+
+- **WHEN** a scan runs without `--json-out`, `--map` and `--feeds`
+- **THEN** it sends no station list request for a language other than English
 
 #### Scenario: Name that differs
 

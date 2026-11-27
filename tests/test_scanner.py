@@ -836,6 +836,23 @@ class StationNamesTest(unittest.TestCase):
         # the list, six languages, the routes of station 1 and one timeframe per route
         self.assertEqual(scan["requests"], 1 + 6 + 1 + 2)
 
+    def test_console_only_scan_makes_no_language_request(self):
+        argv = ["x", "--from", "1", "--road-cache", str(self.dir / "c")]
+        patches = [
+            mock.patch.object(rally, "get", side_effect=self.counting),
+            mock.patch.multiple(rally, REQUESTS=0, FAILED=0, RATE_LIMITED=0),
+            mock.patch.object(rally.time, "sleep"),
+            mock.patch.object(sys, "argv", argv),
+            contextlib.redirect_stdout(io.StringIO()),
+        ]
+        with contextlib.ExitStack() as stack:
+            for p in patches:
+                stack.enter_context(p)
+            rally.main()
+        self.assertEqual(
+            [c[0] for c in self.calls if c[1] == "/rally/stations"], ["en"]
+        )
+
     def test_failed_language_falls_back_and_is_counted(self):
         out = self.dir / "o.json"
         self.broken = {"it"}

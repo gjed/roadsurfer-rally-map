@@ -9,8 +9,9 @@ Unofficial API used by booking.roadsurfer.com (stdlib only):
                                                  models + price for an exact timeframe
 The X-Requested-Alias header must match the route alias or the API returns 404.
 
-Everything is read from /api/en, except that the station list is also read once for each
-page language (LANGS): the localised names go into each record's from/to as "names".
+Everything is read from /api/en, except that a scan that writes --json-out, --map or
+--feeds also reads the station list once for each page language (LANGS): the localised
+names go into each record's from/to as "names".
 
 Road distances come from an OSRM server (the public demo server by default), one
 table request per pick-up station, and are cached per station pair in a JSON file.
@@ -615,7 +616,8 @@ def main():
                 f"{s['id']:>4}  {s['city']['country']}  {s['name']}  ({s['city']['name']})"
             )
         return
-    add_names(stations)
+    if args.json_out or args.map or args.feeds:  # the only places the names go
+        add_names(stations)
     records = run(args, stations)
     scan = {
         # timezone.utc, not datetime.UTC (3.11+): the script supports Python 3.8
