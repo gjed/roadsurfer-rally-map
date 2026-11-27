@@ -3129,6 +3129,9 @@ for (const r of DATA) STATION_WINS.set(place(r.from), (STATION_WINS.get(place(r.
 const windowsOf = (kind, key) => (kind === 'route' ? ROUTES.has(key) ? ROUTES.get(key).trips : [] : kind === 'station' ? STATION_WINS.get(key) || []
   : key.split('|').flatMap(k => ROUTES.has(k) ? ROUTES.get(k).trips : [])).filter(live);
 const isFav = (kind, key) => FAV[kind].has(key);
+// a favourite counts while the scan has its route, a departure from its station, or every route of its chain; the rest stays stored
+const present = (kind, key) => kind === 'route' ? ROUTES.has(key) : kind === 'station' ? STATION_WINS.has(key) : key.split('|').every(k => ROUTES.has(k));
+const nFav = kind => [...FAV[kind].keys()].filter(k => present(kind, k)).length;
 const favRoute = g => isFav('route', g.key) || isFav('station', place(g.from));
 const favOffer = r => isFav('route', routeKey(r)) || isFav('station', place(r.from));
 // a value of a version this page does not know is left alone: it is neither read nor written
@@ -3226,7 +3229,7 @@ function syncFav() {
     b.setAttribute('aria-pressed', on);
     if (b.classList.contains('fav')) b.title = t(on ? 'fav.remove' : 'fav.add');
   }
-  const stars = FAV.route.size + FAV.station.size + FAV.chain.size, n = NEW.size;
+  const stars = nFav('route') + nFav('station') + nFav('chain'), n = NEW.size;
   $('gfav').hidden = !stars && !favOnly;  // nothing to filter by yet
   $('favnew').hidden = !n;
   $('favnew').textContent = fmtN(n);
@@ -3458,7 +3461,7 @@ const chainTry = () => {
   return [legFilter && 'try.leg', !$('cs').checked && 'try.same', o.gmax < 7 && 'try.rest', o.conn < 250 && 'try.hop', o.lmax === 2 && 'try.legs3',
     (o.dmin || o.dmax < Infinity || o.drive < Infinity || o.round) && 'try.limits'].filter(Boolean).slice(0, 2).map(k => t(k)).join(', ');
 };
-const hasStars = () => chainMode ? FAV.chain.size > 0 : FAV.route.size + FAV.station.size > 0;
+const hasStars = () => chainMode ? nFav('chain') > 0 : nFav('route') + nFav('station') > 0;
 const emptyMsg = () => !DATA.length ? t('empty.none') : favOnly && !hasStars() ? t(chainMode ? 'fav.empty.chains' : 'fav.empty.trips') : favOnly ? t(chainMode ? 'fav.empty.chains.fit' : 'fav.empty.none') : chainMode ? (chainTry() ? t('empty.chains.try', { hints: chainTry() }) : t('empty.chains')) : t('empty.trips');
 const noneHtml = () => `<div class="none"><p>${esc(emptyMsg())}</p>${favOnly && !hasStars() ? `<button class="btn2 sm fav-off">${esc(t('fav.empty.show'))}</button>` : DATA.length ? `<button class="btn2 sm reset-all">${esc(t('empty.reset'))}</button>` : ''}</div>`;
 // Rallies | Chains in the results sheet and the Trips header: on a phone the app bar has no room for it
