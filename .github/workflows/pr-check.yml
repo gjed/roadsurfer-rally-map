@@ -129,6 +129,10 @@ jobs:
             echo "::error::The page has no Atom feed <link rel=\"alternate\" type=\"application/atom+xml\"> in <head>. Keep the feed link of rally-map.template.html."
             exit 1
           fi
+          if ! grep -qF 'class="fdbtn" href="feeds/all.xml"' "$PAGE"; then
+            echo "::error::The app bar has no feed button linking feeds/all.xml. Keep the <a class=\"fdbtn\" href=\"feeds/all.xml\"> link in the app bar of rally-map.template.html."
+            exit 1
+          fi
           python3 - "$SITE/feeds" <<'EOF' || {
           import glob
           import sys

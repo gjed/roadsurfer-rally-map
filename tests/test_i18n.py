@@ -135,6 +135,13 @@ class CatalogTest(unittest.TestCase):
                 with self.subTest(lang=lang, key=key):
                     self.assertIn(key, messages)
 
+    def test_feed_button_text_is_in_every_language(self):
+        """The app bar's feed button and the Display sheet's link ship translated."""
+        for lang, messages in self.strings.items():
+            for key in ("fav.feed", "feed.all.tip"):
+                with self.subTest(lang=lang, key=key):
+                    self.assertTrue(messages.get(key))
+
     def test_template_keys_exist(self):
         """A key the template names is a key English has (a typo would show the key)."""
         source = TEMPLATE.read_text(encoding="utf-8")
