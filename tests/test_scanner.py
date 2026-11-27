@@ -19,6 +19,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "roadsurfer-rally.py"
 FIXTURE = ROOT / "tests" / "fixtures" / "offers.json"
+NAMES_FIXTURE = ROOT / "tests" / "fixtures" / "offers-names.json"  # a recorded scan
 
 # the file name has a hyphen, so it cannot be imported by name
 _spec = importlib.util.spec_from_file_location("roadsurfer_rally", SCRIPT)
@@ -168,7 +169,7 @@ class FindOffersTest(unittest.TestCase):
         "2-3": [("2026-12-31", "2027-01-07"), ("2026-11-28", "2026-11-30")],
     }
 
-    def fake_get(self, path, alias, params=None):
+    def fake_get(self, path, alias, params=None, lang="en"):
         kind, _, key = path.rpartition("/")
         if kind == "/rally/stations":
             return self.ROUTES.get(int(key))
@@ -211,7 +212,7 @@ class FindOffersTest(unittest.TestCase):
 class ScanMetadataTest(unittest.TestCase):
     """A scan writes its metadata next to the offers and into the page."""
 
-    def fake_get(self, path, alias, params=None):
+    def fake_get(self, path, alias, params=None, lang="en"):
         if path == "/rally/stations":
             return [
                 {**s, "coordinate": {"latitude": 50.0, "longitude": 9.0}}
@@ -604,7 +605,7 @@ class RoadScanTest(unittest.TestCase):
         self.assertIn("Click to only show", html)
         self.assertIn("Station \u2014 click to filter", html)
 
-    def scan_get(self, path, alias, params=None):
+    def scan_get(self, path, alias, params=None, lang="en"):
         if path == "/rally/stations":
             return [
                 {**s, "coordinate": {"latitude": 50.0, "longitude": 9.0}}
@@ -660,6 +661,273 @@ class RoadScanTest(unittest.TestCase):
         roads = self.scan("--json-out", str(self.dir / "o.json"), REQUESTS=0, FAILED=0)
         roads.assert_called_once()
         self.assertTrue((self.dir / "c.json").exists())
+
+
+LOCAL = {
+    "de": {1: "München", 3: "Brüssel", 4: "Lissabon"},
+    "it": {1: "Monaco di Baviera", 3: "Bruxelles", 4: "Lisbona"},
+    "fr": {1: "Munich", 3: "Bruxelles"},
+}
+
+
+def localised(lang):
+    """/rally/stations in a language: the same ids, the names of LOCAL where it has one."""
+    return [
+        {
+            **s,
+            "name": LOCAL.get(lang, {}).get(s["id"], s["name"]),
+            "coordinate": {"latitude": 50.0, "longitude": 9.0},
+        }
+        for s in STATIONS.values()
+    ]
+
+
+class StationNamesTest(unittest.TestCase):
+    """The scanner reads the station list once per page language, for the names."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.dir = Path(tmp.name)
+        self.calls = []
+        self.broken = set()
+
+    def fake_get(self, path, alias, params=None, lang="en"):
+        self.calls.append((lang, path, alias))
+        if path == "/rally/stations":
+            return None if lang in self.broken else localised(lang)
+        if path == "/rally/stations/1":
+            return {"returns": [3, 4]}
+        return [{"startDate": "2026-12-01T00:00", "endDate": "2026-12-05T00:00"}]
+
+    def counting(self, path, alias, params=None, lang="en"):
+        """fake_get with the counts get() keeps: a request, and a failed one."""
+        rally.REQUESTS += 1
+        result = self.fake_get(path, alias, params, lang)
+        rally.FAILED += result is None
+        return result
+
+    def scan_with(self, out):
+        patches = [
+            mock.patch.object(rally, "get", side_effect=self.counting),
+            mock.patch.multiple(rally, REQUESTS=0, FAILED=0, RATE_LIMITED=0),
+            mock.patch.object(rally.time, "sleep"),
+            mock.patch.object(rally, "road_table", return_value=[0, 0]),
+            mock.patch.object(
+                sys,
+                "argv",
+                ["x", "--from", "1", "--json-out", str(out)]
+                + ["--road-cache", str(self.dir / "c")],
+            ),
+            mock.patch.object(sys, "stderr", io.StringIO()),
+            contextlib.redirect_stdout(io.StringIO()),
+        ]
+        with contextlib.ExitStack() as stack:
+            for p in patches:
+                stack.enter_context(p)
+            rally.main()
+
+    def stations(self):
+        return {s["id"]: dict(s) for s in localised("en")}
+
+    def test_names_only_where_a_language_differs(self):
+        stations = self.stations()
+        with mock.patch.object(rally, "get", side_effect=self.fake_get):
+            rally.add_names(stations)
+        # fr gives Munich, the English name: left out
+        self.assertEqual(
+            stations[1]["names"], {"de": "München", "it": "Monaco di Baviera"}
+        )
+        self.assertEqual(
+            stations[3]["names"],
+            {"de": "Brüssel", "fr": "Bruxelles", "it": "Bruxelles"},
+        )
+        self.assertNotIn("names", stations[2])  # the same in every language
+
+    def test_one_request_per_other_language_in_order(self):
+        with mock.patch.object(rally, "get", side_effect=self.fake_get):
+            rally.add_names(self.stations())
+        self.assertEqual(
+            self.calls,
+            [(lang, "/rally/stations", "rally.startStations") for lang in rally.LANGS],
+        )
+        self.assertEqual(rally.LANGS, ("de", "fr", "es", "it", "nl", "pt"))
+
+    def test_joined_by_id_not_by_name_or_position(self):
+        def odd(path, alias, params=None, lang="en"):
+            if lang != "it":
+                return None
+            # shuffled, a station that English lacks, and a name that is another's
+            return [
+                {"id": 4, "name": "Munich"},
+                {"id": 99, "name": "Roma"},
+                {"id": 1, "name": "Lisbona"},
+            ]
+
+        stations = self.stations()
+        with mock.patch.object(rally, "get", side_effect=odd):
+            rally.add_names(stations)
+        self.assertEqual(stations[1]["names"], {"it": "Lisbona"})
+        self.assertEqual(stations[4]["names"], {"it": "Munich"})
+        self.assertNotIn(99, stations)
+        self.assertNotIn("names", stations[3])
+
+    def test_junk_answers_leave_english(self):
+        stations = self.stations()
+        junk = [None, "x", {"id": 1}, [None, 5, {"id": 1, "name": ""}], {"a": 1}]
+        junk.append([{"id": 1, "name": 7}])
+        with mock.patch.object(rally, "get", side_effect=junk + [None]):
+            rally.add_names(stations)
+        self.assertTrue(all("names" not in s for s in stations.values()))
+
+    def test_station_record_with_and_without_names(self):
+        st = {**self.stations()[1], "coordinate": {"latitude": 1, "longitude": 2}}
+        self.assertEqual(
+            rally.station_record(st),
+            {"name": "Munich", "cc": "DE", "latitude": 1, "longitude": 2},
+        )
+        self.assertEqual(
+            rally.station_record({**st, "names": {"it": "Monaco"}})["names"],
+            {"it": "Monaco"},
+        )
+        self.assertNotIn("names", rally.station_record({**st, "names": {}}))
+
+    def test_get_builds_the_url_of_the_language(self):
+        urls = []
+
+        def urlopen(req, timeout):
+            urls.append((req.full_url, req.get_header("X-requested-alias")))
+            return io.StringIO("[]")
+
+        counters = mock.patch.multiple(rally, REQUESTS=0, FAILED=0, RATE_LIMITED=0)
+        net = mock.patch.object(rally.urllib.request, "urlopen", side_effect=urlopen)
+        with counters, net, mock.patch.object(rally.time, "sleep"):
+            rally.get("/rally/stations", "rally.startStations")
+            rally.get("/rally/stations", "rally.startStations", lang="it")
+        base = "https://booking.roadsurfer.com/api"
+        self.assertEqual(
+            urls,
+            [
+                (f"{base}/en/rally/stations", "rally.startStations"),
+                (f"{base}/it/rally/stations", "rally.startStations"),
+            ],
+        )
+
+    def test_scan_records_carry_names_and_keep_english_keys(self):
+        out = self.dir / "o.json"
+        self.scan_with(out)
+        data = json.loads(out.read_text(encoding="utf-8"))
+        first, second = data["offers"]
+        self.assertEqual(first["from"]["name"], "Munich")
+        self.assertEqual(
+            first["from"]["names"], {"de": "München", "it": "Monaco di Baviera"}
+        )
+        self.assertEqual(first["to"]["name"], "Brussels")
+        self.assertEqual(second["to"]["names"], {"de": "Lissabon", "it": "Lisbona"})
+        self.assertEqual(data["scan"]["stations"], [{"name": "Munich", "cc": "DE"}])
+        # the English list, then one per language in order
+        langs = [c[0] for c in self.calls if c[1] == "/rally/stations"]
+        self.assertEqual(langs, ["en", *rally.LANGS])
+
+    def test_scan_makes_six_more_requests(self):
+        out = self.dir / "o.json"
+        self.scan_with(out)
+        scan = json.loads(out.read_text(encoding="utf-8"))["scan"]
+        # the list, six languages, the routes of station 1 and one timeframe per route
+        self.assertEqual(scan["requests"], 1 + 6 + 1 + 2)
+
+    def test_failed_language_falls_back_and_is_counted(self):
+        out = self.dir / "o.json"
+        self.broken = {"it"}
+        self.scan_with(out)
+        data = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual((data["scan"]["failed"], data["scan"]["requests"]), (1, 10))
+        self.assertEqual(data["offers"][0]["from"]["names"], {"de": "München"})
+        self.assertEqual(data["offers"][0]["from"]["name"], "Munich")
+
+    def test_failed_languages_can_block_the_scan(self):
+        out = self.dir / "o.json"
+        self.broken = set(rally.LANGS)
+        with self.assertRaises(SystemExit) as cm:
+            self.scan_with(out)
+        self.assertIn("Scan blocked: 6 of 10", str(cm.exception.code))
+        self.assertFalse(out.exists())
+
+    def test_list_makes_no_language_request(self):
+        patches = [
+            mock.patch.object(rally, "get", side_effect=self.fake_get),
+            mock.patch.object(sys, "argv", ["x", "--list"]),
+            contextlib.redirect_stdout(io.StringIO()),
+        ]
+        with contextlib.ExitStack() as stack:
+            for p in patches:
+                stack.enter_context(p)
+            rally.main()
+        self.assertEqual([c[0] for c in self.calls], ["en"])
+
+    def test_from_json_with_names_sends_no_request(self):
+        page = self.dir / "i.html"
+        argv = ["x", "--from-json", str(NAMES_FIXTURE), "--map", str(page)]
+        net = mock.patch.object(rally.urllib.request, "urlopen")
+        quiet = contextlib.redirect_stdout(io.StringIO())
+        with net as urlopen, mock.patch.object(sys, "argv", argv), quiet:
+            rally.main()
+        urlopen.assert_not_called()
+        self.assertTrue(page.exists())
+
+
+class StationNamesPageTest(unittest.TestCase):
+    """Records with and without `names`: the page data and the feeds."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.dir = Path(tmp.name)
+        text = NAMES_FIXTURE.read_text(encoding="utf-8")
+        self.with_names = json.loads(text)["offers"]
+
+    def stripped(self):
+        records = json.loads(json.dumps(self.with_names))
+        for r in records:
+            for end in ("from", "to"):
+                r[end].pop("names", None)
+        return records
+
+    def test_fixture_has_names_and_the_old_fixture_has_none(self):
+        self.assertEqual(self.with_names[0]["from"]["names"]["it"], "Anversa")
+        self.assertEqual(self.with_names[0]["from"]["name"], "Antwerp")
+        old = json.loads(FIXTURE.read_text(encoding="utf-8"))["offers"]
+        self.assertFalse(any("names" in r[k] for r in old for k in ("from", "to")))
+
+    def render(self, records):
+        page = self.dir / "i.html"
+        with contextlib.redirect_stdout(io.StringIO()):
+            rally.render(records, page)
+        return page.read_text(encoding="utf-8")
+
+    def test_page_embeds_names_unchanged(self):
+        html = self.render(self.with_names)
+        self.assertEqual(json.loads(page_data(html)), self.with_names)
+
+    def test_old_data_renders_the_same_records(self):
+        old = json.loads(FIXTURE.read_text(encoding="utf-8"))["offers"]
+        self.assertEqual(json.loads(page_data(self.render(old))), old)
+
+    def test_feed_table_stays_english(self):
+        html = self.render(self.with_names)
+        self.assertEqual(
+            json.loads(page_data(html, "FEEDS")), [["Antwerp", "BE", "antwerp"]]
+        )
+
+    def test_feeds_do_not_depend_on_names(self):
+        def feeds(records, name):
+            with contextlib.redirect_stdout(io.StringIO()):
+                rally.write_feeds(records, self.dir / name, SCAN)
+            return {f.name: f.read_bytes() for f in (self.dir / name).glob("*.xml")}
+
+        got = feeds(self.with_names, "with")
+        self.assertEqual(got, feeds(self.stripped(), "without"))
+        self.assertEqual(sorted(got), ["all.xml", "from-antwerp.xml"])
 
 
 ATOM = "{http://www.w3.org/2005/Atom}"

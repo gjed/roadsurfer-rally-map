@@ -1,0 +1,68 @@
+{
+ "offers": [
+  {
+   "start": "2026-12-05",
+   "end": "2026-12-12",
+   "price": "",
+   "link": "https://booking.roadsurfer.com/en/rally/pick?station=47&end_station=130&start-date=2026-12-05&end-date=2026-12-12&currency=EUR",
+   "from": {
+    "name": "Antwerp",
+    "cc": "BE",
+    "latitude": 51.1302023,
+    "longitude": 4.3771619,
+    "names": {
+     "de": "Antwerpen",
+     "fr": "Anvers",
+     "es": "Amberes",
+     "it": "Anversa",
+     "nl": "Antwerpen",
+     "pt": "Antuérpia"
+    }
+   },
+   "to": {
+    "name": "Flensburg",
+    "cc": "DE",
+    "latitude": 54.75925,
+    "longitude": 9.4163889,
+    "names": {
+     "fr": "Flensbourg",
+     "es": "Flensburgo"
+    }
+   },
+   "km": 708,
+   "km_estimated": false
+  },
+  {
+   "start": "2026-12-07",
+   "end": "2026-12-14",
+   "price": "",
+   "link": "https://booking.roadsurfer.com/en/rally/pick?station=47&end_station=115&start-date=2026-12-07&end-date=2026-12-14&currency=EUR",
+   "from": {
+    "name": "Antwerp",
+    "cc": "BE",
+    "latitude": 51.1302023,
+    "longitude": 4.3771619,
+    "names": {
+     "de": "Antwerpen",
+     "fr": "Anvers",
+     "es": "Amberes",
+     "it": "Anversa",
+     "nl": "Antwerpen",
+     "pt": "Antuérpia"
+    }
+   },
+   "to": {
+    "name": "Würzburg",
+    "cc": "DE",
+    "latitude": 49.7968017,
+    "longitude": 9.965019,
+    "names": {
+     "fr": "Wurtzbourg",
+     "es": "Wurzburgo"
+    }
+   },
+   "km": 515,
+   "km_estimated": false
+  }
+ ]
+}

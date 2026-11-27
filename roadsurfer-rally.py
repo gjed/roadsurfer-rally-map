@@ -2,12 +2,15 @@
 """Query roadsurfer Rally (one-way relocation) offers.
 
 Unofficial API used by booking.roadsurfer.com (stdlib only):
-  GET /api/{lang}/rally/stations                 all stations
+  GET /api/{lang}/rally/stations                 all stations; "name" is in {lang}
   GET /api/{lang}/rally/stations/{id}            station; "returns" = rally destinations
   GET /api/{lang}/rally/timeframes/{from}-{to}   [{startDate, endDate}, ...]
   GET /api/{lang}/rally/search?stations=[[from,to]]&range=[start,end]&currency=EUR
                                                  models + price for an exact timeframe
 The X-Requested-Alias header must match the route alias or the API returns 404.
+
+Everything is read from /api/en, except that the station list is also read once for each
+page language (LANGS): the localised names go into each record's from/to as "names".
 
 Road distances come from an OSRM server (the public demo server by default), one
 table request per pick-up station, and are cached per station pair in a JSON file.
@@ -29,7 +32,10 @@ from collections import defaultdict
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-BASE = "https://booking.roadsurfer.com/api/en"
+BASE = (
+    "https://booking.roadsurfer.com/api"  # followed by /{lang}: en, and LANGS for names
+)
+LANGS = ("de", "fr", "es", "it", "nl", "pt")  # the page's languages besides English
 DELAY = 0.5  # seconds between requests (sequential, ~2 req/s); see --delay
 JITTER = 0.2  # up to this share of DELAY is added at random to each wait
 REQUESTS = FAILED = RATE_LIMITED = 0  # get() calls, calls given up, 429 answers
@@ -57,10 +63,12 @@ FOLD = str.maketrans({"ß": "ss", "æ": "ae", "œ": "oe", "ø": "o", "ł": "l", 
 SCAN_TIME = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
 
 
-def get(path, alias, params=None):
+def get(path, alias, params=None, lang="en"):
     global REQUESTS, FAILED, RATE_LIMITED
     REQUESTS += 1
-    url = BASE + path + ("?" + urllib.parse.urlencode(params) if params else "")
+    url = f"{BASE}/{lang}{path}" + (
+        "?" + urllib.parse.urlencode(params) if params else ""
+    )
     req = urllib.request.Request(
         url, headers={"Accept": "application/json", "X-Requested-Alias": alias}
     )
@@ -80,6 +88,31 @@ def get(path, alias, params=None):
                 return None
             # on a 429 back off for minutes (~1, 2, 3, 4) with jitter
             time.sleep(60 * (attempt + 1) + random.uniform(0, 30) if code == 429 else 2)
+
+
+def add_names(stations):
+    """Add `names` ({lang: name}, only where it differs from English) to each station.
+
+    One /rally/stations request per language in LANGS, joined to the English list by id
+    (never by name). A failed or odd answer leaves that language, and a station missing
+    from it, in English.
+    """
+    for lang in LANGS:
+        listed = get("/rally/stations", "rally.startStations", lang=lang)
+        for s in listed if isinstance(listed, list) else []:
+            en = stations.get(s.get("id")) if isinstance(s, dict) else None
+            name = s.get("name") if en else None
+            if isinstance(name, str) and name and name != en["name"]:
+                en.setdefault("names", {})[lang] = name
+
+
+def station_record(s):
+    """The from/to of an offer record. `name` is the English key; `names` is left out
+    when no language differs, like in a record from before station names."""
+    rec = {"name": s["name"], "cc": s["city"]["country"], **s["coordinate"]}
+    if s.get("names"):
+        rec["names"] = s["names"]
+    return rec
 
 
 def resolve(stations, terms):
@@ -184,16 +217,8 @@ def run(args, stations):
                 "end": e,
                 "price": pr,
                 "link": link(o, d, s, e),
-                "from": {
-                    "name": stations[o]["name"],
-                    "cc": stations[o]["city"]["country"],
-                    **stations[o]["coordinate"],
-                },
-                "to": {
-                    "name": stations[d]["name"],
-                    "cc": stations[d]["city"]["country"],
-                    **stations[d]["coordinate"],
-                },
+                "from": station_record(stations[o]),
+                "to": station_record(stations[d]),
             }
         )
         print(line)
@@ -590,6 +615,7 @@ def main():
                 f"{s['id']:>4}  {s['city']['country']}  {s['name']}  ({s['city']['name']})"
             )
         return
+    add_names(stations)
     records = run(args, stations)
     scan = {
         # timezone.utc, not datetime.UTC (3.11+): the script supports Python 3.8
