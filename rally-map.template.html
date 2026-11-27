@@ -190,6 +190,12 @@
   .dispw { display: flex; }
   .dbtn { display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--field); border-radius: 8px; background: var(--surface); font-weight: 600; cursor: pointer; }
   @media (hover: hover) { .dbtn:hover { background: var(--hover); } }
+  /* the feed button sits beside Display on a desktop and a tablet; a phone has the link in the Display sheet instead */
+  .abtn { display: flex; align-items: center; gap: 8px; }
+  .fdbtn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; box-sizing: border-box; border: 1px solid var(--field); border-radius: 8px; background: var(--surface); color: var(--ink); }
+  .fdbtn svg { width: 16px; height: 16px; }
+  @media (hover: hover) { .fdbtn:hover { background: var(--hover); color: var(--ink); } }
+  .dfeed { display: none; }
   .dlang { display: flex; align-items: center; gap: 6px; font-size: 13px; letter-spacing: .02em; }
   .dlang b { min-width: 2.2ch; font-weight: 600; text-align: center; }
   .dsep { width: 1px; height: 16px; background: var(--line); }
@@ -437,6 +443,10 @@
     #p-disp .shh h2 { flex: 1; margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
     #dbody { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
     .dsec small { font-size: 13px; }
+    .fdbtn { display: none; }
+    .dfeed { display: block; border-top: 1px solid var(--line2); padding-top: 16px; }
+    .dfeed .feed { min-height: 44px; margin-left: -10px; font-size: 15px; }
+    .dfeed small { margin-top: 0; }
     .dbtn { width: 44px; height: 44px; padding: 0; border-radius: 12px; }
     .lrow { min-height: 44px; padding: 0 12px; }
     .lrow .lk { width: 18px; height: 18px; }
@@ -611,8 +621,8 @@
     <button id="m-trips" aria-pressed="true" data-t="mode.trips">Single rallies</button>
     <button id="m-chains" aria-pressed="false" title="Longer trips: 2–3 rallies back to back" data-t-title="mode.chains.tip" data-t="mode.chains">Chains</button>
   </div>
-  <span class="abend"><span id="updated"></span>
-  <span class="dispw"><button class="dbtn" id="dbtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-disp" aria-label="Display settings: language English, theme system"><span class="dlang"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2 2 2.8 4.2 2.8 6.5S10 12.5 8 14.5M8 1.5C6 3.5 5.2 5.7 5.2 8S6 12.5 8 14.5"/></svg><b id="dcode">EN</b></span><span class="dsep" aria-hidden="true"></span><svg class="ti" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></svg><svg class="dots" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="currentColor"><circle cx="3.5" cy="9" r="1.6"/><circle cx="9" cy="9" r="1.6"/><circle cx="14.5" cy="9" r="1.6"/></svg></button></span></span>
+  <span class="abend"><span id="updated"></span><span class="abtn"><a class="fdbtn" href="feeds/all.xml" type="application/atom+xml" target="_blank" rel="noopener" aria-label="RSS feed" data-t-aria-label="fav.feed" title="Every new rally, for a feed reader app." data-t-title="feed.all.tip"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="3.5" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M2 7.5a6.5 6.5 0 0 1 6.5 6.5M2 2.5a11.5 11.5 0 0 1 11.5 11.5"/></svg></a>
+  <span class="dispw"><button class="dbtn" id="dbtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="p-disp" aria-label="Display settings: language English, theme system"><span class="dlang"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2 2 2.8 4.2 2.8 6.5S10 12.5 8 14.5M8 1.5C6 3.5 5.2 5.7 5.2 8S6 12.5 8 14.5"/></svg><b id="dcode">EN</b></span><span class="dsep" aria-hidden="true"></span><svg class="ti" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></svg><svg class="dots" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="currentColor"><circle cx="3.5" cy="9" r="1.6"/><circle cx="9" cy="9" r="1.6"/><circle cx="14.5" cy="9" r="1.6"/></svg></button></span></span></span>
 </header>
 <div id="fbar" role="group" aria-label="Filters" data-t-aria-label="filters.title">
   <div id="chips">
@@ -713,6 +723,7 @@
       <div class="seg3" id="themeseg"></div>
       <small data-t="display.theme.help">System follows your device setting.</small>
     </div>
+    <div class="dsec dfeed"><a class="feed" href="feeds/all.xml" type="application/atom+xml" target="_blank" rel="noopener" aria-describedby="fd-all"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="3.5" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M2 7.5a6.5 6.5 0 0 1 6.5 6.5M2 2.5a11.5 11.5 0 0 1 11.5 11.5"/></svg><span data-t="fav.feed">RSS feed</span></a><small id="fd-all" data-t="feed.all.tip">Every new rally, for a feed reader app.</small></div>
   </div>
 </div>
 <script src="vendor/leaflet/leaflet.js"></script>
@@ -1009,6 +1020,7 @@ const STRINGS = {
     "fav.chip.sr.other": " · {n} new since your last visit",
     "fav.hint": "Star ☆ a route, station or chain to see it here.",
     "fav.feed.tip": "New rallies from {place}, for a feed reader app.",
+    "feed.all.tip": "Every new rally, for a feed reader app.",
     "fav.empty.none": "None of your favourites have trips with these filters."
   },
   "de": {
@@ -1301,6 +1313,7 @@ const STRINGS = {
     "fav.chip.sr.other": " · {n} neu seit deinem letzten Besuch",
     "fav.hint": "Markiere eine Route, Station oder Kette mit ☆, um sie hier zu sehen.",
     "fav.feed.tip": "Neue Rallyes ab {place}, für eine Feed-Reader-App.",
+    "feed.all.tip": "Alle neuen Rallyes, für eine Feed-Reader-App.",
     "fav.empty.none": "Keine deiner Favoriten hat Fahrten mit diesen Filtern."
   },
   "fr": {
@@ -1593,6 +1606,7 @@ const STRINGS = {
     "fav.chip.sr.other": " · {n} nouveaux depuis votre dernière visite",
     "fav.hint": "Marquez un itinéraire, une station ou une chaîne avec ☆ pour la voir ici.",
     "fav.feed.tip": "Nouvelles rallyes au départ de {place}, pour une application de lecture de flux.",
+    "feed.all.tip": "Toutes les nouvelles rallyes, pour une application de lecture de flux.",
     "fav.empty.none": "Aucun de vos favoris n'a de trajets avec ces filtres."
   },
   "es": {
@@ -1885,6 +1899,7 @@ const STRINGS = {
     "fav.chip.sr.other": " · {n} nuevos desde tu última visita",
     "fav.hint": "Marca una ruta, una estación o una cadena con ☆ para verla aquí.",
     "fav.feed.tip": "Rallies nuevas desde {place}, para una aplicación lectora de feeds.",
+    "feed.all.tip": "Todas las rallies nuevas, para una aplicación lectora de feeds.",
     "fav.empty.none": "Ninguno de tus favoritos tiene viajes con estos filtros."
   },
   "it": {
@@ -2177,6 +2192,7 @@ const STRINGS = {
     "fav.chip.sr.other": " · {n} nuovi dalla tua ultima visita",
     "fav.hint": "Aggiungi ☆ a un percorso, una stazione o una catena per vederla qui.",
     "fav.feed.tip": "Nuove rally da {place}, per un'app di lettura di feed.",
+    "feed.all.tip": "Tutte le nuove rally, per un'app di lettura di feed.",
     "fav.empty.none": "Nessuno dei tuoi preferiti ha viaggi con questi filtri."
   },
   "nl": {
@@ -2469,6 +2485,7 @@ const STRINGS = {
     "fav.chip.sr.other": " · {n} nieuw sinds je laatste bezoek",
     "fav.hint": "Markeer een route, station of keten met ☆ om die hier te zien.",
     "fav.feed.tip": "Nieuwe rally's vanaf {place}, voor een feedreader-app.",
+    "feed.all.tip": "Alle nieuwe rally's, voor een feedreader-app.",
     "fav.empty.none": "Geen van je favorieten heeft ritten met deze filters."
   },
   "pt": {
@@ -2761,6 +2778,7 @@ const STRINGS = {
     "fav.chip.sr.other": " · {n} novos desde a sua última visita",
     "fav.hint": "Marque uma rota, uma estação ou uma cadeia com ☆ para a ver aqui.",
     "fav.feed.tip": "Novas rallies a partir de {place}, para uma aplicação de leitura de feeds.",
+    "feed.all.tip": "Todas as novas rallies, para uma aplicação de leitura de feeds.",
     "fav.empty.none": "Nenhum dos seus favoritos tem viagens com estes filtros."
   }
 };
