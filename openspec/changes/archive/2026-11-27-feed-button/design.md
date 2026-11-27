@@ -1,3 +1,5 @@
+# Design
+
 ## Decisions
 
 - **Icon only, in the bar.** A 36 px square matches the `Display` button's height,
