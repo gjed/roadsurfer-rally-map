@@ -1,3 +1,5 @@
+# Delta for rally-scanner
+
 ## ADDED Requirements
 
 ### Requirement: App bar feed button
@@ -17,8 +19,7 @@ carries every new rally, in the interface language. Below 700 px it SHALL NOT be
 #### Scenario: Tooltip in German
 
 - **WHEN** the page is shown in German and the user points at the button
-- **THEN** its name is `RSS-Feed` and its title is `Alle neuen Rallyes, für eine
-  Feed-Reader-App.`
+- **THEN** its name is `RSS-Feed` and its title is `Alle neuen Rallyes, für eine Feed-Reader-App.`
 
 #### Scenario: No button on a phone
 

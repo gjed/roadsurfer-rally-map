@@ -1,3 +1,5 @@
+# Proposal
+
 ## Why
 
 The map publishes `feeds/all.xml`, but a visitor cannot find it. The file is linked only
