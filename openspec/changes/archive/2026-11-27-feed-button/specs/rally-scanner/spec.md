@@ -20,7 +20,7 @@ carries every new rally, in the interface language. Below 700 px it SHALL NOT be
 - **THEN** its name is `RSS-Feed` and its title is `Alle neuen Rallyes, für eine
   Feed-Reader-App.`
 
-#### Scenario: Phone
+#### Scenario: No button on a phone
 
 - **WHEN** the page is opened 390 px wide
 - **THEN** the app bar has no feed button
