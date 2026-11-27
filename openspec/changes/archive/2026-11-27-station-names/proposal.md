@@ -25,9 +25,10 @@ None.
 
 ### Modified Capabilities
 
-- `rally-scanner`: adds "Station names per language" and "Station names in the page";
-  changes "Polite API access", "Scan data file" and, by renaming it, "Texts that stay as
-  they are".
+- `rally-scanner`: adds "Station names per language", "Failed language requests",
+  "Station names in the page" and "Station keys stay English"; changes "Polite API
+  access"; replaces "Texts that stay as they are" with "Texts that are never
+  translated".
 
 ## Impact
 
