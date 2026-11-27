@@ -2950,7 +2950,11 @@ const dm = s => s ? fmtDay(F.dm, s) : '\u2026';
 // a range is one message with each end formatted on its own (not Intl's formatRange, whose forms differ by engine)
 const dmRange = (a, b) => t('fmt.range', { a: dm(a), b: dm(b) });
 const nw = s => `<span class="nw">${esc(s)}</span>`;  // a date that breaks only at the arrow or dash beside it
-const place = s => `${s.name}, ${s.cc}`;
+// A station's `name` is its English name and the key of everything stored or linked: route, leg, hop and chain keys, favourites,
+// the hash, select values. What is shown is sname(): the name in the language of the page when the scan has one, else `name`
+const sname = s => (s.names && s.names[lang]) || s.name;
+const place = s => `${sname(s)}, ${s.cc}`;
+const placeKey = s => `${s.name}, ${s.cc}`;  // the key of a favourite station and of its feed, in English
 const fmtN = n => F.num.format(n);
 const fmtKmN = n => F.num.format(Number(n));  // the number alone, for a range that names the unit once
 const fmtKm = n => F.km.format(Number(n));
@@ -3090,6 +3094,7 @@ $('week').max = min ? Math.floor((day(lastStart) - day(min)) / 864e5 / 7) + 1 : 
 // every route of the scan, whatever the filters: the route detail and "Continue from" read it
 const routeKey = r => r.from.name + '>' + r.to.name;
 const ROUTES = new Map(), STATIONS = new Map();
+const nameOf = key => STATIONS.has(key) ? sname(STATIONS.get(key)) : key;  // the label of a station key
 for (const r of DATA) {
   const k = routeKey(r);
   if (!ROUTES.has(k)) ROUTES.set(k, { key: k, from: r.from, to: r.to, trips: [], ...dist(r) });
@@ -3114,7 +3119,7 @@ function renderUpdated() {
 }
 
 // ---- favourites: stars kept in this browser, and the windows that are new on them -----------------------------------
-// Keys: a route is routeKey(), a station its place() (Name, CC) and a chain the route keys of its legs joined by '|' (the key
+// Keys: a route is routeKey(), a station its placeKey() (Name, CC) and a chain the route keys of its legs joined by '|' (the key
 // findChains gives it, with no dates). Stored as {v: 1, route|station|chain: {key: {seen: [route|start|end, ...], scan}}}.
 // The three kinds are Maps in memory, so a key like __proto__ is only a key.
 const FAV_KEY = 'rally-map:fav', FAV_KINDS = ['route', 'station', 'chain'];
@@ -3124,7 +3129,7 @@ const TODAY = iso(Date.now());
 const offerKey = r => routeKey(r) + '|' + r.start + '|' + r.end;
 const live = r => r.end >= TODAY;  // a window that has ended is neither new nor stored
 const STATION_WINS = new Map();
-for (const r of DATA) STATION_WINS.set(place(r.from), (STATION_WINS.get(place(r.from)) || []).concat(r));
+for (const r of DATA) STATION_WINS.set(placeKey(r.from), (STATION_WINS.get(placeKey(r.from)) || []).concat(r));
 // the windows an item covers: its route, the routes of its legs, or the routes that leave its station
 const windowsOf = (kind, key) => (kind === 'route' ? ROUTES.has(key) ? ROUTES.get(key).trips : [] : kind === 'station' ? STATION_WINS.get(key) || []
   : key.split('|').flatMap(k => ROUTES.has(k) ? ROUTES.get(k).trips : [])).filter(live);
@@ -3132,8 +3137,8 @@ const isFav = (kind, key) => FAV[kind].has(key);
 // a favourite counts while the scan has its route, a departure from its station, or every route of its chain; the rest stays stored
 const present = (kind, key) => kind === 'route' ? ROUTES.has(key) : kind === 'station' ? STATION_WINS.has(key) : key.split('|').every(k => ROUTES.has(k));
 const nFav = kind => [...FAV[kind].keys()].filter(k => present(kind, k)).length;
-const favRoute = g => isFav('route', g.key) || isFav('station', place(g.from));
-const favOffer = r => isFav('route', routeKey(r)) || isFav('station', place(r.from));
+const favRoute = g => isFav('route', g.key) || isFav('station', placeKey(g.from));
+const favOffer = r => isFav('route', routeKey(r)) || isFav('station', placeKey(r.from));
 // a value of a version this page does not know is left alone: it is neither read nor written
 let favLocked = false, favOnly = false;  // favOnly: the Favourites filter, which is neither stored nor in the URL
 function favSave() {
@@ -3204,7 +3209,7 @@ function autoSeen() {
   if (open && !chainMode && S.route && ROUTES.has(S.route)) recs.push(...ROUTES.get(S.route).trips);
   const c = open && chainMode && S.chain && chains.find(x => x.key === S.chain);
   if (c) for (const l of c.legs) recs.push(...ROUTES.get(routeKey(l.r)).trips);
-  for (const id of ['fst']) if (eff[id] && STATIONS.has(eff[id])) recs.push(...(STATION_WINS.get(place(STATIONS.get(eff[id]))) || []));
+  for (const id of ['fst']) if (eff[id] && STATIONS.has(eff[id])) recs.push(...(STATION_WINS.get(placeKey(STATIONS.get(eff[id]))) || []));
   return recs.length && markSeen(recs);
 }
 // .fav is the star alone, .favt has its word; the name is the same in both and never changes with the state
@@ -3212,10 +3217,10 @@ const favAria = item => t('fav.aria', { item });
 const favBtn = (kind, key, item, cls) => `<button type="button" class="${cls}" data-fav="${kind}" data-key="${esc(key)}" aria-pressed="${isFav(kind, key)}" aria-label="${esc(favAria(item))}"${cls === 'fav' ? ` title="${esc(t(isFav(kind, key) ? 'fav.remove' : 'fav.add'))}"` : ''}>${STAR}${cls === 'favt' ? `<span>${esc(t('fav.label'))}</span>` : ''}</button>`;
 const routeFav = (key, a, b, cls = 'fav') => favBtn('route', key, t('aria.route', { from: place(a), to: place(b) }), cls);
 const chainFav = (c, cls = 'fav') => favBtn('chain', c.key, chainLabel(c), cls);
-const stationFav = st => favBtn('station', place(st), place(st), 'favt');
+const stationFav = st => favBtn('station', placeKey(st), place(st), 'favt');
 // the feed of a pick-up station: the page links the file the scanner wrote, by the slug the scanner gave it
 const FEED = new Map((Array.isArray(FEEDS) ? FEEDS : []).filter(f => Array.isArray(f) && f.length === 3).map(([n, cc, slug]) => [n + ', ' + cc, slug]));
-const feedUrl = st => FEED.has(place(st)) ? 'feeds/from-' + encodeURIComponent(FEED.get(place(st))) + '.xml' : '';
+const feedUrl = st => FEED.has(placeKey(st)) ? 'feeds/from-' + encodeURIComponent(FEED.get(placeKey(st))) + '.xml' : '';
 const FEEDI = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="3.5" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M2 7.5a6.5 6.5 0 0 1 6.5 6.5M2 2.5a11.5 11.5 0 0 1 11.5 11.5"/></svg>';
 const feedTip = st => t('fav.feed.tip', { place: place(st) });
 const feedLink = (st, id) => feedUrl(st) ? `<a class="feed" href="${esc(feedUrl(st))}" type="application/atom+xml" target="_blank" rel="noopener" title="${esc(feedTip(st))}" aria-describedby="${id}">${FEEDI}<span>${esc(t('fav.feed'))}</span></a><span class="sr" id="${id}">${esc(feedTip(st))}</span>` : '';
@@ -3240,11 +3245,11 @@ function syncFav() {
 }
 // the chosen pick-up station in the Pick-up panel: its favourite button and its feed, with a line that says what the feed is
 function stationActs() {
-  const st = eff.fst && STATIONS.get(eff.fst), key = st ? place(st) : '', row = $('f-from');
+  const st = eff.fst && STATIONS.get(eff.fst), key = st ? placeKey(st) : '', row = $('f-from');
   const b = row.querySelector('.favt'), a = row.querySelector('.feed'), note = $('fd-panel'), url = st ? feedUrl(st) : '';
   row.hidden = !st;
   b.dataset.key = key;
-  b.setAttribute('aria-label', st ? favAria(key) : '');
+  b.setAttribute('aria-label', st ? favAria(place(st)) : '');
   a.hidden = note.hidden = !url;
   if (url) { a.href = url; a.title = note.textContent = feedTip(st); }
 }
@@ -3363,7 +3368,7 @@ let focusKey = null;  // the leg or connection of the open chain picked on the m
 const hopKey = (c, i) => 'hop ' + c.legs[i - 1].r.to.name + '>' + c.legs[i].r.from.name;
 const uses = (c, key) => c.legs.some((l, i) => routeKey(l.r) === key || (i && !c.hops[i - 1].same && hopKey(c, i) === key));
 const isHop = key => key.startsWith('hop ');
-const legTitle = key => key.replace(/^hop /, '').split('>').map(esc).join(` ${ARROW} `);
+const legTitle = key => key.replace(/^hop /, '').split('>').map(n => esc(nameOf(n))).join(` ${ARROW} `);
 // the leg filter limits the chains like the pick-up and return filters, so their dropdown counts follow it
 const endsPass = (c, skip) => { for (const k in ENDS) if (k !== skip && eff[k] && ENDS[k](c) !== eff[k]) return false; return (!favOnly || isFav('chain', c.key)) && (!legFilter || uses(c, legFilter)); };
 let chainMemo = { key: '', list: [], ms: 0, from: 0 };  // from: the offers the chains are built from  // the chains for the current chain settings, filters and dates
@@ -3398,7 +3403,7 @@ function fillSelects() {
     const counts = new Map();
     for (const r of rows) if (chainMode ? endsPass(r, k) : passes(r, k)) counts.set(FS[k](r), (counts.get(FS[k](r)) || 0) + 1);
     if (eff[k] && !counts.has(eff[k])) eff[k] = '';  // selection became impossible -> clear it
-    const el = $(k), cc = k === 'fcc' || k === 'tcc', label = v => cc ? regionName(v) : v;
+    const el = $(k), cc = k === 'fcc' || k === 'tcc', label = v => cc ? regionName(v) : nameOf(v);
     el.innerHTML = `<option value="">${esc(t(cc ? 'select.anycountry' : 'select.anystation'))}</option>` +
       [...counts].sort((a, b) => F.coll.compare(label(a[0]), label(b[0])))
         .map(([v, n]) => `<option value="${esc(v)}"${v === eff[k] ? ' selected' : ''}>${esc(label(v))} (${fmtN(n)})</option>`).join('');
@@ -3444,12 +3449,12 @@ const legLink = l => {
 const handOver = (c, i) => {
   const a = c.legs[i - 1].r.to, b = c.legs[i].r.from, h = c.hops[i - 1], gap = c.legs[i].p - c.legs[i - 1].q;
   const when = esc(gap ? nRest(gap) : t('chain.when.same'));
-  return h.same ? th('chain.handover.same', { station: esc(a.name), when }) : th('chain.handover.hop', { km: kmHtml(h.km, true), route: `${esc(a.name)} ${ARROW} ${esc(b.name)}`, when });
+  return h.same ? th('chain.handover.same', { station: esc(sname(a)), when }) : th('chain.handover.hop', { km: kmHtml(h.km, true), route: `${esc(sname(a))} ${ARROW} ${esc(sname(b))}`, when });
 };
 const chainLabel = c => c.legs.map(l => t('aria.route', { from: place(l.r.from), to: place(l.r.to) })).join(t('chain.label.then'));
 // Berlin -> Barcelona -> Lisbon; a hop to another station is a dashed arrow
-const chainTitle = c => c.legs.map((l, i) => (!i ? esc(l.r.from.name) : c.hops[i - 1].same ? ''
-  : ` <span class="hopsep" aria-hidden="true">\u21e2</span><span class="sr">${esc(t('chain.title.hop'))}</span> ${esc(l.r.from.name)}`) + ` ${ARROW} ${esc(l.r.to.name)}`).join('');
+const chainTitle = c => c.legs.map((l, i) => (!i ? esc(sname(l.r.from)) : c.hops[i - 1].same ? ''
+  : ` <span class="hopsep" aria-hidden="true">\u21e2</span><span class="sr">${esc(t('chain.title.hop'))}</span> ${esc(sname(l.r.from))}`) + ` ${ARROW} ${esc(sname(l.r.to))}`).join('');
 const chainEst = c => c.legs.some(l => dist(l.r).est);
 const chainBadges = c => `<span class="badges"><span>${esc(nDays(c.days))}</span><span>${th('badge.driven', { km: kmHtml(c.drive, chainEst(c)) })}</span><span class="lt">${esc(c.rest ? nRest(c.rest) : t('badge.norest'))}</span></span>`;
 const bookLeg = (c, l, i) => t('book.leg.aria', { i: i + 1, total: c.legs.length, from: place(l.r.from), to: place(l.r.to), start: sd(l.p), end: sd(l.q) });
@@ -3508,7 +3513,7 @@ function drawChainOn(group, c, open) {
     if (open) hitLine(group, pts, 'hot').bindTooltip(th('tip.openleg', { n: i + 1, route: `${esc(place(l.r.from))} ${ARROW} ${esc(place(l.r.to))}` }), { sticky: true }).on('click', () => pickLeg(key));
     if (i && !c.hops[i - 1].same) {
       const hk = hopKey(c, i), hit = drawHop(group, c.legs[i - 1].r.to, l.r.from, { pane: 'hot', ...paint({ color: 'hop' }), weight: 4, opacity: 1, interactive: open });
-      if (hit) hit.bindTooltip(th('tip.openhop', { route: `${esc(c.legs[i - 1].r.to.name)} ${ARROW} ${esc(l.r.from.name)}` }), { sticky: true }).on('click', () => pickLeg(hk));
+      if (hit) hit.bindTooltip(th('tip.openhop', { route: `${esc(sname(c.legs[i - 1].r.to))} ${ARROW} ${esc(sname(l.r.from))}` }), { sticky: true }).on('click', () => pickLeg(hk));
     }
     if (open) L.marker(pts[20], { pane: 'stations', interactive: false, keyboard: false, icon: L.divIcon({ className: 'legno', html: String(i + 1), iconSize: [24, 24] }) }).addTo(group);
     st.set(l.r.from.name, l.r.from).set(l.r.to.name, l.r.to);
@@ -3575,7 +3580,7 @@ function drawChains() {
   }
   for (const [key, g] of hops) {
     drawHop(layer, g.a, g.b, { ...paint({ color: 'hop' }), weight: 3, opacity: 1, className: 'base' }).on('click', () => pickLeg(key))
-      .bindTooltip(th(onMap ? 'tip.hop.map' : 'tip.hop', { route: `${esc(g.a.name)} ${ARROW} ${esc(g.b.name)}`, km: esc(kmText({ km: g.h.km, est: true })), chains: esc(nChains(g.n)) }), { sticky: true });
+      .bindTooltip(th(onMap ? 'tip.hop.map' : 'tip.hop', { route: `${esc(sname(g.a))} ${ARROW} ${esc(sname(g.b))}`, km: esc(kmText({ km: g.h.km, est: true })), chains: esc(nChains(g.n)) }), { sticky: true });
   }
   return { stations, routes: legs.size, n: chains.length };
 }
@@ -3588,7 +3593,7 @@ function drawSelection() {
     ring(picked, g.from, false);
     ring(picked, g.to, true);
     L.tooltip({ permanent: true, direction: 'top', className: 'rpill', offset: [0, -6] }).setLatLng(pts[20])
-      .setContent(`${esc(g.from.name)} ${ARROW} ${esc(g.to.name)} \u00b7 ${esc(nTrips(routeWins(g).length))}`).addTo(picked);
+      .setContent(`${esc(sname(g.from))} ${ARROW} ${esc(sname(g.to))} \u00b7 ${esc(nTrips(routeWins(g).length))}`).addTo(picked);
   }
   const c = chainMode && S.chain && chains.find(x => x.key === S.chain);
   if (c) drawChainOn(picked, c, true);
@@ -3651,7 +3656,7 @@ function routeCards() {
     start: (a, b) => a.first.localeCompare(b.first) || a.km - b.km, km: (a, b) => a.km - b.km, '-km': (a, b) => b.km - a.km,
     n: (a, b) => b.trips.length - a.trips.length || a.first.localeCompare(b.first),
   };
-  list.sort((a, b) => ord[S.rsort](a, b) || F.coll.compare(a.key, b.key));
+  list.sort((a, b) => ord[S.rsort](a, b) || F.coll.compare(place(a.from) + place(a.to), place(b.from) + place(b.to)) || F.coll.compare(a.key, b.key));
   const st = eff.fst && STATIONS.get(eff.fst);
   const first = shown.map(r => r.start).sort()[0], last = shown.map(r => r.end).sort().pop();
   const sub = st ? dot(nRoutes(list.length), nTrips(shown.length)) : dot(nTrips(shown.length), first && dmRange(first, last));
@@ -3674,26 +3679,26 @@ function routeCards() {
 function routeDetail(g) {
   const wins = routeWins(g), longest = Math.max(...wins.map(nightsOf));
   const next = [...ROUTES.values()].filter(x => x.from.name === g.to.name && x.last >= g.first).sort((a, b) => a.first.localeCompare(b.first) || a.km - b.km);
-  const also = [...ROUTES.values()].filter(x => x.from.name === g.from.name && x.key !== g.key).sort((a, b) => F.coll.compare(a.to.name, b.to.name));
-  return `<div class="detail"><div class="dtop"><button class="back" data-act="back">${BACK}${esc(eff.fst ? t('route.back.from', { station: eff.fst }) : t('route.back.all'))}</button>${routeFav(g.key, g.from, g.to, 'favt')}</div>` +
+  const also = [...ROUTES.values()].filter(x => x.from.name === g.from.name && x.key !== g.key).sort((a, b) => F.coll.compare(sname(a.to), sname(b.to)));
+  return `<div class="detail"><div class="dtop"><button class="back" data-act="back">${BACK}${esc(eff.fst ? t('route.back.from', { station: nameOf(eff.fst) }) : t('route.back.all'))}</button>${routeFav(g.key, g.from, g.to, 'favt')}</div>` +
     `<div class="dhead"><h2 class="rt" id="dh" tabindex="-1">${RING('var(--selected)', 5)}<span>${esc(place(g.from))}</span><span class="vl" aria-hidden="true"></span><span><span class="sr"> ${esc(t('arrow.to'))} </span></span>${DOT('var(--selected)', 5.5)}<span>${esc(place(g.to))}</span></h2>` +
     `<dl class="stats"><div><dt>${esc(t('route.stat.road'))}</dt><dd>${kmHtml(g.km, g.est)}</dd></div><div><dt>${esc(t('route.stat.windows'))}</dt><dd>${fmtN(wins.length)}</dd></div><div><dt>${esc(t('route.stat.stay'))}</dt><dd>${esc(nNights(longest))}</dd></div></dl></div>` +
     `<section class="sec" aria-labelledby="h-win"><h3 id="h-win">${esc(t('route.windows'))}</h3><p class="help">${esc(t('route.windows.help', { n: NIGHTS }))}</p><ul class="wins">` +
     wins.map(r => `<li><div class="w"><div class="d num">${nw(short(r.start))} ${ARROW} ${nw(short(r.end))}</div><div class="m">${isNew(r) ? newBadge(r) : ''}${esc(dot(t('route.win.upto', { n: nightsOf(r) }), r.price))}</div></div>` +
       `<a class="btn" href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="${esc(t('book.aria', { from: place(g.from), to: place(g.to), date: short(r.start) }))}">${esc(t('book.button'))}${EXT}</a></li>`).join('') + '</ul></section>' +
-    `<section class="sec" aria-labelledby="h-next"><h3 id="h-next">${esc(t('route.next', { station: g.to.name }))}</h3>` +
+    `<section class="sec" aria-labelledby="h-next"><h3 id="h-next">${esc(t('route.next', { station: sname(g.to) }))}</h3>` +
     (next.length ? `<p class="help">${esc(t('route.next.help'))}</p><ul class="nexts">` +
-      next.map(x => `<li><button class="nx" data-route="${esc(x.key)}"><span><b>${esc(x.from.name)} ${ARROW} ${esc(place(x.to))}</b><small>${th('route.next.meta', { trips: esc(nTrips(x.trips.length)), date: esc(short(x.first)), km: kmHtml(x.km, x.est) })}</small></span>${CHEVR}</button></li>`).join('') + '</ul>'
-      : `<p class="soft">${esc(t('route.next.none', { station: g.to.name }))}</p>`) + '</section>' +
-    (also.length ? `<section class="sec" aria-labelledby="h-also"><h3 id="h-also">${esc(t('route.also', { station: g.from.name }))}</h3><div class="also">` +
-      also.map(x => `<button data-route="${esc(x.key)}" aria-label="${esc(t('aria.route', { from: g.from.name, to: place(x.to) }))}"><span aria-hidden="true">\u2192</span> ${esc(x.to.name)}</button>`).join('') + '</div></section>' : '') +
+      next.map(x => `<li><button class="nx" data-route="${esc(x.key)}"><span><b>${esc(sname(x.from))} ${ARROW} ${esc(place(x.to))}</b><small>${th('route.next.meta', { trips: esc(nTrips(x.trips.length)), date: esc(short(x.first)), km: kmHtml(x.km, x.est) })}</small></span>${CHEVR}</button></li>`).join('') + '</ul>'
+      : `<p class="soft">${esc(t('route.next.none', { station: sname(g.to) }))}</p>`) + '</section>' +
+    (also.length ? `<section class="sec" aria-labelledby="h-also"><h3 id="h-also">${esc(t('route.also', { station: sname(g.from) }))}</h3><div class="also">` +
+      also.map(x => `<button data-route="${esc(x.key)}" aria-label="${esc(t('aria.route', { from: sname(g.from), to: place(x.to) }))}"><span aria-hidden="true">\u2192</span> ${esc(sname(x.to))}</button>`).join('') + '</div></section>' : '') +
     `<a class="more" href="#trips" data-act="list">${esc(t('route.more'))} <span aria-hidden="true">\u2192</span></a></div>`;
 }
 
 function chainCards() {
   const n = chains.length, st = eff.fst && STATIONS.get(eff.fst);
   const sub = dot(n > CHAIN_ROWS && t('chain.sub.first', { n: CHAIN_ROWS }), t(legFilter ? 'chain.sub.pick' : 'chain.sub.default'));
-  const title = legFilter ? t(isHop(legFilter) ? 'chain.uses.hop' : 'chain.uses.leg', { n }) : st ? t('chain.from', { station: st.name }) : nChains(n);
+  const title = legFilter ? t(isHop(legFilter) ? 'chain.uses.hop' : 'chain.uses.leg', { n }) : st ? t('chain.from', { station: sname(st) }) : nChains(n);
   const head = `<div class="shead"><div><h2 id="ch" tabindex="-1">${esc(title)}</h2><p>${esc(st && !legFilter ? dot(nChains(n), sub) : sub)}</p>${st ? stationControls(st) : ''}</div>${n ? orderSelect('csort', CHAIN_ORDERS, sortVal(SORT.chains)) : ''}${modeSeg()}</div>`;
   if (!n) return head + noneHtml();
   return head + '<ul class="cards">' + chains.slice(0, CHAIN_ROWS).map(c => `<li><button class="card ch" data-chain="${esc(c.key)}"><span class="t">${chainTitle(c)}</span>` +
@@ -3730,7 +3735,7 @@ const tripRow = r => `<tr><td class="ft">${routeFav(routeKey(r), r.from, r.to)}<
 
 function tripsTable() {
   const s = SORT.trips;
-  shown.sort(byOrder(s, SORTS[s.key], (x, y) => x.start.localeCompare(y.start) || F.coll.compare(x.from.name, y.from.name)));
+  shown.sort(byOrder(s, SORTS[s.key], (x, y) => x.start.localeCompare(y.start) || F.coll.compare(sname(x.from), sname(y.from))));
   const first = shown.map(r => r.start).sort()[0], last = shown.map(r => r.end).sort().pop();
   const ph = `<div class="phead"><p><strong>${esc(nTrips(shown.length))}</strong> <span>${th('count.onRoutes', { routes: esc(nRoutes(routes.size)) })}</span></p>${modeSeg()}</div>` +
     `<div class="prow">${orderSelect('tsort', TRIP_ORDERS, sortVal(s))}<label class="sortl">${esc(t('group.label'))}<select id="tgroup">` +
@@ -3772,7 +3777,7 @@ function tripsChains() {
   if (!n) return head + `<div class="tbox">${noneHtml()}</div>` + foot();
   return head + '<div class="tbox plain"><ul class="ccards">' + chains.slice(0, CHAIN_ROWS).map(c => `<li class="ccard" data-card="${esc(c.key)}"><div class="sum"><div class="sh"><h3>${chainTitle(c)}</h3>${chainFav(c)}</div>` +
     `<p class="num">${sdRange(c.start, c.end)}</p>${chainBadges(c)}</div><ol>` +
-    c.legs.map((l, i) => `<li><span class="no" aria-hidden="true">${i + 1}</span><span><b>${esc(l.r.from.name)} ${ARROW} ${esc(l.r.to.name)}</b> ` +
+    c.legs.map((l, i) => `<li><span class="no" aria-hidden="true">${i + 1}</span><span><b>${esc(sname(l.r.from))} ${ARROW} ${esc(sname(l.r.to))}</b> ` +
       `<span class="dt num">\u00b7 ${nw(sd(l.p))} ${ARROW} ${nw(sd(l.q))} \u00b7 ${kmCell(l.r)}</span>${i ? `<span class="hn${c.hops[i - 1].same ? '' : ' hop'}">${handOver(c, i)}</span>` : ''}</span>` +
       `<a class="btn sm" href="${esc(legLink(l))}" target="_blank" rel="noopener" aria-label="${esc(bookLeg(c, l, i))}">${esc(t('book.leg', { n: i + 1 }))}</a></li>`).join('') +
     `</ol><button class="btn2 sm" data-chain="${esc(c.key)}"${c.key === S.chain ? ' aria-current="true"' : ''} aria-label="${esc(t('chain.map.aria', { label: chainLabel(c) }))}">${MAPI}${esc(t('btn.map'))}</button></li>`).join('') + '</ul>' +
@@ -3826,7 +3831,7 @@ function render() {
     const on = eff.fst === name, click = g.dep > 0;
     // arrival only: the pick-up dropdown has no such option, so the click does nothing
     const click_ = click && t(chainMode ? (on ? 'tip.click.chain.on' : 'tip.click.chain.off') : (on ? 'tip.click.trips.on' : 'tip.click.trips.off'));
-    const tip = [(isFav('station', place(g.s)) ? '\u2605 ' : '') + place(g.s), ...(chainMode ? [t('count.chains.starting', { n: g.dep }), t('count.chains.ending', { n: g.arr })] : [t('count.departures', { n: g.dep }), t('count.arrivals', { n: g.arr })]), click_].filter(Boolean).map(esc).join(' \u00b7 ');
+    const tip = [(isFav('station', placeKey(g.s)) ? '\u2605 ' : '') + place(g.s), ...(chainMode ? [t('count.chains.starting', { n: g.dep }), t('count.chains.ending', { n: g.arr })] : [t('count.departures', { n: g.dep }), t('count.arrivals', { n: g.arr })]), click_].filter(Boolean).map(esc).join(' \u00b7 ');
     L.circleMarker(ll(g.s), { pane: 'stations', radius: on ? 7 : 5.5, weight: 2.5, ...paint({ color: 'station', fillColor: on ? 'station' : 'station-fill' }), fillOpacity: 1, className: click ? 'stn' : 'stn noclick' }).addTo(layer)
       .bindTooltip(tip, { direction: 'top', offset: [0, -8] })
       .on('click', () => { if (click) toggle(name); });
@@ -4303,7 +4308,7 @@ function pill() {
     if (phone()) map.invalidateSize();  // the fit that follows needs the new size now, not after the ResizeObserver
   }
   if (!open) return;
-  $('mptitle').innerHTML = S.route ? `${esc(open.from.name)} ${ARROW} ${esc(open.to.name)}` : chainTitle(open);
+  $('mptitle').innerHTML = S.route ? `${esc(sname(open.from))} ${ARROW} ${esc(sname(open.to))}` : chainTitle(open);
   $('mpback').setAttribute('aria-label', t(S.route ? 'pill.back.routes' : 'pill.back.chains'));
 }
 $('mpback').onclick = () => closeDetail();

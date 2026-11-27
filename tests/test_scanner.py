@@ -929,6 +929,18 @@ class StationNamesPageTest(unittest.TestCase):
         self.assertEqual(got, feeds(self.stripped(), "without"))
         self.assertEqual(sorted(got), ["all.xml", "from-antwerp.xml"])
 
+    def test_template_labels_by_language_and_keys_by_english_name(self):
+        tpl = (ROOT / "rally-map.template.html").read_text(encoding="utf-8")
+        self.assertIn("const sname = s => (s.names && s.names[lang]) || s.name;", tpl)
+        self.assertIn("const place = s => `${sname(s)}, ${s.cc}`;", tpl)
+        # the keys are the English names; labels never feed them
+        self.assertIn("const placeKey = s => `${s.name}, ${s.cc}`;", tpl)
+        self.assertIn("const routeKey = r => r.from.name + '>' + r.to.name;", tpl)
+        self.assertIn("const legKey = r => r.from.name + '>' + r.to.name;", tpl)
+        self.assertIn("isFav('station', placeKey(g.from))", tpl)
+        self.assertIn("label = v => cc ? regionName(v) : nameOf(v);", tpl)
+        self.assertNotIn("isFav('station', place(", tpl)
+
 
 ATOM = "{http://www.w3.org/2005/Atom}"
 
