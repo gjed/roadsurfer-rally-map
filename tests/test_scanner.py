@@ -1310,6 +1310,14 @@ class FeedsTest(unittest.TestCase):
             tpl,
         )
 
+    def test_template_links_the_feed_from_the_app_bar(self):
+        tpl = (ROOT / "rally-map.template.html").read_text(encoding="utf-8")
+        bar = tpl.split('<span class="abend">', 1)[1].split("</header>", 1)[0]
+        self.assertIn('class="fdbtn" href="feeds/all.xml"', bar)
+        self.assertLess(bar.index('class="fdbtn"'), bar.index('class="dispw"'))
+        sheet = tpl.split('id="dbody"', 1)[1]
+        self.assertIn('class="feed" href="feeds/all.xml"', sheet)
+
 
 if __name__ == "__main__":
     unittest.main()
