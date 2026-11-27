@@ -280,8 +280,9 @@ Unofficial API used by booking.roadsurfer.com (stdlib only):
                                                  models + price for an exact timeframe
 The X-Requested-Alias header must match the route alias or the API returns 404.
 
-Everything is read from /api/en, except that the station list is also read once for each
-page language (LANGS): the localised names go into each record's from/to as "names".
+Everything is read from /api/en, except that a scan that writes --json-out, --map or
+--feeds also reads the station list once for each page language (LANGS): the localised
+names go into each record's from/to as "names".
 
 Road distances come from an OSRM server (the public demo server by default), one
 table request per pick-up station, and are cached per station pair in a JSON file.
@@ -505,7 +506,8 @@ a 404 HTML page. The language in the path matters for one thing: see "Known beha
   `Antwerpen`, `Anvers`, `Amberes`, `Anversa`, `Antuérpia`. The `name` of 26 to 57 of
   the 112 stations differs from English, depending on the language. `city.name` is
   not localised. The scanner reads the list once for each of the six languages after
-  the English one (6 more requests per scan) and joins the answers by station `id`,
+  the English one (6 more requests per scan that writes `--json-out`, `--map` or
+  `--feeds`; a console-only scan skips them) and joins the answers by station `id`,
   never by name. A language whose request fails falls back to English and counts as a
   failed request.
 - A full scan makes about 850 requests. With `--delay 5` it takes about 70 to 90
