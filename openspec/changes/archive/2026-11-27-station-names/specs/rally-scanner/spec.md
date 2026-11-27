@@ -127,26 +127,6 @@ that grows with each attempt.
 - **WHEN** a request fails with HTTP 404
 - **THEN** the scanner gives up on that request without retrying
 
-### Requirement: Scan data file
-
-With `--json-out FILE`, the scanner SHALL write a UTF-8 JSON object whose `offers` key
-holds the offer records that `--map` embeds, each with `km` and `km_estimated`, and
-whose `scan` key holds the scan metadata: `finished_at` (UTC, ISO 8601), `offers`,
-`requests`, `failed`, `rate_limited`, `start`, `end`, `from`, `to` and `stations` (the
-pick-up stations asked about, as `{"name", "cc"}`). A record's `from` and `to` MAY have
-`names`, the station name per page language. Readers SHALL tolerate other
-top-level keys, records without `km`, records without `names` and a `scan` without
-`stations`.
-
-#### Scenario: Scan to a data file
-
-- **WHEN** the user runs `python3 roadsurfer-rally.py --from 1 --json-out offers.json`
-- **THEN** `offers.json` holds an object whose `offers` list has one record per listed
-  offer, each with `km` and `km_estimated`, and whose `scan` object has the finish time
-  such as `2026-11-18T03:12:05Z`, the number of offers, the request, failed and HTTP
-  429 counts the summary prints, the `--start` and `--end` window, `from` set to
-  `["1"]`, `to` set to `null` and `stations` listing station 1
-
 ## REMOVED Requirements
 
 ### Requirement: Texts that stay as they are
