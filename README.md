@@ -353,8 +353,10 @@ slug, both get their country code appended (`neustadt-de`, `neustadt-at`), and a
 that is still taken gets `-2`, `-3`, in the order of the sorted names. The stations are
 the scan's `stations` list plus those of the offers (a data file from before the list
 existed has only the latter), so a slug does not change when another station gets an
-offer. The map links `all.xml` from its `<head>` and shows an `RSS feed` link to the file of
-the chosen pick-up station, from the station table `--map` embeds.
+offer. The map links `all.xml` from its `<head>` and from the app bar, as an RSS icon
+button beside `Display` (on a phone, as an `RSS feed` link at the end of the `Display`
+menu), and shows an `RSS feed` link to the file of the chosen pick-up station, from the
+station table `--map` embeds.
 
 `--feeds DIR` writes the same files locally, from a scan or from a data file, and keeps
 other files in `DIR`:
