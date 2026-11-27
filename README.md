@@ -33,8 +33,11 @@ full scan makes about 850 sequential requests and takes several minutes.
 The page is in English, German, French, Spanish, Italian, Dutch and Portuguese. It opens
 in the language of the browser, falling back to English, and the `Display` button at the
 end of the top bar changes it. The choice is kept in the browser and in the page address
-(`#map?lang=de`), so a shared link keeps it. Dates, numbers, distances and country names
-follow the language; station names stay as the API gives them.
+(`#map?lang=de`), so a shared link keeps it. Dates, numbers, distances, country names
+and station names follow the language; a station that roadsurfer names the same in a
+language, or a data file from before station names, shows the English name. Favourites,
+the page address and the feeds keep the English names, so they do not change with the
+language.
 
 The page has two views, `Map` and `Trips`, and shows either `Single rallies` or
 `Chains` (see "Chains"); both switches are in the bar at the top, next to
@@ -139,6 +142,11 @@ object with the scan metadata:
 | `start`, `end` | the `--start` and `--end` window                            |
 | `from`, `to`   | the `--from` and `--to` terms as given, `null` when not set |
 | `stations`     | the pick-up stations asked about, as `{"name", "cc"}`       |
+
+Each station in a record (`from` and `to`) has the English `name`, which is the key of
+the page, and may have `names`: the name per page language (`de`, `fr`, `es`, `it`, `nl`,
+`pt`), only for the languages where it differs from English, for example
+`{"it": "Anversa", "pt": "Antuérpia"}`. A file without `names` is still rendered.
 
 `--from-json` builds the page from that file without any network request:
 
@@ -265,12 +273,15 @@ usage: roadsurfer-rally.py [-h] [--to [TO ...]] [--from [ORIGIN ...]]
 Query roadsurfer Rally (one-way relocation) offers.
 
 Unofficial API used by booking.roadsurfer.com (stdlib only):
-  GET /api/{lang}/rally/stations                 all stations
+  GET /api/{lang}/rally/stations                 all stations; "name" is in {lang}
   GET /api/{lang}/rally/stations/{id}            station; "returns" = rally destinations
   GET /api/{lang}/rally/timeframes/{from}-{to}   [{startDate, endDate}, ...]
   GET /api/{lang}/rally/search?stations=[[from,to]]&range=[start,end]&currency=EUR
                                                  models + price for an exact timeframe
 The X-Requested-Alias header must match the route alias or the API returns 404.
+
+Everything is read from /api/en, except that the station list is also read once for each
+page language (LANGS): the localised names go into each record's from/to as "names".
 
 Road distances come from an OSRM server (the public demo server by default), one
 table request per pick-up station, and are cached per station pair in a JSON file.
@@ -468,7 +479,7 @@ These notes were reverse-engineered from booking.roadsurfer.com.
 
 The base URL is `https://booking.roadsurfer.com/api/en`. Every request needs an
 `X-Requested-Alias` header that matches the route. Without it, the API answers with
-a 404 HTML page.
+a 404 HTML page. The language in the path matters for one thing: see "Known behaviour".
 
 | Path                                                                                | Alias                 | Returns                                      |
 | ----------------------------------------------------------------------------------- | --------------------- | -------------------------------------------- |
@@ -489,6 +500,14 @@ a 404 HTML page.
   answers, and the duration. When more than 10% of the requests failed
   (`MAX_FAILED`), it exits with status 1 and writes neither the `--json-out` file,
   the `--map` file nor the `--feeds` files.
+- `/api/{lang}/rally/stations` answers for `de`, `fr`, `es`, `it`, `nl` and `pt` with
+  the same station ids as `en` and a localised `name`, for example `Antwerp` is
+  `Antwerpen`, `Anvers`, `Amberes`, `Anversa`, `Antuérpia`. The `name` of 26 to 57 of
+  the 112 stations differs from English, depending on the language. `city.name` is
+  not localised. The scanner reads the list once for each of the six languages after
+  the English one (6 more requests per scan) and joins the answers by station `id`,
+  never by name. A language whose request fails falls back to English and counts as a
+  failed request.
 - A full scan makes about 850 requests. With `--delay 5` it takes about 70 to 90
   minutes; the workflow allows 150.
 - Every rally lasts 7 days and costs a flat €129.01.
